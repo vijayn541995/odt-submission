@@ -1,0 +1,196 @@
+{
+  "inference": {
+    "mode": "repo_inferred_manifest",
+    "keywords": [
+      "change",
+      "submit",
+      "request",
+      "button",
+      "text",
+      "employee",
+      "form",
+      "filter",
+      "activities",
+      "keyword",
+      "without",
+      "leaving",
+      "page",
+      "filtering",
+      "updates",
+      "announced",
+      "clearly",
+      "assistive",
+      "technology",
+      "users",
+      "keyboard",
+      "open",
+      "clear",
+      "navigate"
+    ],
+    "hintedAreas": [],
+    "candidateFiles": [
+      "src/components/employeeFormUtils.js",
+      "src/components/EmployeeForm.jsx",
+      "src/data/fallbackEmployees.js",
+      "src/components/FilterBar.jsx",
+      "src/api/fetchEmployees.js",
+      "src/components/ActivityList.jsx",
+      "src/components/OracleLogo.js"
+    ],
+    "candidateDetails": [
+      {
+        "file": "src/components/employeeFormUtils.js",
+        "score": 111,
+        "exportNames": [
+          "INITIAL_FORM",
+          "EMAIL_PATTERN",
+          "MIN_SUMMARY_LENGTH",
+          "TEAM_OPTIONS",
+          "FIELD_CONFIG",
+          "REQUIRED_FIELDS",
+          "SUBMIT_STATUS_ID",
+          "normalizeText",
+          "hasAllRequiredFields",
+          "getFormErrors",
+          "isFormSubmittable",
+          "getFieldDescribedBy",
+          "getSubmitStatusMessage"
+        ],
+        "preview": "export const INITIAL_FORM = { requesterName: \"\", requesterEmail: \"\", team: \"\",",
+        "reasons": [
+          "path:employee",
+          "path:form",
+          "export:INITIAL_FORM",
+          "export:SUBMIT_STATUS_ID",
+          "export:normalizeText",
+          "export:getFormErrors"
+        ]
+      },
+      {
+        "file": "src/components/EmployeeForm.jsx",
+        "score": 58,
+        "exportNames": [
+          "EmployeeForm"
+        ],
+        "preview": "import React, { useMemo, useState } from \"react\"; import { FIELD_CONFIG, INITIAL_FORM,",
+        "reasons": [
+          "path:employee",
+          "path:form",
+          "export:EmployeeForm",
+          "preview:form"
+        ]
+      },
+      {
+        "file": "src/data/fallbackEmployees.js",
+        "score": 30,
+        "exportNames": [
+          "FALLBACK_EMPLOYEES"
+        ],
+        "preview": "export const FALLBACK_EMPLOYEES = [ { id: 101, name: \"Amelia Hart\",",
+        "reasons": [
+          "path:employee",
+          "export:FALLBACK_EMPLOYEES",
+          "preview:employee"
+        ]
+      },
+      {
+        "file": "src/components/FilterBar.jsx",
+        "score": 28,
+        "exportNames": [
+          "FilterBar"
+        ],
+        "preview": "import React from \"react\"; export default function FilterBar({ query, selectedDepartment,",
+        "reasons": [
+          "path:filter",
+          "export:FilterBar",
+          "preview:filter"
+        ]
+      },
+      {
+        "file": "src/api/fetchEmployees.js",
+        "score": 23,
+        "exportNames": [],
+        "preview": "import { FALLBACK_EMPLOYEES } from \"../data/fallbackEmployees.js\"; const DEPARTMENTS = [ \"Platform Engineering\", \"Experience Design\",",
+        "reasons": [
+          "path:employee",
+          "preview:employee",
+          "preview:form"
+        ]
+      },
+      {
+        "file": "src/components/ActivityList.jsx",
+        "score": 4,
+        "exportNames": [
+          "ActivityList"
+        ],
+        "preview": "import React from \"react\"; function EmployeeCard({ employee, index }) { return ( <li className=\"employee-card\" style={{ \"--stagger\": `${index * 60}ms` }}>",
+        "reasons": [
+          "preview:employee"
+        ]
+      },
+      {
+        "file": "src/components/OracleLogo.js",
+        "score": 1,
+        "exportNames": [
+          "OracleLogo",
+          "ORACLE_LOGO_LABEL"
+        ],
+        "preview": "import React from \"react\"; export const ORACLE_LOGO_LABEL = \"Oracle logo\"; export default function OracleLogo({ className = \"oracle-logo\" }) { return React.createElement(",
+        "reasons": []
+      }
+    ]
+  },
+  "moduleImpacts": [
+    {
+      "modulePath": "src/components",
+      "sourceFiles": [
+        "src/components/employeeFormUtils.js",
+        "src/components/EmployeeForm.jsx",
+        "src/components/FilterBar.jsx",
+        "src/components/ActivityList.jsx",
+        "src/components/OracleLogo.js"
+      ],
+      "testFiles": [],
+      "sourceFileCount": 5,
+      "testFileCount": 0
+    },
+    {
+      "modulePath": "src/data",
+      "sourceFiles": [
+        "src/data/fallbackEmployees.js"
+      ],
+      "testFiles": [],
+      "sourceFileCount": 1,
+      "testFileCount": 0
+    },
+    {
+      "modulePath": "src/api",
+      "sourceFiles": [
+        "src/api/fetchEmployees.js"
+      ],
+      "testFiles": [],
+      "sourceFileCount": 1,
+      "testFileCount": 0
+    }
+  ],
+  "totals": {
+    "modules": 3,
+    "totalSourceFiles": 7,
+    "totalTestFiles": 0,
+    "blastRadius": 7
+  },
+  "hotspots": [
+    {
+      "modulePath": "src/components",
+      "blastRadius": 5
+    },
+    {
+      "modulePath": "src/data",
+      "blastRadius": 1
+    },
+    {
+      "modulePath": "src/api",
+      "blastRadius": 1
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "generatedAt": "2026-04-23T16:20:01.867Z",
+  "provider": "template",
+  "oci": {
+    "profile": "",
+    "region": "",
+    "endpoint": "",
+    "modelId": "",
+    "endpointId": "",
+    "servingType": "ON_DEMAND",
+    "subcommand": "chat-on-demand-serving-mode"
+  },
+  "summary": {
+    "totalStages": 7,
+    "generated": 7,
+    "fallback": 0,
+    "failed": 0
+  },
+  "stages": [
+    {
+      "stage": "intake",
+      "slug": "intake",
+      "provider": "template",
+      "model": "",
+      "latencyMs": 0,
+      "fallback": false,
+      "status": "generated",
+      "requestFile": "reports/odt/prompts/generated/01-intake.request.md",
+      "outputFile": "reports/odt/prompts/generated/01-intake.generated.md",
+      "error": ""
+    },
+    {
+      "stage": "impact",
+      "slug": "impact",
+      "provider": "template",
+      "model": "",
+      "latencyMs": 0,
+      "fallback": false,
+      "status": "generated",
+      "requestFile": "reports/odt/prompts/generated/02-impact.request.md",
+      "outputFile": "reports/odt/prompts/generated/02-impact.generated.md",
+      "error": ""
+    },
+    {
+      "stage": "compliance",
+      "slug": "compliance",
+      "provider": "template",
+      "model": "",
+      "latencyMs": 0,
+      "fallback": false,
+      "status": "generated",
+      "requestFile": "reports/odt/prompts/generated/06-compliance.request.md",
+      "outputFile": "reports/odt/prompts/generated/06-compliance.generated.md",
+      "error": ""
+    },
+    {
+      "stage": "design",
+      "slug": "tech-design",
+      "provider": "template",
+      "model": "",
+      "latencyMs": 0,
+      "fallback": false,
+      "status": "generated",
+      "requestFile": "reports/odt/prompts/generated/03-tech-design.request.md",
+      "outputFile": "reports/odt/prompts/generated/03-tech-design.generated.md",
+      "error": ""
+    },
+    {
+      "stage": "code-workpack",
+      "slug": "code",
+      "provider": "template",
+      "model": "",
+      "latencyMs": 0,
+      "fallback": false,
+      "status": "generated",
+      "requestFile": "reports/odt/prompts/generated/04-code.request.md",
+      "outputFile": "reports/odt/prompts/generated/04-code.generated.md",
+      "error": ""
+    },
+    {
+      "stage": "test-workpack",
+      "slug": "unit-tests",
+      "provider": "template",
+      "model": "",
+      "latencyMs": 0,
+      "fallback": false,
+      "status": "generated",
+      "requestFile": "reports/odt/prompts/generated/05-unit-tests.request.md",
+      "outputFile": "reports/odt/prompts/generated/05-unit-tests.generated.md",
+      "error": ""
+    },
+    {
+      "stage": "verify-summary",
+      "slug": "verify",
+      "provider": "template",
+      "model": "",
+      "latencyMs": 0,
+      "fallback": false,
+      "status": "generated",
+      "requestFile": "reports/odt/prompts/generated/07-verify.request.md",
+      "outputFile": "reports/odt/prompts/generated/07-verify.generated.md",
+      "error": ""
+    }
+  ]
+}

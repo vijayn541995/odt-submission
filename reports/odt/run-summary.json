@@ -1,0 +1,347 @@
+{
+  "summary": {
+    "generatedAt": "2026-04-23T16:20:01.866Z",
+    "totalStages": 7,
+    "completedStages": 7,
+    "failedStages": 0,
+    "status": "ready_for_review"
+  },
+  "stages": [
+    {
+      "name": "intake",
+      "status": "completed",
+      "startedAt": "2026-04-23T16:20:00.112Z",
+      "finishedAt": "2026-04-23T16:20:00.125Z",
+      "detail": {
+        "intakeFile": "reports/dev-twin/intake.json",
+        "intakeQuestionsFile": "reports/dev-twin/intake-questions.md",
+        "missingFieldsFile": "reports/dev-twin/intake-missing-fields.md",
+        "intakeStatus": "ready",
+        "missingFieldCount": 0,
+        "featureName": "change the submit request button text to submit employee form",
+        "workItemType": "feature",
+        "reviewEditsActive": false,
+        "promptOverridesActive": 0,
+        "complexity": "medium",
+        "imageInputs": [],
+        "workspaceRoot": "/Users/vn105957/Desktop/odt-submission",
+        "targetRepoPath": "/Users/vn105957/Desktop/odt-submission/demo-target-repo/"
+      }
+    },
+    {
+      "name": "impact",
+      "status": "completed",
+      "startedAt": "2026-04-23T16:20:00.133Z",
+      "finishedAt": "2026-04-23T16:20:00.400Z",
+      "detail": {
+        "blastRadius": 7,
+        "modules": 3,
+        "sourceFiles": 7,
+        "testFiles": 0,
+        "inferenceMode": "repo_inferred_manifest",
+        "candidateFiles": 7,
+        "keywords": [
+          "change",
+          "submit",
+          "request",
+          "button",
+          "text",
+          "employee",
+          "form",
+          "filter"
+        ],
+        "rankedFileCount": 7,
+        "topConfidence": 0.99,
+        "regressionRisks": [
+          "No critical planning risk detected. Keep human-in-loop for merge approvals."
+        ]
+      }
+    },
+    {
+      "name": "compliance",
+      "status": "completed",
+      "startedAt": "2026-04-23T16:20:00.133Z",
+      "finishedAt": "2026-04-23T16:20:01.803Z",
+      "detail": {
+        "status": "completed",
+        "blockers": 0,
+        "verifyStatus": "pass",
+        "dashboard": "reports/a11y-twin/index.html",
+        "complianceMapFile": "reports/odt/compliance-mapping.md",
+        "topRules": 0,
+        "repoMode": "external_target",
+        "note": "A11y scan executed against the selected target repo and reports were saved in the ODT workspace artifacts."
+      }
+    },
+    {
+      "name": "design",
+      "status": "completed",
+      "startedAt": "2026-04-23T16:20:01.811Z",
+      "finishedAt": "2026-04-23T16:20:01.820Z",
+      "detail": {
+        "designFile": "reports/odt/tech-design.md",
+        "designJsonFile": "reports/odt/tech-design.json",
+        "qualityGateCount": 4
+      }
+    },
+    {
+      "name": "code-workpack",
+      "status": "completed",
+      "startedAt": "2026-04-23T16:20:01.827Z",
+      "finishedAt": "2026-04-23T16:20:01.835Z",
+      "detail": {
+        "codeWorkpack": "reports/dev-twin/code-workpack.md",
+        "available": true,
+        "patchPlanFile": "reports/odt/code-patch-plan.md",
+        "targetFiles": 7,
+        "noNewDependencies": true
+      }
+    },
+    {
+      "name": "test-workpack",
+      "status": "completed",
+      "startedAt": "2026-04-23T16:20:01.827Z",
+      "finishedAt": "2026-04-23T16:20:01.843Z",
+      "detail": {
+        "testWorkpack": "reports/dev-twin/unit-test-workpack.md",
+        "available": true,
+        "testMatrixFile": "reports/odt/unit-test-matrix.md",
+        "relatedTestFiles": 0
+      }
+    },
+    {
+      "name": "verify-summary",
+      "status": "completed",
+      "startedAt": "2026-04-23T16:20:01.851Z",
+      "finishedAt": "2026-04-23T16:20:01.858Z",
+      "detail": {
+        "note": "Run summary generated for human review.",
+        "decision": "go",
+        "blockerCount": 0,
+        "verifyChecklistFile": "reports/odt/verify-checklist.md"
+      }
+    }
+  ],
+  "profile": {
+    "id": "react-js",
+    "name": "React",
+    "status": "active",
+    "description": "Frontend profile with Jest/RTL and Oracle a11y checks.",
+    "commands": {
+      "test": "npm test -- --watch=false --runInBand",
+      "lint": "npx eslint src",
+      "a11y": "npm run a11y:twin:demo"
+    },
+    "qualityGates": [
+      "VPAT/WCAG findings reviewed",
+      "Keyboard accessibility parity",
+      "Unit tests updated for impacted behavior"
+    ]
+  },
+  "intake": {
+    "title": "change the submit request button text to submit employee form",
+    "featureName": "change the submit request button text to submit employee form",
+    "summary": "change the submit request button text to submit employee form",
+    "reviewEdits": "",
+    "promptOverrides": {
+      "intake": "",
+      "impact": "",
+      "design": "",
+      "code": "",
+      "unitTests": "",
+      "compliance": "",
+      "verify": ""
+    },
+    "targetRepoPath": "/Users/vn105957/Desktop/odt-submission/demo-target-repo/",
+    "workItemType": "feature",
+    "jira": {
+      "ticketId": "",
+      "url": ""
+    },
+    "scope": {
+      "uiSurface": "web",
+      "complexity": "medium",
+      "repoScan": "full"
+    },
+    "requirements": {
+      "acceptanceCriteria": [
+        "User can filter activities by keyword without leaving the page",
+        "Filtering updates are announced clearly for assistive technology users",
+        "Keyboard users can open, clear, and navigate filter controls"
+      ],
+      "nonFunctional": [
+        "a11y",
+        "performance",
+        "analytics"
+      ],
+      "outOfScope": [
+        "No backend API changes",
+        "Do not alter existing permissions behavior"
+      ]
+    },
+    "designInputs": {
+      "mockupImages": [],
+      "referenceDocs": [],
+      "jiraLinks": []
+    },
+    "constraints": {
+      "noNewDependencies": true,
+      "releaseWindowDays": 10,
+      "approvedLibrariesOnly": true
+    },
+    "developerHints": {
+      "suspectedAreas": [],
+      "relatedComponents": [],
+      "notes": "Optional only. ODT should infer impact areas from the repo when hints are not provided."
+    },
+    "defectContext": {
+      "defectId": "",
+      "observedBehavior": "",
+      "expectedBehavior": "",
+      "severity": "medium"
+    }
+  },
+  "kpis": {
+    "automationCoverage": 100,
+    "impact": {
+      "blastRadius": 7,
+      "modules": 3,
+      "sourceFiles": 7,
+      "testFiles": 0,
+      "inferenceMode": "repo_inferred_manifest",
+      "candidateFiles": 7,
+      "keywords": [
+        "change",
+        "submit",
+        "request",
+        "button",
+        "text",
+        "employee",
+        "form",
+        "filter"
+      ]
+    },
+    "tests": {
+      "available": true,
+      "testFiles": 0
+    },
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "design": {
+      "available": true
+    },
+    "review": {
+      "humanApprovalRequired": true,
+      "status": "ready_for_review"
+    },
+    "intake": {
+      "workItemType": "feature"
+    },
+    "trend": {
+      "totalRunsStored": 60,
+      "lastRunAt": "2026-04-23T16:20:01.866Z",
+      "blockerDelta": 0,
+      "averageAutomationCoverage5Runs": 100,
+      "runSuccessRate10Runs": 100,
+      "reviewReadyRuns5": 5
+    }
+  },
+  "promptGeneration": {
+    "provider": "template",
+    "stages": [
+      {
+        "stage": "intake",
+        "slug": "intake",
+        "provider": "template",
+        "model": "",
+        "latencyMs": 0,
+        "fallback": false,
+        "status": "generated",
+        "requestFile": "reports/odt/prompts/generated/01-intake.request.md",
+        "outputFile": "reports/odt/prompts/generated/01-intake.generated.md",
+        "error": ""
+      },
+      {
+        "stage": "impact",
+        "slug": "impact",
+        "provider": "template",
+        "model": "",
+        "latencyMs": 0,
+        "fallback": false,
+        "status": "generated",
+        "requestFile": "reports/odt/prompts/generated/02-impact.request.md",
+        "outputFile": "reports/odt/prompts/generated/02-impact.generated.md",
+        "error": ""
+      },
+      {
+        "stage": "compliance",
+        "slug": "compliance",
+        "provider": "template",
+        "model": "",
+        "latencyMs": 0,
+        "fallback": false,
+        "status": "generated",
+        "requestFile": "reports/odt/prompts/generated/06-compliance.request.md",
+        "outputFile": "reports/odt/prompts/generated/06-compliance.generated.md",
+        "error": ""
+      },
+      {
+        "stage": "design",
+        "slug": "tech-design",
+        "provider": "template",
+        "model": "",
+        "latencyMs": 0,
+        "fallback": false,
+        "status": "generated",
+        "requestFile": "reports/odt/prompts/generated/03-tech-design.request.md",
+        "outputFile": "reports/odt/prompts/generated/03-tech-design.generated.md",
+        "error": ""
+      },
+      {
+        "stage": "code-workpack",
+        "slug": "code",
+        "provider": "template",
+        "model": "",
+        "latencyMs": 0,
+        "fallback": false,
+        "status": "generated",
+        "requestFile": "reports/odt/prompts/generated/04-code.request.md",
+        "outputFile": "reports/odt/prompts/generated/04-code.generated.md",
+        "error": ""
+      },
+      {
+        "stage": "test-workpack",
+        "slug": "unit-tests",
+        "provider": "template",
+        "model": "",
+        "latencyMs": 0,
+        "fallback": false,
+        "status": "generated",
+        "requestFile": "reports/odt/prompts/generated/05-unit-tests.request.md",
+        "outputFile": "reports/odt/prompts/generated/05-unit-tests.generated.md",
+        "error": ""
+      },
+      {
+        "stage": "verify-summary",
+        "slug": "verify",
+        "provider": "template",
+        "model": "",
+        "latencyMs": 0,
+        "fallback": false,
+        "status": "generated",
+        "requestFile": "reports/odt/prompts/generated/07-verify.request.md",
+        "outputFile": "reports/odt/prompts/generated/07-verify.generated.md",
+        "error": ""
+      }
+    ]
+  },
+  "reviewPlan": {
+    "reviewPlanFile": "reports/odt/developer-review-plan.md",
+    "reviewPlanJsonFile": "reports/odt/developer-review-plan.json",
+    "plannedFiles": 6,
+    "phases": 5
+  }
+}

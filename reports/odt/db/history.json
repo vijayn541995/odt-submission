@@ -1,0 +1,722 @@
+[
+  {
+    "generatedAt": "2026-04-22T14:04:16.196Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-22T14:04:28.092Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-22T14:04:48.777Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-22T14:09:52.430Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-22T14:11:09.047Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-22T14:22:14.410Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-22T15:24:16.672Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-22T15:25:00.143Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-22T15:28:57.900Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-22T15:34:51.025Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-22T15:41:30.198Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-22T15:46:46.749Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-22T15:47:57.384Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-22T15:56:52.433Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-22T15:58:15.877Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T07:25:20.798Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T08:13:28.074Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T08:19:54.874Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T08:31:11.826Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T08:34:54.142Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T08:35:15.171Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T08:36:54.603Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T08:44:06.392Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 1,
+      "verifyStatus": "action_required"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T08:49:21.413Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T08:51:55.958Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T08:52:04.665Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T11:07:27.390Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T11:10:21.016Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T11:20:00.565Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T11:22:58.596Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T11:28:51.823Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T12:11:48.199Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T12:17:40.973Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T12:40:19.913Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T12:54:58.151Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T12:58:47.391Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T13:12:39.983Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T13:29:09.831Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T13:59:14.474Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T14:00:55.500Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T14:13:23.084Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T14:28:06.757Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T14:37:03.859Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T14:40:45.472Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T14:45:58.936Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T14:49:47.814Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T14:51:35.283Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T14:52:16.583Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T14:58:33.189Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T15:01:44.386Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T15:03:27.437Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T15:03:51.342Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T15:04:18.574Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T15:08:48.689Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T15:10:43.573Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T15:12:00.166Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T15:18:07.546Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T15:35:50.710Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T15:45:58.156Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  },
+  {
+    "generatedAt": "2026-04-23T16:20:01.866Z",
+    "profile": "react-js",
+    "workItemType": "feature",
+    "status": "ready_for_review",
+    "compliance": {
+      "status": "completed",
+      "blockers": 0,
+      "verifyStatus": "pass"
+    },
+    "automationCoverage": 100
+  }
+]

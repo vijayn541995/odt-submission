@@ -1,0 +1,48 @@
+{
+  "generatedAt": "2026-04-23T16:20:01.868Z",
+  "source": "reports/dev-twin/intake.json",
+  "redactionCount": 0,
+  "intake": {
+    "title": "change the submit request button text to submit employee form",
+    "featureName": "change the submit request button text to submit employee form",
+    "summary": "change the submit request button text to submit employee form",
+    "reviewEdits": "",
+    "workItemType": "feature",
+    "jira": {
+      "ticketId": "",
+      "url": ""
+    },
+    "requirements": {
+      "acceptanceCriteria": [
+        "User can filter activities by keyword without leaving the page",
+        "Filtering updates are announced clearly for assistive technology users",
+        "Keyboard users can open, clear, and navigate filter controls"
+      ],
+      "nonFunctional": [
+        "a11y",
+        "performance",
+        "analytics"
+      ]
+    },
+    "defectContext": {
+      "defectId": "",
+      "observedBehavior": "",
+      "expectedBehavior": "",
+      "severity": "medium"
+    },
+    "designInputs": {
+      "mockupImages": [],
+      "referenceDocs": [],
+      "jiraLinks": []
+    },
+    "promptOverrides": {
+      "intake": "",
+      "impact": "",
+      "design": "",
+      "code": "",
+      "unitTests": "",
+      "compliance": "",
+      "verify": ""
+    }
+  }
+}

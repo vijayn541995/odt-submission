@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A11y Twin Dashboard</title>
+  <style>
+    :root {
+      --bg: #f2f6f7;
+      --card: #ffffff;
+      --ink: #122025;
+      --muted: #4b5f67;
+      --accent: #006d77;
+      --accent-soft: #d8f1ef;
+      --danger: #b00020;
+      --line: #d7e1e4;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      color: var(--ink);
+      background: radial-gradient(circle at 20% 20%, #e4f8f4, transparent 45%), var(--bg);
+    }
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 32px;
+      line-height: 1.2;
+    }
+    .sub {
+      margin: 0 0 24px;
+      color: var(--muted);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .metric {
+      font-size: 30px;
+      font-weight: 700;
+      margin: 4px 0 0;
+    }
+    .danger { color: var(--danger); }
+    h2 {
+      margin: 0 0 12px;
+      font-size: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      padding: 8px 6px;
+      vertical-align: top;
+    }
+    th {
+      color: var(--muted);
+      font-weight: 600;
+      background: var(--accent-soft);
+    }
+    .stack {
+      display: grid;
+      gap: 12px;
+    }
+    .foot {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    @media (max-width: 768px) {
+      .wrap { padding: 12px; }
+      h1 { font-size: 26px; }
+      table { font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>Frontend Accessibility Twin</h1>
+    <p class="sub">Digital Worker output for demo day: scan, prioritize, suggest, verify.</p>
+
+    <section class="grid">
+      <article class="card">
+        <div>Files Scanned</div>
+        <div class="metric">9</div>
+      </article>
+      <article class="card">
+        <div>Total Findings</div>
+        <div class="metric">0</div>
+      </article>
+      <article class="card">
+        <div>Blockers</div>
+        <div class="metric danger">0</div>
+      </article>
+      <article class="card">
+        <div>Triage Reduction</div>
+        <div class="metric">NaN%</div>
+      </article>
+      <article class="card">
+        <div>Priority Queue Effort</div>
+        <div class="metric">0h</div>
+      </article>
+    </section>
+
+    <section class="stack">
+      <article class="card">
+        <h2>Top Rules</h2>
+        <table>
+          <thead>
+            <tr><th>Rule</th><th>Count</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            
+          </tbody>
+        </table>
+      </article>
+
+      <article class="card">
+        <h2>Component Hotspots</h2>
+        <table>
+          <thead>
+            <tr><th>File</th><th>Findings</th></tr>
+          </thead>
+          <tbody>
+            
+          </tbody>
+        </table>
+      </article>
+
+      <article class="card">
+        <h2>Priority Fix Queue</h2>
+        <table>
+          <thead>
+            <tr><th>Rule</th><th>File</th><th>Line</th><th>Score</th><th>Recommendation</th></tr>
+          </thead>
+          <tbody>
+            
+          </tbody>
+        </table>
+      </article>
+    </section>
+
+    <p class="foot">
+      Standard: Oracle VPAT guidance (internal Confluence source of truth) (fallback: WCAG 2.1 AA)<br/>
+      Generated at: 2026-04-23T16:20:01.800Z
+    </p>
+  </main>
+</body>
+</html>

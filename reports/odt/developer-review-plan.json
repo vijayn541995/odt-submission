@@ -1,0 +1,131 @@
+{
+  "generatedAt": "2026-04-23T16:20:01.867Z",
+  "stage": "review",
+  "workItem": "change the submit request button text to submit employee form",
+  "status": "ready_for_review",
+  "summary": "change the submit request button text to submit employee form should be implemented as a minimal blast-radius change starting with 6 ranked file candidate(s) already inferred from the repository. Dependency policy already indicates no new packages should be introduced.",
+  "phases": [
+    {
+      "title": "Confirm intent and guardrails",
+      "detail": "Review the intake summary, acceptance criteria, design inputs, and reviewer notes before touching code. Work item type: feature."
+    },
+    {
+      "title": "Validate impacted repo surfaces",
+      "detail": "Start with the top-ranked candidate files and confirm they match the requested outcome before implementation begins."
+    },
+    {
+      "title": "Implement the minimal patch",
+      "detail": "Follow the tech design and code workpack, preserve existing contracts, and keep the patch scoped to the smallest safe set of files."
+    },
+    {
+      "title": "Verify tests and accessibility",
+      "detail": "Update deterministic happy, edge, and error tests, then validate keyboard interactions, semantic controls, and accessibility expectations."
+    },
+    {
+      "title": "Complete human review",
+      "detail": "Use this plan, the run summary, and generated workpacks as review evidence before delegation approval, patch application, or merge."
+    }
+  ],
+  "fileActions": [
+    {
+      "file": "src/components/employeeFormUtils.js",
+      "score": 111,
+      "confidence": 0.99,
+      "reasons": [
+        "path:employee",
+        "path:form",
+        "export:INITIAL_FORM",
+        "export:SUBMIT_STATUS_ID",
+        "export:normalizeText",
+        "export:getFormErrors"
+      ],
+      "intent": "Review and, if confirmed in scope, apply the smallest safe edit in src/components/employeeFormUtils.js."
+    },
+    {
+      "file": "src/components/EmployeeForm.jsx",
+      "score": 58,
+      "confidence": 0.97,
+      "reasons": [
+        "path:employee",
+        "path:form",
+        "export:EmployeeForm",
+        "preview:form"
+      ],
+      "intent": "Review and, if confirmed in scope, apply the smallest safe edit in src/components/EmployeeForm.jsx."
+    },
+    {
+      "file": "src/data/fallbackEmployees.js",
+      "score": 30,
+      "confidence": 0.5,
+      "reasons": [
+        "path:employee",
+        "export:FALLBACK_EMPLOYEES",
+        "preview:employee"
+      ],
+      "intent": "Review and, if confirmed in scope, apply the smallest safe edit in src/data/fallbackEmployees.js."
+    },
+    {
+      "file": "src/components/FilterBar.jsx",
+      "score": 28,
+      "confidence": 0.47,
+      "reasons": [
+        "path:filter",
+        "export:FilterBar",
+        "preview:filter"
+      ],
+      "intent": "Review and, if confirmed in scope, apply the smallest safe edit in src/components/FilterBar.jsx."
+    },
+    {
+      "file": "src/api/fetchEmployees.js",
+      "score": 23,
+      "confidence": 0.38,
+      "reasons": [
+        "path:employee",
+        "preview:employee",
+        "preview:form"
+      ],
+      "intent": "Review and, if confirmed in scope, apply the smallest safe edit in src/api/fetchEmployees.js."
+    },
+    {
+      "file": "src/components/ActivityList.jsx",
+      "score": 4,
+      "confidence": 0.07,
+      "reasons": [
+        "preview:employee"
+      ],
+      "intent": "Review and, if confirmed in scope, apply the smallest safe edit in src/components/ActivityList.jsx."
+    }
+  ],
+  "reviewerInputs": {
+    "reviewEdits": "",
+    "activePromptOverrides": []
+  },
+  "risks": [
+    "No critical planning risk detected. Keep human-in-loop for merge approvals."
+  ],
+  "reviewChecklist": [
+    "Requirement intent matches the planned implementation.",
+    "No new dependencies are introduced.",
+    "Candidate-file selection still makes sense after local code review.",
+    "Unit tests cover happy, edge, and error paths.",
+    "Keyboard and accessibility behavior remain intact or improve.",
+    "Final diff is reviewed by a human before merge.",
+    "Quality gate: No unauthorized dependencies",
+    "Quality gate: Backward compatibility preserved",
+    "Quality gate: Keyboard and ARIA behavior validated"
+  ],
+  "approvalsRequired": [
+    "Feature owner approval",
+    "QA/Test owner approval",
+    "Accessibility reviewer approval"
+  ],
+  "blockers": [],
+  "supportingArtifacts": [
+    "reports/odt/tech-design.md",
+    "reports/dev-twin/code-workpack.md",
+    "reports/dev-twin/unit-test-workpack.md",
+    "reports/odt/code-patch-plan.md",
+    "reports/odt/verify-checklist.md",
+    "reports/odt/run-summary.md"
+  ]
+}

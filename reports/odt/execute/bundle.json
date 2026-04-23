@@ -1,0 +1,750 @@
+{
+  "generatedAt": "2026-04-23T15:12:00.177Z",
+  "workspaceRoot": "/Users/vn105957/Desktop/odt-submission",
+  "targetRepoPath": "/Users/vn105957/Desktop/odt-submission/demo-target-repo/",
+  "intake": {
+    "title": "change the submit request button text to submit employee form",
+    "featureName": "change the submit request button text to submit employee form",
+    "summary": "change the submit request button text to submit employee form",
+    "reviewEdits": "",
+    "promptOverrides": {
+      "intake": "",
+      "impact": "",
+      "design": "",
+      "code": "",
+      "unitTests": "",
+      "compliance": "",
+      "verify": ""
+    },
+    "targetRepoPath": "/Users/vn105957/Desktop/odt-submission/demo-target-repo/",
+    "workItemType": "feature",
+    "jira": {
+      "ticketId": "",
+      "url": ""
+    },
+    "scope": {
+      "uiSurface": "web",
+      "complexity": "medium",
+      "repoScan": "full"
+    },
+    "requirements": {
+      "acceptanceCriteria": [
+        "User can filter activities by keyword without leaving the page",
+        "Filtering updates are announced clearly for assistive technology users",
+        "Keyboard users can open, clear, and navigate filter controls"
+      ],
+      "nonFunctional": [
+        "a11y",
+        "performance",
+        "analytics"
+      ],
+      "outOfScope": [
+        "No backend API changes",
+        "Do not alter existing permissions behavior"
+      ]
+    },
+    "designInputs": {
+      "mockupImages": [],
+      "referenceDocs": [],
+      "jiraLinks": []
+    },
+    "constraints": {
+      "noNewDependencies": true,
+      "releaseWindowDays": 10,
+      "approvedLibrariesOnly": true
+    },
+    "developerHints": {
+      "suspectedAreas": [],
+      "relatedComponents": [],
+      "notes": "Optional only. ODT should infer impact areas from the repo when hints are not provided."
+    },
+    "defectContext": {
+      "defectId": "",
+      "observedBehavior": "",
+      "expectedBehavior": "",
+      "severity": "medium"
+    }
+  },
+  "odt": {
+    "summary": {
+      "generatedAt": "2026-04-23T15:12:00.166Z",
+      "totalStages": 7,
+      "completedStages": 7,
+      "failedStages": 0,
+      "status": "ready_for_review"
+    },
+    "stages": [
+      {
+        "name": "intake",
+        "status": "completed",
+        "startedAt": "2026-04-23T15:11:58.203Z",
+        "finishedAt": "2026-04-23T15:11:58.222Z",
+        "detail": {
+          "intakeFile": "reports/dev-twin/intake.json",
+          "intakeQuestionsFile": "reports/dev-twin/intake-questions.md",
+          "missingFieldsFile": "reports/dev-twin/intake-missing-fields.md",
+          "intakeStatus": "ready",
+          "missingFieldCount": 0,
+          "featureName": "change the submit request button text to submit employee form",
+          "workItemType": "feature",
+          "reviewEditsActive": false,
+          "promptOverridesActive": 0,
+          "complexity": "medium",
+          "imageInputs": [],
+          "workspaceRoot": "/Users/vn105957/Desktop/odt-submission",
+          "targetRepoPath": "/Users/vn105957/Desktop/odt-submission/demo-target-repo/"
+        }
+      },
+      {
+        "name": "impact",
+        "status": "completed",
+        "startedAt": "2026-04-23T15:11:58.236Z",
+        "finishedAt": "2026-04-23T15:11:58.665Z",
+        "detail": {
+          "blastRadius": 7,
+          "modules": 3,
+          "sourceFiles": 7,
+          "testFiles": 0,
+          "inferenceMode": "repo_inferred_manifest",
+          "candidateFiles": 7,
+          "keywords": [
+            "change",
+            "submit",
+            "request",
+            "button",
+            "text",
+            "employee",
+            "form",
+            "filter"
+          ],
+          "rankedFileCount": 7,
+          "topConfidence": 0.99,
+          "regressionRisks": [
+            "No critical planning risk detected. Keep human-in-loop for merge approvals."
+          ]
+        }
+      },
+      {
+        "name": "compliance",
+        "status": "completed",
+        "startedAt": "2026-04-23T15:11:58.236Z",
+        "finishedAt": "2026-04-23T15:12:00.079Z",
+        "detail": {
+          "status": "completed",
+          "blockers": 0,
+          "verifyStatus": "pass",
+          "dashboard": "reports/a11y-twin/index.html",
+          "complianceMapFile": "reports/odt/compliance-mapping.md",
+          "topRules": 0,
+          "repoMode": "external_target",
+          "note": "A11y scan executed against the selected target repo and reports were saved in the ODT workspace artifacts."
+        }
+      },
+      {
+        "name": "design",
+        "status": "completed",
+        "startedAt": "2026-04-23T15:12:00.090Z",
+        "finishedAt": "2026-04-23T15:12:00.100Z",
+        "detail": {
+          "designFile": "reports/odt/tech-design.md",
+          "designJsonFile": "reports/odt/tech-design.json",
+          "qualityGateCount": 4
+        }
+      },
+      {
+        "name": "code-workpack",
+        "status": "completed",
+        "startedAt": "2026-04-23T15:12:00.110Z",
+        "finishedAt": "2026-04-23T15:12:00.120Z",
+        "detail": {
+          "codeWorkpack": "reports/dev-twin/code-workpack.md",
+          "available": true,
+          "patchPlanFile": "reports/odt/code-patch-plan.md",
+          "targetFiles": 7,
+          "noNewDependencies": true
+        }
+      },
+      {
+        "name": "test-workpack",
+        "status": "completed",
+        "startedAt": "2026-04-23T15:12:00.110Z",
+        "finishedAt": "2026-04-23T15:12:00.129Z",
+        "detail": {
+          "testWorkpack": "reports/dev-twin/unit-test-workpack.md",
+          "available": true,
+          "testMatrixFile": "reports/odt/unit-test-matrix.md",
+          "relatedTestFiles": 0
+        }
+      },
+      {
+        "name": "verify-summary",
+        "status": "completed",
+        "startedAt": "2026-04-23T15:12:00.142Z",
+        "finishedAt": "2026-04-23T15:12:00.154Z",
+        "detail": {
+          "note": "Run summary generated for human review.",
+          "decision": "go",
+          "blockerCount": 0,
+          "verifyChecklistFile": "reports/odt/verify-checklist.md"
+        }
+      }
+    ],
+    "profile": {
+      "id": "react-js",
+      "name": "React",
+      "status": "active",
+      "description": "Frontend profile with Jest/RTL and Oracle a11y checks.",
+      "commands": {
+        "test": "npm test -- --watch=false --runInBand",
+        "lint": "npx eslint src",
+        "a11y": "npm run a11y:twin:demo"
+      },
+      "qualityGates": [
+        "VPAT/WCAG findings reviewed",
+        "Keyboard accessibility parity",
+        "Unit tests updated for impacted behavior"
+      ]
+    },
+    "intake": {
+      "title": "change the submit request button text to submit employee form",
+      "featureName": "change the submit request button text to submit employee form",
+      "summary": "change the submit request button text to submit employee form",
+      "reviewEdits": "",
+      "promptOverrides": {
+        "intake": "",
+        "impact": "",
+        "design": "",
+        "code": "",
+        "unitTests": "",
+        "compliance": "",
+        "verify": ""
+      },
+      "targetRepoPath": "/Users/vn105957/Desktop/odt-submission/demo-target-repo/",
+      "workItemType": "feature",
+      "jira": {
+        "ticketId": "",
+        "url": ""
+      },
+      "scope": {
+        "uiSurface": "web",
+        "complexity": "medium",
+        "repoScan": "full"
+      },
+      "requirements": {
+        "acceptanceCriteria": [
+          "User can filter activities by keyword without leaving the page",
+          "Filtering updates are announced clearly for assistive technology users",
+          "Keyboard users can open, clear, and navigate filter controls"
+        ],
+        "nonFunctional": [
+          "a11y",
+          "performance",
+          "analytics"
+        ],
+        "outOfScope": [
+          "No backend API changes",
+          "Do not alter existing permissions behavior"
+        ]
+      },
+      "designInputs": {
+        "mockupImages": [],
+        "referenceDocs": [],
+        "jiraLinks": []
+      },
+      "constraints": {
+        "noNewDependencies": true,
+        "releaseWindowDays": 10,
+        "approvedLibrariesOnly": true
+      },
+      "developerHints": {
+        "suspectedAreas": [],
+        "relatedComponents": [],
+        "notes": "Optional only. ODT should infer impact areas from the repo when hints are not provided."
+      },
+      "defectContext": {
+        "defectId": "",
+        "observedBehavior": "",
+        "expectedBehavior": "",
+        "severity": "medium"
+      }
+    },
+    "kpis": {
+      "automationCoverage": 100,
+      "impact": {
+        "blastRadius": 7,
+        "modules": 3,
+        "sourceFiles": 7,
+        "testFiles": 0,
+        "inferenceMode": "repo_inferred_manifest",
+        "candidateFiles": 7,
+        "keywords": [
+          "change",
+          "submit",
+          "request",
+          "button",
+          "text",
+          "employee",
+          "form",
+          "filter"
+        ]
+      },
+      "tests": {
+        "available": true,
+        "testFiles": 0
+      },
+      "compliance": {
+        "status": "completed",
+        "blockers": 0,
+        "verifyStatus": "pass"
+      },
+      "design": {
+        "available": true
+      },
+      "review": {
+        "humanApprovalRequired": true,
+        "status": "ready_for_review"
+      },
+      "intake": {
+        "workItemType": "feature"
+      },
+      "trend": {
+        "totalRunsStored": 60,
+        "lastRunAt": "2026-04-23T15:12:00.166Z",
+        "blockerDelta": 0,
+        "averageAutomationCoverage5Runs": 100,
+        "runSuccessRate10Runs": 100,
+        "reviewReadyRuns5": 5
+      }
+    },
+    "promptGeneration": {
+      "provider": "template",
+      "stages": [
+        {
+          "stage": "intake",
+          "slug": "intake",
+          "provider": "template",
+          "model": "",
+          "latencyMs": 0,
+          "fallback": false,
+          "status": "generated",
+          "requestFile": "reports/odt/prompts/generated/01-intake.request.md",
+          "outputFile": "reports/odt/prompts/generated/01-intake.generated.md",
+          "error": ""
+        },
+        {
+          "stage": "impact",
+          "slug": "impact",
+          "provider": "template",
+          "model": "",
+          "latencyMs": 0,
+          "fallback": false,
+          "status": "generated",
+          "requestFile": "reports/odt/prompts/generated/02-impact.request.md",
+          "outputFile": "reports/odt/prompts/generated/02-impact.generated.md",
+          "error": ""
+        },
+        {
+          "stage": "compliance",
+          "slug": "compliance",
+          "provider": "template",
+          "model": "",
+          "latencyMs": 0,
+          "fallback": false,
+          "status": "generated",
+          "requestFile": "reports/odt/prompts/generated/06-compliance.request.md",
+          "outputFile": "reports/odt/prompts/generated/06-compliance.generated.md",
+          "error": ""
+        },
+        {
+          "stage": "design",
+          "slug": "tech-design",
+          "provider": "template",
+          "model": "",
+          "latencyMs": 0,
+          "fallback": false,
+          "status": "generated",
+          "requestFile": "reports/odt/prompts/generated/03-tech-design.request.md",
+          "outputFile": "reports/odt/prompts/generated/03-tech-design.generated.md",
+          "error": ""
+        },
+        {
+          "stage": "code-workpack",
+          "slug": "code",
+          "provider": "template",
+          "model": "",
+          "latencyMs": 0,
+          "fallback": false,
+          "status": "generated",
+          "requestFile": "reports/odt/prompts/generated/04-code.request.md",
+          "outputFile": "reports/odt/prompts/generated/04-code.generated.md",
+          "error": ""
+        },
+        {
+          "stage": "test-workpack",
+          "slug": "unit-tests",
+          "provider": "template",
+          "model": "",
+          "latencyMs": 0,
+          "fallback": false,
+          "status": "generated",
+          "requestFile": "reports/odt/prompts/generated/05-unit-tests.request.md",
+          "outputFile": "reports/odt/prompts/generated/05-unit-tests.generated.md",
+          "error": ""
+        },
+        {
+          "stage": "verify-summary",
+          "slug": "verify",
+          "provider": "template",
+          "model": "",
+          "latencyMs": 0,
+          "fallback": false,
+          "status": "generated",
+          "requestFile": "reports/odt/prompts/generated/07-verify.request.md",
+          "outputFile": "reports/odt/prompts/generated/07-verify.generated.md",
+          "error": ""
+        }
+      ]
+    },
+    "reviewPlan": {
+      "reviewPlanFile": "reports/odt/developer-review-plan.md",
+      "reviewPlanJsonFile": "reports/odt/developer-review-plan.json",
+      "plannedFiles": 6,
+      "phases": 5
+    }
+  },
+  "devTwin": {
+    "generatedAt": "2026-04-23T15:11:58.657Z",
+    "intake": {
+      "title": "change the submit request button text to submit employee form",
+      "featureName": "change the submit request button text to submit employee form",
+      "summary": "change the submit request button text to submit employee form",
+      "reviewEdits": "",
+      "promptOverrides": {
+        "intake": "",
+        "impact": "",
+        "design": "",
+        "code": "",
+        "unitTests": "",
+        "compliance": "",
+        "verify": ""
+      },
+      "targetRepoPath": "/Users/vn105957/Desktop/odt-submission/demo-target-repo/",
+      "workItemType": "feature",
+      "jira": {
+        "ticketId": "",
+        "url": ""
+      },
+      "scope": {
+        "uiSurface": "web",
+        "complexity": "medium",
+        "repoScan": "full"
+      },
+      "requirements": {
+        "acceptanceCriteria": [
+          "User can filter activities by keyword without leaving the page",
+          "Filtering updates are announced clearly for assistive technology users",
+          "Keyboard users can open, clear, and navigate filter controls"
+        ],
+        "nonFunctional": [
+          "a11y",
+          "performance",
+          "analytics"
+        ],
+        "outOfScope": [
+          "No backend API changes",
+          "Do not alter existing permissions behavior"
+        ]
+      },
+      "designInputs": {
+        "mockupImages": [],
+        "referenceDocs": [],
+        "jiraLinks": []
+      },
+      "constraints": {
+        "noNewDependencies": true,
+        "releaseWindowDays": 10,
+        "approvedLibrariesOnly": true
+      },
+      "developerHints": {
+        "suspectedAreas": [],
+        "relatedComponents": [],
+        "notes": "Optional only. ODT should infer impact areas from the repo when hints are not provided."
+      },
+      "defectContext": {
+        "defectId": "",
+        "observedBehavior": "",
+        "expectedBehavior": "",
+        "severity": "medium"
+      }
+    },
+    "workspaceRoot": "/Users/vn105957/Desktop/odt-submission",
+    "targetRepoPath": "/Users/vn105957/Desktop/odt-submission/demo-target-repo/",
+    "estimate": {
+      "assumptions": {
+        "complexity": "medium",
+        "criteriaCount": 3,
+        "modulesTouched": 1,
+        "codingReductionPercent": 35,
+        "testingReductionPercent": 45,
+        "triageReductionPercent": 80,
+        "aiDeviationBufferPercent": 15,
+        "tokenRetryOverheadPercent": 8,
+        "errorHandlingBufferPercent": 10
+      },
+      "baseline": {
+        "manualTotalHours": 21,
+        "humanCodingHours": 12,
+        "humanTestingHours": 6,
+        "humanTriageHours": 3
+      },
+      "aiPlan": {
+        "aiBaseHours": 12,
+        "aiCodingHours": 8,
+        "aiTestingHours": 3,
+        "aiTriageHours": 1,
+        "bufferHours": 4,
+        "bufferPercent": 33,
+        "aiTotalHoursWithBuffer": 16
+      },
+      "impact": {
+        "netSavedHours": 5,
+        "netReductionPercent": 24
+      }
+    },
+    "impact": {
+      "inference": {
+        "mode": "repo_inferred_manifest",
+        "keywords": [
+          "change",
+          "submit",
+          "request",
+          "button",
+          "text",
+          "employee",
+          "form",
+          "filter",
+          "activities",
+          "keyword",
+          "without",
+          "leaving",
+          "page",
+          "filtering",
+          "updates",
+          "announced",
+          "clearly",
+          "assistive",
+          "technology",
+          "users",
+          "keyboard",
+          "open",
+          "clear",
+          "navigate"
+        ],
+        "hintedAreas": [],
+        "candidateFiles": [
+          "src/components/employeeFormUtils.js",
+          "src/components/EmployeeForm.jsx",
+          "src/data/fallbackEmployees.js",
+          "src/components/FilterBar.jsx",
+          "src/api/fetchEmployees.js",
+          "src/components/ActivityList.jsx",
+          "src/components/OracleLogo.js"
+        ],
+        "candidateDetails": [
+          {
+            "file": "src/components/employeeFormUtils.js",
+            "score": 111,
+            "exportNames": [
+              "INITIAL_FORM",
+              "EMAIL_PATTERN",
+              "MIN_SUMMARY_LENGTH",
+              "TEAM_OPTIONS",
+              "FIELD_CONFIG",
+              "REQUIRED_FIELDS",
+              "SUBMIT_STATUS_ID",
+              "normalizeText",
+              "hasAllRequiredFields",
+              "getFormErrors",
+              "isFormSubmittable",
+              "getFieldDescribedBy",
+              "getSubmitStatusMessage"
+            ],
+            "preview": "export const INITIAL_FORM = { requesterName: \"\", requesterEmail: \"\", team: \"\",",
+            "reasons": [
+              "path:employee",
+              "path:form",
+              "export:INITIAL_FORM",
+              "export:SUBMIT_STATUS_ID",
+              "export:normalizeText",
+              "export:getFormErrors"
+            ]
+          },
+          {
+            "file": "src/components/EmployeeForm.jsx",
+            "score": 58,
+            "exportNames": [
+              "EmployeeForm"
+            ],
+            "preview": "import React, { useMemo, useState } from \"react\"; import { FIELD_CONFIG, INITIAL_FORM,",
+            "reasons": [
+              "path:employee",
+              "path:form",
+              "export:EmployeeForm",
+              "preview:form"
+            ]
+          },
+          {
+            "file": "src/data/fallbackEmployees.js",
+            "score": 30,
+            "exportNames": [
+              "FALLBACK_EMPLOYEES"
+            ],
+            "preview": "export const FALLBACK_EMPLOYEES = [ { id: 101, name: \"Amelia Hart\",",
+            "reasons": [
+              "path:employee",
+              "export:FALLBACK_EMPLOYEES",
+              "preview:employee"
+            ]
+          },
+          {
+            "file": "src/components/FilterBar.jsx",
+            "score": 28,
+            "exportNames": [
+              "FilterBar"
+            ],
+            "preview": "import React from \"react\"; export default function FilterBar({ query, selectedDepartment,",
+            "reasons": [
+              "path:filter",
+              "export:FilterBar",
+              "preview:filter"
+            ]
+          },
+          {
+            "file": "src/api/fetchEmployees.js",
+            "score": 23,
+            "exportNames": [],
+            "preview": "import { FALLBACK_EMPLOYEES } from \"../data/fallbackEmployees.js\"; const DEPARTMENTS = [ \"Platform Engineering\", \"Experience Design\",",
+            "reasons": [
+              "path:employee",
+              "preview:employee",
+              "preview:form"
+            ]
+          },
+          {
+            "file": "src/components/ActivityList.jsx",
+            "score": 4,
+            "exportNames": [
+              "ActivityList"
+            ],
+            "preview": "import React from \"react\"; function EmployeeCard({ employee, index }) { return ( <li className=\"employee-card\" style={{ \"--stagger\": `${index * 60}ms` }}>",
+            "reasons": [
+              "preview:employee"
+            ]
+          },
+          {
+            "file": "src/components/OracleLogo.js",
+            "score": 1,
+            "exportNames": [
+              "OracleLogo",
+              "ORACLE_LOGO_LABEL"
+            ],
+            "preview": "import React from \"react\"; export const ORACLE_LOGO_LABEL = \"Oracle logo\"; export default function OracleLogo({ className = \"oracle-logo\" }) { return React.createElement(",
+            "reasons": []
+          }
+        ]
+      },
+      "moduleImpacts": [
+        {
+          "modulePath": "src/components",
+          "sourceFiles": [
+            "src/components/employeeFormUtils.js",
+            "src/components/EmployeeForm.jsx",
+            "src/components/FilterBar.jsx",
+            "src/components/ActivityList.jsx",
+            "src/components/OracleLogo.js"
+          ],
+          "testFiles": [],
+          "sourceFileCount": 5,
+          "testFileCount": 0
+        },
+        {
+          "modulePath": "src/data",
+          "sourceFiles": [
+            "src/data/fallbackEmployees.js"
+          ],
+          "testFiles": [],
+          "sourceFileCount": 1,
+          "testFileCount": 0
+        },
+        {
+          "modulePath": "src/api",
+          "sourceFiles": [
+            "src/api/fetchEmployees.js"
+          ],
+          "testFiles": [],
+          "sourceFileCount": 1,
+          "testFileCount": 0
+        }
+      ],
+      "totals": {
+        "modules": 3,
+        "totalSourceFiles": 7,
+        "totalTestFiles": 0,
+        "blastRadius": 7
+      },
+      "hotspots": [
+        {
+          "modulePath": "src/components",
+          "blastRadius": 5
+        },
+        {
+          "modulePath": "src/data",
+          "blastRadius": 1
+        },
+        {
+          "modulePath": "src/api",
+          "blastRadius": 1
+        }
+      ]
+    },
+    "risks": [
+      "No critical planning risk detected. Keep human-in-loop for merge approvals."
+    ]
+  },
+  "a11ySummary": {
+    "generatedAt": "2026-04-23T15:12:00.074Z",
+    "metadata": {
+      "generatedAt": "2026-04-23T15:12:00.072Z",
+      "mode": "ci",
+      "scanRoot": "/Users/vn105957/Desktop/odt-submission/demo-target-repo/",
+      "filesScanned": 9,
+      "standardPrimary": "Oracle VPAT guidance (internal Confluence source of truth)",
+      "standardFallback": "WCAG 2.1 AA",
+      "policySource": {
+        "name": "Oracle A11y and VPAT minimums",
+        "updated": "2019-05-17",
+        "notes": "Derived from APO OAG 3.0 checklist subset; Oracle VPAT guidance is primary."
+      }
+    },
+    "summary": {
+      "blockers": 0,
+      "warnings": 0,
+      "infos": 0,
+      "total": 0
+    },
+    "ruleSummary": [],
+    "hotspots": [],
+    "priorityQueue": [],
+    "recommendationBacklog": [],
+    "effort": {
+      "remediationMinutes": 0,
+      "remediationHours": 0,
+      "triageMinutesWithoutTwin": 0,
+      "triageMinutesWithTwin": 0,
+      "triageReductionPercent": null
+    }
+  },
+  "techDesignMarkdown": "# ODT Tech Design\n\n- Feature: change the submit request button text to submit employee form\n- Target repo: /Users/vn105957/Desktop/odt-submission/demo-target-repo/\n- UI: React/Terra minimal-blast-radius update\n- API strategy: reuse current contracts unless explicitly approved\n- State strategy: incremental updates in existing store/actions\n- Error handling: loading/empty/error states with deterministic behavior\n- Testing: Jest/RTL unit coverage for happy/edge/error paths\n- Accessibility: VPAT/WCAG and keyboard parity validation\n- Governance: human-reviewed approvals before merge\n\n## Prompt Override (Design Stage)\n- No design-stage prompt override supplied.\n\n## Quality Gates\n- No unauthorized dependencies\n- Backward compatibility preserved\n- Keyboard and ARIA behavior validated\n- Deterministic unit tests updated\n",
+  "codeWorkpack": "# Codex Workpack: ODT Code Implementation\n\nWork Item: change the submit request button text to submit employee form\n\nYou are a senior frontend developer assistant.\nUse the intake, inferred repo impact, and compliance guidance below to implement a reviewable patch.\n\nExecution steps:\n1) Ask clarifying questions only for safety-critical ambiguities.\n2) Review existing patterns in the inferred source files before editing.\n3) Implement code changes with backward compatibility.\n4) Include keyboard accessibility and semantic HTML by default.\n5) Summarize edge cases and regression risk after patching.\n\nScope summary:\n- src/components (source: 5, tests: 0)\n- src/data (source: 1, tests: 0)\n- src/api (source: 1, tests: 0)\n\nRepo-analysis evidence:\n- Target repo path: /Users/vn105957/Desktop/odt-submission/demo-target-repo/\n- Analysis mode: repo_inferred_manifest\n- Keywords: change, submit, request, button, text, employee, form, filter, activities, keyword, without, leaving, page, filtering, updates, announced, clearly, assistive, technology, users, keyboard, open, clear, navigate\n- Mockup image: none supplied\n- Reference doc: none supplied\n- Candidate file: src/components/employeeFormUtils.js [score=111] exports=INITIAL_FORM, EMAIL_PATTERN, MIN_SUMMARY_LENGTH, TEAM_OPTIONS, FIELD_CONFIG, REQUIRED_FIELDS, SUBMIT_STATUS_ID, normalizeText, hasAllRequiredFields, getFormErrors, isFormSubmittable, getFieldDescribedBy, getSubmitStatusMessage signals=path:employee, path:form, export:INITIAL_FORM, export:SUBMIT_STATUS_ID, export:normalizeText, export:getFormErrors\n- Candidate file: src/components/EmployeeForm.jsx [score=58] exports=EmployeeForm signals=path:employee, path:form, export:EmployeeForm, preview:form\n- Candidate file: src/data/fallbackEmployees.js [score=30] exports=FALLBACK_EMPLOYEES signals=path:employee, export:FALLBACK_EMPLOYEES, preview:employee\n- Candidate file: src/components/FilterBar.jsx [score=28] exports=FilterBar signals=path:filter, export:FilterBar, preview:filter\n- Candidate file: src/api/fetchEmployees.js [score=23] exports=none signals=path:employee, preview:employee, preview:form\n- Candidate file: src/components/ActivityList.jsx [score=4] exports=ActivityList signals=preview:employee\n- Candidate file: src/components/OracleLogo.js [score=1] exports=OracleLogo, ORACLE_LOGO_LABEL signals=path-ranked\n\nReviewer refinements:\n- None supplied\n\nPrompt override (code stage):\n- None supplied\n\nQuality gates to run after implementation:\n- npm run a11y:scan:ci || true\n- npm run a11y:twin:verify\n\nFeature payload:\n```json\n{\n  \"title\": \"change the submit request button text to submit employee form\",\n  \"featureName\": \"change the submit request button text to submit employee form\",\n  \"summary\": \"change the submit request button text to submit employee form\",\n  \"reviewEdits\": \"\",\n  \"promptOverrides\": {\n    \"intake\": \"\",\n    \"impact\": \"\",\n    \"design\": \"\",\n    \"code\": \"\",\n    \"unitTests\": \"\",\n    \"compliance\": \"\",\n    \"verify\": \"\"\n  },\n  \"targetRepoPath\": \"/Users/vn105957/Desktop/odt-submission/demo-target-repo/\",\n  \"workItemType\": \"feature\",\n  \"jira\": {\n    \"ticketId\": \"\",\n    \"url\": \"\"\n  },\n  \"scope\": {\n    \"uiSurface\": \"web\",\n    \"complexity\": \"medium\",\n    \"repoScan\": \"full\"\n  },\n  \"requirements\": {\n    \"acceptanceCriteria\": [\n      \"User can filter activities by keyword without leaving the page\",\n      \"Filtering updates are announced clearly for assistive technology users\",\n      \"Keyboard users can open, clear, and navigate filter controls\"\n    ],\n    \"nonFunctional\": [\n      \"a11y\",\n      \"performance\",\n      \"analytics\"\n    ],\n    \"outOfScope\": [\n      \"No backend API changes\",\n      \"Do not alter existing permissions behavior\"\n    ]\n  },\n  \"designInputs\": {\n    \"mockupImages\": [],\n    \"referenceDocs\": [],\n    \"jiraLinks\": []\n  },\n  \"constraints\": {\n    \"noNewDependencies\": true,\n    \"releaseWindowDays\": 10,\n    \"approvedLibrariesOnly\": true\n  },\n  \"developerHints\": {\n    \"suspectedAreas\": [],\n    \"relatedComponents\": [],\n    \"notes\": \"Optional only. ODT should infer impact areas from the repo when hints are not provided.\"\n  },\n  \"defectContext\": {\n    \"defectId\": \"\",\n    \"observedBehavior\": \"\",\n    \"expectedBehavior\": \"\",\n    \"severity\": \"medium\"\n  }\n}\n```\n\n",
+  "testWorkpack": "# Codex Workpack: ODT Unit Test Generation\n\nWork Item: change the submit request button text to submit employee form\n\nGenerate or update Jest/RTL tests for impacted behavior.\nCover:\n- Happy path\n- Error path\n- Empty/loading states\n- Keyboard accessibility interactions where applicable\n\nKnown related test files:\n- No direct tests matched; create nearest-module tests.\n\nPrompt override (unit test stage):\n- None supplied\n\nRules:\n- Keep tests deterministic and isolated.\n- Avoid snapshot-only validation for behavior-heavy flows.\n- Assert accessibility roles/labels when adding interactive UI.\n\nVerification command:\n- npm test -- --watch=false --runInBand\n\n"
+}

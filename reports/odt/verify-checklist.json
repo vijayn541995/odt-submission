@@ -1,0 +1,16 @@
+{
+  "stage": "verify",
+  "generatedAt": "2026-04-23T16:20:01.858Z",
+  "decision": "go",
+  "blockers": [],
+  "rollbackPlan": [
+    "Revert scoped patch if post-release regressions are detected.",
+    "Keep rollback ownership with the feature reviewer and release manager."
+  ],
+  "approvalsRequired": [
+    "Feature owner approval",
+    "QA/Test owner approval",
+    "Accessibility reviewer approval"
+  ],
+  "promptOverride": ""
+}

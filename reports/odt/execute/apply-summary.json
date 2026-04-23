@@ -1,0 +1,5 @@
+{
+  "generatedAt": "2026-04-23T15:12:00.178Z",
+  "status": "awaiting_agent_patch",
+  "note": "Bundle created at reports/odt/execute. Produce a unified diff via reports/odt/execute/prompt.md and re-run with --response-file or --patch-file."
+}

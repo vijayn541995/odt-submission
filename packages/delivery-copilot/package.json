@@ -1,0 +1,11 @@
+{
+  "name": "@cerner/delivery-copilot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MCP delivery copilot CLI for requirement summarization and Jira task orchestration",
+  "main": "src/index.js",
+  "bin": {
+    "delivery-copilot": "bin/delivery-copilot.js"
+  },
+  "license": "UNLICENSED"
+}

@@ -1,0 +1,435 @@
+{
+  "generatedAt": "2026-04-23T16:20:00.111Z",
+  "stageCount": 7,
+  "contracts": [
+    {
+      "id": "01",
+      "slug": "intake",
+      "file": "01-intake.md",
+      "title": "Intake",
+      "inputs": [
+        {
+          "path": "reports/dev-twin/intake.json",
+          "required": true,
+          "purpose": "Primary work item, constraints, Jira, and design inputs."
+        }
+      ],
+      "task": [
+        "Validate ticket completeness and identify missing decision-critical information.",
+        "Ask only safety-critical clarifications when ambiguity can create incorrect implementation risk."
+      ],
+      "outputs": [
+        {
+          "path": "reports/dev-twin/intake-questions.md",
+          "format": "markdown",
+          "schema": {
+            "sections": [
+              "Ticket Intake",
+              "Acceptance & UX",
+              "Repo Analysis Inputs",
+              "Compliance & Review"
+            ]
+          }
+        },
+        {
+          "path": "reports/dev-twin/intake-missing-fields.md",
+          "format": "markdown",
+          "schema": {
+            "stage": "intake",
+            "status": "ready|needs_input|blocked",
+            "missingFields": [
+              {
+                "field": "string",
+                "severity": "high|medium|low",
+                "reason": "string"
+              }
+            ]
+          }
+        }
+      ],
+      "qualityGates": [
+        "Acceptance criteria are explicit and testable.",
+        "Backward compatibility constraints are captured.",
+        "Accessibility expectations are visible before coding."
+      ],
+      "stopConditions": [
+        "Missing acceptance criteria for core behavior.",
+        "Conflicting requirement statements or undefined rollback expectations.",
+        "Potential sensitive data leakage in ticket text."
+      ]
+    },
+    {
+      "id": "02",
+      "slug": "impact",
+      "file": "02-impact.md",
+      "title": "Repo Impact",
+      "inputs": [
+        {
+          "path": "reports/dev-twin/intake.json",
+          "required": true,
+          "purpose": "Requirement intent and scope."
+        },
+        {
+          "path": "reports/dev-twin/impact-analysis.json",
+          "required": true,
+          "purpose": "Repo-inferred module and file candidates."
+        }
+      ],
+      "task": [
+        "Rank likely impacted files with confidence and explain selection signals.",
+        "Surface regression risks tied to impacted modules and related tests."
+      ],
+      "outputs": [
+        {
+          "path": "reports/dev-twin/impact-analysis.json",
+          "format": "json",
+          "schema": {
+            "inference": {
+              "mode": "string",
+              "candidateDetails": [
+                {
+                  "file": "string",
+                  "score": "number",
+                  "reasons": [
+                    "string"
+                  ]
+                }
+              ]
+            },
+            "totals": {
+              "blastRadius": "number"
+            }
+          }
+        },
+        {
+          "path": "reports/odt/impact-ranked-files.json",
+          "format": "json",
+          "schema": {
+            "stage": "impact",
+            "rankedFiles": [
+              {
+                "file": "string",
+                "score": "number",
+                "confidence": "0..1",
+                "reasons": [
+                  "string"
+                ]
+              }
+            ],
+            "regressionRisks": [
+              "string"
+            ]
+          }
+        }
+      ],
+      "qualityGates": [
+        "Confidence and rationale are present for each top candidate.",
+        "Regression risks reference concrete repo surfaces.",
+        "No broad, unbounded blast radius without explanation."
+      ],
+      "stopConditions": [
+        "No candidate files are inferred and no module hints exist.",
+        "Risk hotspots cannot be tied to any test or component area."
+      ]
+    },
+    {
+      "id": "03",
+      "slug": "tech-design",
+      "file": "03-tech-design.md",
+      "title": "Tech Design",
+      "inputs": [
+        {
+          "path": "reports/dev-twin/intake.json",
+          "required": true,
+          "purpose": "Feature/defect constraints and quality requirements."
+        },
+        {
+          "path": "reports/dev-twin/impact-analysis.json",
+          "required": true,
+          "purpose": "Scope and blast radius evidence."
+        }
+      ],
+      "task": [
+        "Define implementation approach with API, state, error, a11y, and testing strategy.",
+        "Keep design scoped to blast-radius minimization and approved dependencies."
+      ],
+      "outputs": [
+        {
+          "path": "reports/odt/tech-design.md",
+          "format": "markdown",
+          "schema": {
+            "sections": [
+              "Scope",
+              "API strategy",
+              "State strategy",
+              "Error handling",
+              "Accessibility strategy",
+              "Test strategy"
+            ]
+          }
+        },
+        {
+          "path": "reports/odt/tech-design.json",
+          "format": "json",
+          "schema": {
+            "featureName": "string",
+            "architecture": {
+              "apiStrategy": "string",
+              "stateStrategy": "string",
+              "errorHandling": "string",
+              "accessibility": "string",
+              "testing": "string"
+            },
+            "qualityGates": [
+              "string"
+            ]
+          }
+        }
+      ],
+      "qualityGates": [
+        "Design addresses both functional and non-functional constraints.",
+        "Error handling and rollback path are explicit.",
+        "Accessibility and test strategy are first-class sections."
+      ],
+      "stopConditions": [
+        "Design introduces unauthorized dependencies without approval.",
+        "Critical error-state behavior is undefined."
+      ]
+    },
+    {
+      "id": "04",
+      "slug": "code",
+      "file": "04-code.md",
+      "title": "Code Workpack",
+      "inputs": [
+        {
+          "path": "reports/dev-twin/code-workpack.md",
+          "required": true,
+          "purpose": "Implementation guidance from Dev Twin."
+        },
+        {
+          "path": "reports/odt/tech-design.md",
+          "required": true,
+          "purpose": "Design constraints and quality gates."
+        },
+        {
+          "path": "reports/dev-twin/impact-analysis.json",
+          "required": true,
+          "purpose": "Impacted files and module evidence."
+        }
+      ],
+      "task": [
+        "Generate file-scoped patch intent and dependency policy checks before coding.",
+        "Require backward compatibility and minimal blast-radius edits."
+      ],
+      "outputs": [
+        {
+          "path": "reports/dev-twin/code-workpack.md",
+          "format": "markdown",
+          "schema": {
+            "includes": [
+              "execution steps",
+              "quality gates",
+              "repo-analysis evidence"
+            ]
+          }
+        },
+        {
+          "path": "reports/odt/code-patch-plan.md",
+          "format": "markdown",
+          "schema": {
+            "sections": [
+              "File-by-file intent",
+              "Dependency policy checks",
+              "Regression watchpoints"
+            ]
+          }
+        }
+      ],
+      "qualityGates": [
+        "Every candidate file has a clear edit intent.",
+        "Dependency policy checks are explicit.",
+        "Backward compatibility is validated before implementation."
+      ],
+      "stopConditions": [
+        "Patch intent cannot be mapped to candidate files.",
+        "Requested behavior requires out-of-scope architecture changes."
+      ]
+    },
+    {
+      "id": "05",
+      "slug": "unit-tests",
+      "file": "05-unit-tests.md",
+      "title": "Unit Tests",
+      "inputs": [
+        {
+          "path": "reports/dev-twin/unit-test-workpack.md",
+          "required": true,
+          "purpose": "Test guidance for impacted behavior."
+        },
+        {
+          "path": "reports/dev-twin/impact-analysis.json",
+          "required": true,
+          "purpose": "Related source and test file context."
+        }
+      ],
+      "task": [
+        "Create deterministic test matrix for happy, edge, error, and keyboard-accessibility paths.",
+        "Add anti-flake guidance for stable CI behavior."
+      ],
+      "outputs": [
+        {
+          "path": "reports/dev-twin/unit-test-workpack.md",
+          "format": "markdown",
+          "schema": {
+            "includes": [
+              "happy path",
+              "edge path",
+              "error path",
+              "keyboard assertions"
+            ]
+          }
+        },
+        {
+          "path": "reports/odt/unit-test-matrix.md",
+          "format": "markdown",
+          "schema": {
+            "columns": [
+              "Scenario",
+              "Coverage type",
+              "Expected assertion",
+              "Flake risk",
+              "Mitigation"
+            ]
+          }
+        }
+      ],
+      "qualityGates": [
+        "No snapshot-only strategy for behavior-critical paths.",
+        "Keyboard and ARIA assertions are present for interactive UI.",
+        "Anti-flake mitigations are documented."
+      ],
+      "stopConditions": [
+        "No stable assertion strategy for async behavior.",
+        "Critical user journey lacks testability due to ambiguity."
+      ]
+    },
+    {
+      "id": "06",
+      "slug": "compliance",
+      "file": "06-compliance.md",
+      "title": "VPAT/WCAG Compliance",
+      "inputs": [
+        {
+          "path": "reports/a11y/findings.json",
+          "required": true,
+          "purpose": "Raw accessibility findings from scans."
+        },
+        {
+          "path": "reports/a11y/coding-agent-prompt.md",
+          "required": false,
+          "purpose": "A11y remediation instructions if generated."
+        }
+      ],
+      "task": [
+        "Map findings to VPAT/WCAG and keyboard accessibility obligations.",
+        "Prioritize remediations by blocker impact and implementation risk."
+      ],
+      "outputs": [
+        {
+          "path": "reports/odt/compliance-mapping.md",
+          "format": "markdown",
+          "schema": {
+            "sections": [
+              "VPAT/WCAG mapping",
+              "Keyboard gaps",
+              "Remediation priority",
+              "Residual risk"
+            ]
+          }
+        },
+        {
+          "path": "reports/a11y/coding-agent-prompt.md",
+          "format": "markdown",
+          "schema": {
+            "includes": [
+              "safe fixes",
+              "keyboard parity",
+              "semantic guidance"
+            ]
+          }
+        }
+      ],
+      "qualityGates": [
+        "Top rule classes are mapped to actionable guidance.",
+        "Keyboard gaps are explicit.",
+        "Priority order is risk-based and explainable."
+      ],
+      "stopConditions": [
+        "A11y findings are unavailable for current run.",
+        "Compliance mapping cannot determine actionable priority."
+      ]
+    },
+    {
+      "id": "07",
+      "slug": "verify",
+      "file": "07-verify.md",
+      "title": "Verification & Release Readiness",
+      "inputs": [
+        {
+          "path": "reports/odt/run-summary.json",
+          "required": true,
+          "purpose": "Current stage statuses and KPI snapshot."
+        },
+        {
+          "path": "reports/odt/compliance-mapping.md",
+          "required": false,
+          "purpose": "Compliance risks and remediation posture."
+        }
+      ],
+      "task": [
+        "Produce go/no-go decision with blockers, risk notes, rollback, and human approvals.",
+        "Ensure release readiness remains human-reviewed."
+      ],
+      "outputs": [
+        {
+          "path": "reports/odt/verify-checklist.md",
+          "format": "markdown",
+          "schema": {
+            "stage": "verify",
+            "decision": "go|go_with_conditions|no_go",
+            "blockers": [
+              "string"
+            ],
+            "rollbackPlan": [
+              "string"
+            ],
+            "approvalsRequired": [
+              "string"
+            ]
+          }
+        },
+        {
+          "path": "reports/odt/run-summary.md",
+          "format": "markdown",
+          "schema": {
+            "includes": [
+              "stage statuses",
+              "status summary",
+              "notes"
+            ]
+          }
+        }
+      ],
+      "qualityGates": [
+        "Decision rationale is explicit and auditable.",
+        "Blockers and mitigations are concrete.",
+        "Human approval gates are clear before merge."
+      ],
+      "stopConditions": [
+        "Any critical stage failed or blocker remains unresolved.",
+        "Rollback or owner accountability is missing."
+      ]
+    }
+  ]
+}

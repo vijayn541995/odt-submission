@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Developer Twin Dashboard</title>
+  <style>
+    :root {
+      --bg: #eef4f9;
+      --card: #ffffff;
+      --ink: #182534;
+      --muted: #5b6c80;
+      --accent: #0f67b9;
+      --accent-soft: #edf5ff;
+      --line: #d8e2ee;
+      --good: #137c5b;
+      --warn: #a76a00;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background:
+        radial-gradient(circle at 15% 0%, rgba(15, 103, 185, 0.12), transparent 32%),
+        var(--bg);
+      color: var(--ink);
+    }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 22px; }
+    .hero {
+      background: linear-gradient(135deg, #0f67b9 0%, #1492b3 100%);
+      color: #fff;
+      border-radius: 18px;
+      padding: 22px 24px;
+      box-shadow: 0 18px 40px rgba(17, 35, 61, 0.12);
+    }
+    .hero h1 { margin: 0; font-size: 30px; }
+    .hero p { margin: 8px 0 0; max-width: 780px; line-height: 1.5; }
+    .grid { display: grid; gap: 12px; margin-top: 14px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 8px 22px rgba(17, 35, 61, 0.05);
+    }
+    .metric-label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+    .metric-value { font-size: 30px; font-weight: 700; color: var(--accent); margin-top: 6px; }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+    .three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+    h2 { margin: 0 0 10px; font-size: 18px; }
+    ul { margin: 0; padding-left: 18px; }
+    li { margin: 6px 0; line-height: 1.45; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid var(--line); padding: 8px; text-align: left; font-size: 13px; }
+    th { color: var(--muted); }
+    .pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      margin-right: 6px;
+      margin-bottom: 6px;
+    }
+    .good { color: var(--good); }
+    .warn { color: var(--warn); }
+    .foot { color: var(--muted); font-size: 12px; margin-top: 12px; }
+    @media (max-width: 980px) {
+      .two, .three { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <h1>Developer Twin Analysis Dashboard</h1>
+      <p>ODT turns a ticket, mockups, and requirements into inferred repo impact, code/test guidance, accessibility review inputs, and human-review artifacts. Developers can provide optional hints, but the workflow is designed to scan the repo and surface candidate impact areas automatically.</p>
+    </section>
+
+    <section class="grid">
+      <article class="card"><div class="metric-label">Work Item</div><div class="metric-value">change the submit request button text to submit employee form</div></article>
+      <article class="card"><div class="metric-label">Repo Analysis Mode</div><div class="metric-value">repo_inferred_manifest</div></article>
+      <article class="card"><div class="metric-label">Candidate Modules</div><div class="metric-value">3</div></article>
+      <article class="card"><div class="metric-label">Candidate Files</div><div class="metric-value">7</div></article>
+      <article class="card"><div class="metric-label">Related Tests</div><div class="metric-value">0</div></article>
+      <article class="card"><div class="metric-label">Blast Radius</div><div class="metric-value">7</div></article>
+    </section>
+
+    <section class="two">
+      <article class="card">
+        <h2>Intake Summary</h2>
+        <ul>
+          <li>Work item type: <strong>feature</strong></li>
+          <li>Jira ticket: <strong>not supplied</strong></li>
+          <li>Mockups attached: <strong>0</strong></li>
+          <li>Reference docs: <strong>0</strong></li>
+          <li>Optional suspected areas: <strong>0</strong></li>
+        </ul>
+      </article>
+      <article class="card">
+        <h2>What The Agent Inferred</h2>
+        <div>
+          <span class="pill">change</span><span class="pill">submit</span><span class="pill">request</span><span class="pill">button</span><span class="pill">text</span><span class="pill">employee</span><span class="pill">form</span><span class="pill">filter</span><span class="pill">activities</span><span class="pill">keyword</span>
+        </div>
+        <table style="margin-top:10px;">
+          <thead><tr><th>Signal</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>Inference Mode</td><td>repo_inferred_manifest</td></tr>
+            <tr><td>Hinted Areas Used</td><td>0</td></tr>
+            <tr><td>Candidate Files Surfaced</td><td>7</td></tr>
+          </tbody>
+        </table>
+      </article>
+    </section>
+
+    <section class="three">
+      <article class="card">
+        <h2>Candidate Files</h2>
+        <ul><li><strong>src/components/employeeFormUtils.js</strong><div><small>score: 111 | exports: INITIAL_FORM, EMAIL_PATTERN, MIN_SUMMARY_LENGTH, TEAM_OPTIONS, FIELD_CONFIG, REQUIRED_FIELDS, SUBMIT_STATUS_ID, normalizeText, hasAllRequiredFields, getFormErrors, isFormSubmittable, getFieldDescribedBy, getSubmitStatusMessage</small></div><div><small>signals: path:employee, path:form, export:INITIAL_FORM, export:SUBMIT_STATUS_ID, export:normalizeText, export:getFormErrors</small></div><div><small>export const INITIAL_FORM = { requesterName: &quot;&quot;, requesterEmail: &quot;&quot;, team: &quot;&quot;,</small></div></li><li><strong>src/components/EmployeeForm.jsx</strong><div><small>score: 58 | exports: EmployeeForm</small></div><div><small>signals: path:employee, path:form, export:EmployeeForm, preview:form</small></div><div><small>import React, { useMemo, useState } from &quot;react&quot;; import { FIELD_CONFIG, INITIAL_FORM,</small></div></li><li><strong>src/data/fallbackEmployees.js</strong><div><small>score: 30 | exports: FALLBACK_EMPLOYEES</small></div><div><small>signals: path:employee, export:FALLBACK_EMPLOYEES, preview:employee</small></div><div><small>export const FALLBACK_EMPLOYEES = [ { id: 101, name: &quot;Amelia Hart&quot;,</small></div></li><li><strong>src/components/FilterBar.jsx</strong><div><small>score: 28 | exports: FilterBar</small></div><div><small>signals: path:filter, export:FilterBar, preview:filter</small></div><div><small>import React from &quot;react&quot;; export default function FilterBar({ query, selectedDepartment,</small></div></li><li><strong>src/api/fetchEmployees.js</strong><div><small>score: 23 | exports: none</small></div><div><small>signals: path:employee, preview:employee, preview:form</small></div><div><small>import { FALLBACK_EMPLOYEES } from &quot;../data/fallbackEmployees.js&quot;; const DEPARTMENTS = [ &quot;Platform Engineering&quot;, &quot;Experience Design&quot;,</small></div></li><li><strong>src/components/ActivityList.jsx</strong><div><small>score: 4 | exports: ActivityList</small></div><div><small>signals: preview:employee</small></div><div><small>import React from &quot;react&quot;; function EmployeeCard({ employee, index }) { return ( &lt;li className=&quot;employee-card&quot; style={{ &quot;--stagger&quot;: `${index * 60}ms` }}&gt;</small></div></li><li><strong>src/components/OracleLogo.js</strong><div><small>score: 1 | exports: OracleLogo, ORACLE_LOGO_LABEL</small></div><div><small>signals: path-ranked</small></div><div><small>import React from &quot;react&quot;; export const ORACLE_LOGO_LABEL = &quot;Oracle logo&quot;; export default function OracleLogo({ className = &quot;oracle-logo&quot; }) { return React.createElement(</small></div></li></ul>
+      </article>
+      <article class="card">
+        <h2>Impact Hotspots</h2>
+        <ul><li>src/components (5)</li><li>src/data (1)</li><li>src/api (1)</li></ul>
+      </article>
+      <article class="card">
+        <h2>Review Gates</h2>
+        <ul>
+          <li class="good">Human review required before merge.</li>
+          <li>Code workpack and unit-test workpack are generated from inferred impact.</li>
+          <li>VPAT/WCAG and keyboard checks remain mandatory quality gates.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="two">
+      <article class="card">
+        <h2>Acceptance Criteria</h2>
+        <ul><li>User can filter activities by keyword without leaving the page</li><li>Filtering updates are announced clearly for assistive technology users</li><li>Keyboard users can open, clear, and navigate filter controls</li></ul>
+      </article>
+      <article class="card">
+        <h2>Risk Notes</h2>
+        <ul><li>No critical planning risk detected. Keep human-in-loop for merge approvals.</li></ul>
+      </article>
+    </section>
+
+    <p class="foot">Generated at: 2026-04-23T16:20:00.392Z</p>
+  </main>
+</body>
+</html>

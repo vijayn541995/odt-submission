@@ -1,0 +1,33 @@
+{
+  "generatedAt": "2026-04-23T16:20:01.800Z",
+  "metadata": {
+    "generatedAt": "2026-04-23T16:20:01.798Z",
+    "mode": "ci",
+    "scanRoot": "/Users/vn105957/Desktop/odt-submission/demo-target-repo",
+    "filesScanned": 9,
+    "standardPrimary": "Oracle VPAT guidance (internal Confluence source of truth)",
+    "standardFallback": "WCAG 2.1 AA",
+    "policySource": {
+      "name": "Oracle A11y and VPAT minimums",
+      "updated": "2019-05-17",
+      "notes": "Derived from APO OAG 3.0 checklist subset; Oracle VPAT guidance is primary."
+    }
+  },
+  "summary": {
+    "blockers": 0,
+    "warnings": 0,
+    "infos": 0,
+    "total": 0
+  },
+  "ruleSummary": [],
+  "hotspots": [],
+  "priorityQueue": [],
+  "recommendationBacklog": [],
+  "effort": {
+    "remediationMinutes": 0,
+    "remediationHours": 0,
+    "triageMinutesWithoutTwin": 0,
+    "triageMinutesWithTwin": 0,
+    "triageReductionPercent": null
+  }
+}

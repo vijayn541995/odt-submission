@@ -1,0 +1,441 @@
+{"kind":"shape","geometry":"ellipse","bbox":[808,-110,520,520]}
+{"kind":"shape","geometry":"ellipse","bbox":[864,-54,408,408]}
+{"kind":"shape","geometry":"ellipse","bbox":[906,-10,324,324]}
+{"kind":"shape","geometry":"ellipse","bbox":[-120,520,320,320]}
+{"kind":"shape","geometry":"rect","bbox":[920,0,180,720]}
+{"kind":"shape","geometry":"rect","bbox":[980,0,26,720]}
+{"kind":"shape","geometry":"rect","bbox":[1112,0,12,720]}
+{"kind":"textbox","text":"ORACLE DEVELOPER TWIN","bbox":[78,40,280,20]}
+{"kind":"textbox","text":"01 / 10","bbox":[1090,40,110,20]}
+{"kind":"shape","geometry":"rect","bbox":[78,67,1124,1.5]}
+{"kind":"shape","geometry":"roundRect","bbox":[84,88,154,34]}
+{"kind":"shape","geometry":"rect","bbox":[84,88,8,34]}
+{"kind":"textbox","text":"HACKATHON 2026","bbox":[102,98,122,16]}
+{"kind":"textbox","text":"Turning AI Into a Governed\nDigital Worker for Software Delivery","bbox":[84,138,700,170]}
+{"kind":"textbox","text":"ODT turns a ticket into a guided, review-ready delivery flow, while keeping human approval in control.","bbox":[86,320,640,82]}
+{"kind":"textbox","text":"Not another copilot. A digital worker for the work before coding.","bbox":[86,424,520,24]}
+{"kind":"shape","geometry":"roundRect","bbox":[84,496,228,126]}
+{"kind":"shape","geometry":"rect","bbox":[84,496,8,126]}
+{"kind":"textbox","text":"MOVES FASTER","bbox":[108,516,186,28]}
+{"kind":"textbox","text":"Cuts the setup work that slows delivery before implementation starts.","bbox":[108,558,184,42]}
+{"kind":"shape","geometry":"ellipse","bbox":[254,514,22,22]}
+{"kind":"shape","geometry":"roundRect","bbox":[332,496,228,126]}
+{"kind":"shape","geometry":"rect","bbox":[332,496,8,126]}
+{"kind":"textbox","text":"EXPLAINS ITSELF","bbox":[356,516,186,28]}
+{"kind":"textbox","text":"Shows impact, guidance, and evidence in one visible flow.","bbox":[356,558,184,42]}
+{"kind":"shape","geometry":"ellipse","bbox":[502,514,22,22]}
+{"kind":"shape","geometry":"roundRect","bbox":[580,496,228,126]}
+{"kind":"shape","geometry":"rect","bbox":[580,496,8,126]}
+{"kind":"textbox","text":"PROTECTS QUALITY","bbox":[604,516,186,28]}
+{"kind":"textbox","text":"Keeps accessibility, testing, and review in the flow from the start.","bbox":[604,558,184,42]}
+{"kind":"shape","geometry":"ellipse","bbox":[750,514,22,22]}
+{"kind":"shape","geometry":"ellipse","bbox":[984.8,166,38.4,38.4]}
+{"kind":"shape","geometry":"rect","bbox":[1001.6,190,4.8,26.4]}
+{"kind":"shape","geometry":"roundRect","bbox":[932,209.2,144,110.4]}
+{"kind":"shape","geometry":"ellipse","bbox":[963.2,247.60000000000002,24,24]}
+{"kind":"shape","geometry":"ellipse","bbox":[1020.8,247.60000000000002,24,24]}
+{"kind":"shape","geometry":"roundRect","bbox":[972.8,283.6,62.400000000000006,16.8]}
+{"kind":"shape","geometry":"rect","bbox":[912.8,242.8,19.2,9.6]}
+{"kind":"shape","geometry":"rect","bbox":[1076,242.8,19.2,9.6]}
+{"kind":"shape","geometry":"roundRect","bbox":[860,456,270,34]}
+{"kind":"shape","geometry":"rect","bbox":[860,456,8,34]}
+{"kind":"textbox","text":"Visible demo surface: FEDIT","bbox":[878,466,238,16]}
+{"kind":"shape","geometry":"roundRect","bbox":[860,504,300,34]}
+{"kind":"shape","geometry":"rect","bbox":[860,504,8,34]}
+{"kind":"textbox","text":"Execution agents: Codex / Cline","bbox":[878,514,268,16]}
+{"kind":"shape","geometry":"roundRect","bbox":[860,552,286,34]}
+{"kind":"shape","geometry":"rect","bbox":[860,552,8,34]}
+{"kind":"textbox","text":"Human-reviewed before merge","bbox":[878,562,254,16]}
+{"kind":"textbox","text":"It solves the hidden work between a ticket and a safe change.","bbox":[860,614,290,48]}
+{"kind":"shape","geometry":"ellipse","bbox":[918,-96,430,430]}
+{"kind":"shape","geometry":"ellipse","bbox":[-100,520,270,270]}
+{"kind":"shape","geometry":"ellipse","bbox":[1018,528,180,180]}
+{"kind":"shape","geometry":"rect","bbox":[0,0,1280,720]}
+{"kind":"textbox","text":"THE PROBLEM","bbox":[78,40,280,20]}
+{"kind":"textbox","text":"02 / 10","bbox":[1090,40,110,20]}
+{"kind":"shape","geometry":"rect","bbox":[78,67,1124,1.5]}
+{"kind":"textbox","text":"The expensive part of delivery often happens before code begins","bbox":[84,96,820,170]}
+{"kind":"shape","geometry":"roundRect","bbox":[84,342,182,230]}
+{"kind":"shape","geometry":"roundRect","bbox":[84,258,182,264]}
+{"kind":"textbox","text":"01","bbox":[102,280,42,30]}
+{"kind":"textbox","text":"Clarify intent","bbox":[102,320,140,26]}
+{"kind":"textbox","text":"Acceptance criteria, scope, and edge cases are often scattered across tickets and chats.","bbox":[102,360,146,130]}
+{"kind":"shape","geometry":"roundRect","bbox":[320,306,182,266]}
+{"kind":"shape","geometry":"roundRect","bbox":[320,258,182,264]}
+{"kind":"textbox","text":"02","bbox":[338,280,42,30]}
+{"kind":"textbox","text":"Find repo impact","bbox":[338,320,140,26]}
+{"kind":"textbox","text":"Developers still have to infer which files, modules, and regressions are actually in play.","bbox":[338,360,146,130]}
+{"kind":"shape","geometry":"roundRect","bbox":[556,274,182,298]}
+{"kind":"shape","geometry":"roundRect","bbox":[556,258,182,264]}
+{"kind":"textbox","text":"03","bbox":[574,280,42,30]}
+{"kind":"textbox","text":"Plan the change","bbox":[574,320,140,26]}
+{"kind":"textbox","text":"Technical design and patch strategy vary by person and time pressure.","bbox":[574,360,146,130]}
+{"kind":"shape","geometry":"roundRect","bbox":[792,244,182,328]}
+{"kind":"shape","geometry":"roundRect","bbox":[792,258,182,264]}
+{"kind":"textbox","text":"04","bbox":[810,280,42,30]}
+{"kind":"textbox","text":"Check obligations","bbox":[810,320,140,26]}
+{"kind":"textbox","text":"Testing, keyboard behavior, and accessibility often arrive too late in the cycle.","bbox":[810,360,146,130]}
+{"kind":"shape","geometry":"roundRect","bbox":[1028,210,182,362]}
+{"kind":"shape","geometry":"roundRect","bbox":[1028,258,182,264]}
+{"kind":"textbox","text":"05","bbox":[1046,280,42,30]}
+{"kind":"textbox","text":"Prepare handoff","bbox":[1046,320,140,26]}
+{"kind":"textbox","text":"Coding agents need structured context, or quality becomes unpredictable.","bbox":[1046,360,146,130]}
+{"kind":"shape","geometry":"rect","bbox":[84,560,1112,12]}
+{"kind":"textbox","text":"Before code starts, teams are already losing time and building risk.","bbox":[84,592,690,28]}
+{"kind":"textbox","text":"ODT targets that hidden layer of work.","bbox":[84,630,340,20]}
+{"kind":"shape","geometry":"ellipse","bbox":[918,-96,430,430]}
+{"kind":"shape","geometry":"ellipse","bbox":[-100,520,270,270]}
+{"kind":"shape","geometry":"ellipse","bbox":[1018,528,180,180]}
+{"kind":"shape","geometry":"rect","bbox":[0,0,1280,720]}
+{"kind":"textbox","text":"THE SHIFT","bbox":[78,40,280,20]}
+{"kind":"textbox","text":"03 / 10","bbox":[1090,40,110,20]}
+{"kind":"shape","geometry":"rect","bbox":[78,67,1124,1.5]}
+{"kind":"textbox","text":"ODT removes setup work, not developer judgement","bbox":[84,96,850,170]}
+{"kind":"shape","geometry":"roundRect","bbox":[84,206,296,34]}
+{"kind":"shape","geometry":"rect","bbox":[84,206,8,34]}
+{"kind":"textbox","text":"Intent -> evidence -> execution","bbox":[102,216,264,16]}
+{"kind":"shape","geometry":"roundRect","bbox":[84,270,470,356]}
+{"kind":"textbox","text":"Before ODT","bbox":[112,292,160,24]}
+{"kind":"shape","geometry":"roundRect","bbox":[112,332,414,68]}
+{"kind":"shape","geometry":"ellipse","bbox":[130,350,18,18]}
+{"kind":"textbox","text":"Manual interpretation","bbox":[164,346,340,24]}
+{"kind":"textbox","text":"Business asks still have to be translated into engineering action.","bbox":[164,370,342,22]}
+{"kind":"shape","geometry":"roundRect","bbox":[112,402,414,68]}
+{"kind":"shape","geometry":"ellipse","bbox":[130,420,18,18]}
+{"kind":"textbox","text":"Hidden blast radius","bbox":[164,416,340,24]}
+{"kind":"textbox","text":"Impact discovery still relies on memory, search, and guesswork.","bbox":[164,440,342,22]}
+{"kind":"shape","geometry":"roundRect","bbox":[112,472,414,68]}
+{"kind":"shape","geometry":"ellipse","bbox":[130,490,18,18]}
+{"kind":"textbox","text":"Late quality checks","bbox":[164,486,340,24]}
+{"kind":"textbox","text":"Accessibility and regression planning can slip until the very end.","bbox":[164,510,342,22]}
+{"kind":"shape","geometry":"roundRect","bbox":[112,542,414,68]}
+{"kind":"shape","geometry":"ellipse","bbox":[130,560,18,18]}
+{"kind":"textbox","text":"Unstructured prompting","bbox":[164,556,340,24]}
+{"kind":"textbox","text":"Execution agents get uneven context, so output quality can vary.","bbox":[164,580,342,22]}
+{"kind":"shape","geometry":"rightArrow","bbox":[566,400,86,80]}
+{"kind":"shape","geometry":"roundRect","bbox":[684,270,512,356]}
+{"kind":"textbox","text":"With ODT","bbox":[712,292,160,24]}
+{"kind":"shape","geometry":"roundRect","bbox":[712,332,456,68]}
+{"kind":"shape","geometry":"ellipse","bbox":[730,350,18,18]}
+{"kind":"textbox","text":"Structured intake","bbox":[764,346,382,24]}
+{"kind":"textbox","text":"Requirements and constraints are captured in one governed flow.","bbox":[764,370,384,22]}
+{"kind":"shape","geometry":"roundRect","bbox":[712,402,456,68]}
+{"kind":"shape","geometry":"ellipse","bbox":[730,420,18,18]}
+{"kind":"textbox","text":"Repo-aware impact","bbox":[764,416,382,24]}
+{"kind":"textbox","text":"Candidate files and regression areas are ranked before coding begins.","bbox":[764,440,384,22]}
+{"kind":"shape","geometry":"roundRect","bbox":[712,472,456,68]}
+{"kind":"shape","geometry":"ellipse","bbox":[730,490,18,18]}
+{"kind":"textbox","text":"Guided execution","bbox":[764,486,382,24]}
+{"kind":"textbox","text":"Design, code, test, and compliance workpacks are ready to use.","bbox":[764,510,384,22]}
+{"kind":"shape","geometry":"roundRect","bbox":[712,542,456,68]}
+{"kind":"shape","geometry":"ellipse","bbox":[730,560,18,18]}
+{"kind":"textbox","text":"Visible review gate","bbox":[764,556,382,24]}
+{"kind":"textbox","text":"FEDIT makes decisions clearer before any merge decision.","bbox":[764,580,384,22]}
+{"kind":"shape","geometry":"ellipse","bbox":[918,-96,430,430]}
+{"kind":"shape","geometry":"ellipse","bbox":[-100,520,270,270]}
+{"kind":"shape","geometry":"ellipse","bbox":[1018,528,180,180]}
+{"kind":"shape","geometry":"rect","bbox":[0,0,1280,720]}
+{"kind":"textbox","text":"DIFFERENTIATION","bbox":[78,40,280,20]}
+{"kind":"textbox","text":"04 / 10","bbox":[1090,40,110,20]}
+{"kind":"shape","geometry":"rect","bbox":[78,67,1124,1.5]}
+{"kind":"textbox","text":"Why this is more than a coding copilot","bbox":[84,96,840,170]}
+{"kind":"shape","geometry":"roundRect","bbox":[92,228,308,58]}
+{"kind":"shape","geometry":"roundRect","bbox":[412,228,776,58]}
+{"kind":"textbox","text":"Typical coding copilot","bbox":[114,246,264,22]}
+{"kind":"textbox","text":"Oracle Developer Twin","bbox":[438,246,300,22]}
+{"kind":"shape","geometry":"roundRect","bbox":[92,302,308,54]}
+{"kind":"shape","geometry":"roundRect","bbox":[412,302,776,54]}
+{"kind":"textbox","text":"Starts with a prompt","bbox":[114,317,264,22]}
+{"kind":"shape","geometry":"rect","bbox":[412,302,8,54]}
+{"kind":"textbox","text":"Starts with a work item, structured intake, and target-repo context.","bbox":[434,313,720,28]}
+{"kind":"shape","geometry":"roundRect","bbox":[92,366,308,54]}
+{"kind":"shape","geometry":"roundRect","bbox":[412,366,776,54]}
+{"kind":"textbox","text":"Mainly returns code or text","bbox":[114,381,264,22]}
+{"kind":"shape","geometry":"rect","bbox":[412,366,8,54]}
+{"kind":"textbox","text":"Creates dashboards, impact analysis, workpacks, prompt contracts, and verification artifacts.","bbox":[434,377,720,28]}
+{"kind":"shape","geometry":"roundRect","bbox":[92,430,308,54]}
+{"kind":"shape","geometry":"roundRect","bbox":[412,430,776,54]}
+{"kind":"textbox","text":"Repo understanding is ad hoc","bbox":[114,445,264,22]}
+{"kind":"shape","geometry":"rect","bbox":[412,430,8,54]}
+{"kind":"textbox","text":"Impact is inferred and ranked so change scope becomes visible before execution.","bbox":[434,441,720,28]}
+{"kind":"shape","geometry":"roundRect","bbox":[92,494,308,54]}
+{"kind":"shape","geometry":"roundRect","bbox":[412,494,776,54]}
+{"kind":"textbox","text":"Quality checks are optional","bbox":[114,509,264,22]}
+{"kind":"shape","geometry":"rect","bbox":[412,494,8,54]}
+{"kind":"textbox","text":"Accessibility, testing, and review checkpoints are built into the flow.","bbox":[434,505,720,28]}
+{"kind":"shape","geometry":"roundRect","bbox":[92,558,308,54]}
+{"kind":"shape","geometry":"roundRect","bbox":[412,558,776,54]}
+{"kind":"textbox","text":"Responsibility can feel blurry","bbox":[114,573,264,22]}
+{"kind":"shape","geometry":"rect","bbox":[412,558,8,54]}
+{"kind":"textbox","text":"Human approval remains explicit before merge or release.","bbox":[434,569,720,28]}
+{"kind":"shape","geometry":"roundRect","bbox":[92,640,1096,42]}
+{"kind":"textbox","text":"Codex and Cline can execute. ODT makes execution safer and more consistent.","bbox":[114,652,1054,18]}
+{"kind":"shape","geometry":"ellipse","bbox":[808,-110,520,520]}
+{"kind":"shape","geometry":"ellipse","bbox":[864,-54,408,408]}
+{"kind":"shape","geometry":"ellipse","bbox":[906,-10,324,324]}
+{"kind":"shape","geometry":"ellipse","bbox":[-120,520,320,320]}
+{"kind":"shape","geometry":"rect","bbox":[920,0,180,720]}
+{"kind":"shape","geometry":"rect","bbox":[980,0,26,720]}
+{"kind":"shape","geometry":"rect","bbox":[1112,0,12,720]}
+{"kind":"textbox","text":"IMPLEMENTED TODAY","bbox":[78,40,280,20]}
+{"kind":"textbox","text":"05 / 10","bbox":[1090,40,110,20]}
+{"kind":"shape","geometry":"rect","bbox":[78,67,1124,1.5]}
+{"kind":"textbox","text":"Built. Running. Demoable today.","bbox":[84,96,640,170]}
+{"kind":"textbox","text":"This is a working delivery flow, not a concept mockup.","bbox":[84,244,760,22]}
+{"kind":"shape","geometry":"roundRect","bbox":[84,286,338,284]}
+{"kind":"textbox","text":"What the demo proves right now","bbox":[108,312,260,24]}
+{"kind":"textbox","text":"Review-ready run\nArtifacts on disk\nTarget-repo a11y verification\nLive worker console","bbox":[108,356,240,132]}
+{"kind":"textbox","text":"Hybrid AI path also works: OCI prompt generation with safe fallback.","bbox":[108,512,254,50]}
+{"kind":"shape","geometry":"roundRect","bbox":[470,270,324,150]}
+{"kind":"shape","geometry":"rect","bbox":[470,270,324,7]}
+{"kind":"textbox","text":"7","bbox":[492,292,282,58]}
+{"kind":"textbox","text":"Governed stages from intake to verify","bbox":[494,354,276,38]}
+{"kind":"textbox","text":"Current product flow","bbox":[494,388,276,20]}
+{"kind":"shape","geometry":"roundRect","bbox":[816,270,324,150]}
+{"kind":"shape","geometry":"rect","bbox":[816,270,324,7]}
+{"kind":"textbox","text":"32","bbox":[838,292,282,58]}
+{"kind":"textbox","text":"Runs stored in ODT history","bbox":[840,354,276,38]}
+{"kind":"textbox","text":"Persisted run trail","bbox":[840,388,276,20]}
+{"kind":"shape","geometry":"roundRect","bbox":[470,438,324,150]}
+{"kind":"shape","geometry":"rect","bbox":[470,438,324,7]}
+{"kind":"textbox","text":"0","bbox":[492,460,282,58]}
+{"kind":"textbox","text":"Blockers in current demo a11y scan","bbox":[494,522,276,38]}
+{"kind":"textbox","text":"Latest target-repo verification","bbox":[494,556,276,20]}
+{"kind":"shape","geometry":"roundRect","bbox":[816,438,324,150]}
+{"kind":"shape","geometry":"rect","bbox":[816,438,324,7]}
+{"kind":"textbox","text":"1","bbox":[838,460,282,58]}
+{"kind":"textbox","text":"Visible console for the digital worker","bbox":[840,522,276,38]}
+{"kind":"textbox","text":"FEDIT dashboard","bbox":[840,556,276,20]}
+{"kind":"shape","geometry":"roundRect","bbox":[84,620,232,34]}
+{"kind":"shape","geometry":"rect","bbox":[84,620,8,34]}
+{"kind":"textbox","text":"Oracle VPAT guidance primary","bbox":[102,630,200,16]}
+{"kind":"shape","geometry":"roundRect","bbox":[330,620,208,34]}
+{"kind":"shape","geometry":"rect","bbox":[330,620,8,34]}
+{"kind":"textbox","text":"WCAG 2.1 AA fallback","bbox":[348,630,176,16]}
+{"kind":"shape","geometry":"roundRect","bbox":[552,620,224,34]}
+{"kind":"shape","geometry":"rect","bbox":[552,620,8,34]}
+{"kind":"textbox","text":"OCI prompt generation wired","bbox":[570,630,192,16]}
+{"kind":"shape","geometry":"roundRect","bbox":[790,620,228,34]}
+{"kind":"shape","geometry":"rect","bbox":[790,620,8,34]}
+{"kind":"textbox","text":"Safe template mode preserved","bbox":[808,630,196,16]}
+{"kind":"shape","geometry":"ellipse","bbox":[918,-96,430,430]}
+{"kind":"shape","geometry":"ellipse","bbox":[-100,520,270,270]}
+{"kind":"shape","geometry":"ellipse","bbox":[1018,528,180,180]}
+{"kind":"shape","geometry":"rect","bbox":[0,0,1280,720]}
+{"kind":"textbox","text":"ARCHITECTURE","bbox":[78,40,280,20]}
+{"kind":"textbox","text":"06 / 10","bbox":[1090,40,110,20]}
+{"kind":"shape","geometry":"rect","bbox":[78,67,1124,1.5]}
+{"kind":"textbox","text":"Simple architecture. Clear control points.","bbox":[84,96,820,170]}
+{"kind":"textbox","text":"Every layer has one job. That keeps the AI path understandable and safe.","bbox":[84,188,680,24]}
+{"kind":"shape","geometry":"roundRect","bbox":[84,274,246,224]}
+{"kind":"shape","geometry":"rect","bbox":[84,274,246,7]}
+{"kind":"textbox","text":"INPUT LAYER","bbox":[104,292,206,20]}
+{"kind":"textbox","text":"Ticket, acceptance criteria, mockups, constraints, and repo target define the request.","bbox":[104,322,206,164]}
+{"kind":"shape","geometry":"roundRect","bbox":[360,274,246,224]}
+{"kind":"shape","geometry":"rect","bbox":[360,274,246,7]}
+{"kind":"textbox","text":"PLANNING ENGINE","bbox":[380,292,206,20]}
+{"kind":"textbox","text":"Repo analysis, prompt hardening, design guidance, code and test workpacks, and compliance review.","bbox":[380,322,206,164]}
+{"kind":"shape","geometry":"roundRect","bbox":[636,274,246,224]}
+{"kind":"shape","geometry":"rect","bbox":[636,274,246,7]}
+{"kind":"textbox","text":"CONTROL SURFACE","bbox":[656,292,206,20]}
+{"kind":"textbox","text":"FEDIT shows status, explainability, launch controls, and run telemetry.","bbox":[656,322,206,164]}
+{"kind":"shape","geometry":"roundRect","bbox":[912,274,246,224]}
+{"kind":"shape","geometry":"rect","bbox":[912,274,246,7]}
+{"kind":"textbox","text":"HUMAN DECISION","bbox":[932,292,206,20]}
+{"kind":"textbox","text":"A developer or reviewer inspects artifacts and diffs before approving merge or release.","bbox":[932,322,206,164]}
+{"kind":"shape","geometry":"rightArrow","bbox":[300,362,40,40]}
+{"kind":"shape","geometry":"rightArrow","bbox":[576,362,40,40]}
+{"kind":"shape","geometry":"rightArrow","bbox":[852,362,40,40]}
+{"kind":"textbox","text":"Technology foundation","bbox":[84,546,240,20]}
+{"kind":"shape","geometry":"roundRect","bbox":[84,578,144,32]}
+{"kind":"textbox","text":"Node.js CLI engine","bbox":[98,586,116,16]}
+{"kind":"shape","geometry":"roundRect","bbox":[240,578,150,32]}
+{"kind":"textbox","text":"FEDIT dashboard","bbox":[254,586,122,16]}
+{"kind":"shape","geometry":"roundRect","bbox":[402,578,176,32]}
+{"kind":"textbox","text":"Local context server","bbox":[416,586,148,16]}
+{"kind":"shape","geometry":"roundRect","bbox":[590,578,156,32]}
+{"kind":"textbox","text":"OCI GenAI optional","bbox":[604,586,128,16]}
+{"kind":"shape","geometry":"roundRect","bbox":[758,578,174,32]}
+{"kind":"textbox","text":"Codex / Cline handoff","bbox":[772,586,146,16]}
+{"kind":"shape","geometry":"roundRect","bbox":[944,578,228,32]}
+{"kind":"textbox","text":"Oracle VPAT / WCAG mapping","bbox":[958,586,200,16]}
+{"kind":"textbox","text":"ODT plans. Agents execute. Humans decide.","bbox":[84,632,560,26]}
+{"kind":"shape","geometry":"ellipse","bbox":[918,-96,430,430]}
+{"kind":"shape","geometry":"ellipse","bbox":[-100,520,270,270]}
+{"kind":"shape","geometry":"ellipse","bbox":[1018,528,180,180]}
+{"kind":"shape","geometry":"rect","bbox":[0,0,1280,720]}
+{"kind":"textbox","text":"DEVELOPER EXPERIENCE","bbox":[78,40,280,20]}
+{"kind":"textbox","text":"07 / 10","bbox":[1090,40,110,20]}
+{"kind":"shape","geometry":"rect","bbox":[78,67,1124,1.5]}
+{"kind":"textbox","text":"What a developer actually does","bbox":[84,96,740,170]}
+{"kind":"textbox","text":"The workflow is simple, even though the engine underneath is rich.","bbox":[84,188,680,24]}
+{"kind":"shape","geometry":"ellipse","bbox":[84,258,42,42]}
+{"kind":"textbox","text":"1","bbox":[84,266,42,20]}
+{"kind":"shape","geometry":"roundRect","bbox":[144,254,386,76]}
+{"kind":"textbox","text":"Paste the ticket","bbox":[166,266,180,20]}
+{"kind":"textbox","text":"Set the repo and add constraints or design input if needed.","bbox":[166,288,332,34]}
+{"kind":"shape","geometry":"ellipse","bbox":[84,344,42,42]}
+{"kind":"textbox","text":"2","bbox":[84,352,42,20]}
+{"kind":"shape","geometry":"roundRect","bbox":[144,340,386,76]}
+{"kind":"textbox","text":"Run Digital Worker","bbox":[166,352,180,20]}
+{"kind":"textbox","text":"ODT runs the seven-stage flow and prepares evidence.","bbox":[166,374,332,34]}
+{"kind":"shape","geometry":"ellipse","bbox":[84,430,42,42]}
+{"kind":"textbox","text":"3","bbox":[84,438,42,20]}
+{"kind":"shape","geometry":"roundRect","bbox":[144,426,386,76]}
+{"kind":"textbox","text":"Review the evidence","bbox":[166,438,180,20]}
+{"kind":"textbox","text":"Impact, design, tests, compliance, and verify outputs appear in FEDIT.","bbox":[166,460,332,34]}
+{"kind":"shape","geometry":"ellipse","bbox":[84,516,42,42]}
+{"kind":"textbox","text":"4","bbox":[84,524,42,20]}
+{"kind":"shape","geometry":"roundRect","bbox":[144,512,386,76]}
+{"kind":"textbox","text":"Delegate to agent","bbox":[166,524,180,20]}
+{"kind":"textbox","text":"Codex or Cline can implement with prepared guidance.","bbox":[166,546,332,34]}
+{"kind":"shape","geometry":"ellipse","bbox":[84,602,42,42]}
+{"kind":"textbox","text":"5","bbox":[84,610,42,20]}
+{"kind":"shape","geometry":"roundRect","bbox":[144,598,386,76]}
+{"kind":"textbox","text":"Approve or reject","bbox":[166,610,180,20]}
+{"kind":"textbox","text":"A human reviewer still decides before merge.","bbox":[166,632,332,34]}
+{"kind":"shape","geometry":"roundRect","bbox":[700,232,514,420]}
+{"kind":"shape","geometry":"roundRect","bbox":[718,250,478,46]}
+{"kind":"textbox","text":"Oracle-themed Digital Worker Console","bbox":[732,266,290,16]}
+{"kind":"shape","geometry":"roundRect","bbox":[1006,256,168,30]}
+{"kind":"textbox","text":"RUN DIGITAL WORKER","bbox":[1022,266,136,12]}
+{"kind":"shape","geometry":"roundRect","bbox":[718,314,154,110]}
+{"kind":"textbox","text":"Prompt Hardening","bbox":[734,330,130,18]}
+{"kind":"textbox","text":"Structured intake\nand stage\ncontrols","bbox":[734,358,112,50]}
+{"kind":"shape","geometry":"roundRect","bbox":[890,314,176,110]}
+{"kind":"textbox","text":"Visible Agent Workflow","bbox":[908,330,144,18]}
+{"kind":"textbox","text":"Impact\nDesign\nVerify","bbox":[908,358,70,54]}
+{"kind":"shape","geometry":"rect","bbox":[994,358,10,40]}
+{"kind":"shape","geometry":"rect","bbox":[1014,358,10,52]}
+{"kind":"shape","geometry":"rect","bbox":[1034,358,10,34]}
+{"kind":"shape","geometry":"roundRect","bbox":[1084,314,112,110]}
+{"kind":"textbox","text":"Explainability","bbox":[1100,330,96,18]}
+{"kind":"textbox","text":"Ranked files,\nprompts,\nnotes.","bbox":[1100,358,84,52]}
+{"kind":"shape","geometry":"roundRect","bbox":[718,446,478,186]}
+{"kind":"textbox","text":"Completion","bbox":[734,462,120,16]}
+{"kind":"textbox","text":"Ready for\nreview","bbox":[734,482,180,56]}
+{"kind":"textbox","text":"Human review stays\nthe final decision point.","bbox":[734,542,236,40]}
+{"kind":"shape","geometry":"roundRect","bbox":[1018,478,104,32]}
+{"kind":"textbox","text":"Intake","bbox":[1030,487,80,14]}
+{"kind":"shape","geometry":"roundRect","bbox":[1138,478,104,32]}
+{"kind":"textbox","text":"Impact","bbox":[1150,487,80,14]}
+{"kind":"shape","geometry":"roundRect","bbox":[1258,478,104,32]}
+{"kind":"textbox","text":"Design","bbox":[1270,487,80,14]}
+{"kind":"shape","geometry":"roundRect","bbox":[1378,478,104,32]}
+{"kind":"textbox","text":"Code","bbox":[1390,487,80,14]}
+{"kind":"shape","geometry":"roundRect","bbox":[1018,526,104,32]}
+{"kind":"textbox","text":"Tests","bbox":[1030,535,80,14]}
+{"kind":"shape","geometry":"roundRect","bbox":[1138,526,104,32]}
+{"kind":"textbox","text":"Compliance","bbox":[1150,535,80,14]}
+{"kind":"shape","geometry":"roundRect","bbox":[1258,526,104,32]}
+{"kind":"textbox","text":"Verify","bbox":[1270,535,80,14]}
+{"kind":"shape","geometry":"roundRect","bbox":[1002,596,172,30]}
+{"kind":"shape","geometry":"rect","bbox":[1002,596,8,30]}
+{"kind":"textbox","text":"DELEGATE TO AGENT","bbox":[1020,606,140,12]}
+{"kind":"shape","geometry":"ellipse","bbox":[808,-110,520,520]}
+{"kind":"shape","geometry":"ellipse","bbox":[864,-54,408,408]}
+{"kind":"shape","geometry":"ellipse","bbox":[906,-10,324,324]}
+{"kind":"shape","geometry":"ellipse","bbox":[-120,520,320,320]}
+{"kind":"shape","geometry":"rect","bbox":[920,0,180,720]}
+{"kind":"shape","geometry":"rect","bbox":[980,0,26,720]}
+{"kind":"shape","geometry":"rect","bbox":[1112,0,12,720]}
+{"kind":"textbox","text":"TRUST AND GOVERNANCE","bbox":[78,40,280,20]}
+{"kind":"textbox","text":"08 / 10","bbox":[1090,40,110,20]}
+{"kind":"shape","geometry":"rect","bbox":[78,67,1124,1.5]}
+{"kind":"textbox","text":"Trust is built in","bbox":[84,96,760,170]}
+{"kind":"textbox","text":"Human review, accessibility, traceability, and fallback behavior are part of the product.","bbox":[84,182,760,24]}
+{"kind":"shape","geometry":"roundRect","bbox":[84,212,258,34]}
+{"kind":"shape","geometry":"rect","bbox":[84,212,8,34]}
+{"kind":"textbox","text":"Speed with visible control","bbox":[102,222,226,16]}
+{"kind":"shape","geometry":"roundRect","bbox":[84,282,518,144]}
+{"kind":"shape","geometry":"ellipse","bbox":[108,304,26,26]}
+{"kind":"textbox","text":"Human in the loop","bbox":[150,300,424,22]}
+{"kind":"textbox","text":"Merge and release decisions stay with a developer or reviewer. ODT accelerates preparation, not accountability transfer.","bbox":[108,342,470,66]}
+{"kind":"shape","geometry":"roundRect","bbox":[628,282,568,144]}
+{"kind":"shape","geometry":"ellipse","bbox":[652,304,26,26]}
+{"kind":"textbox","text":"Accessibility by default","bbox":[694,300,474,22]}
+{"kind":"textbox","text":"Oracle VPAT guidance is treated as primary, with WCAG fallback and manual evidence checks preserved.","bbox":[652,342,520,66]}
+{"kind":"shape","geometry":"roundRect","bbox":[84,446,518,144]}
+{"kind":"shape","geometry":"ellipse","bbox":[108,468,26,26]}
+{"kind":"textbox","text":"Explainability and audit","bbox":[150,464,424,22]}
+{"kind":"textbox","text":"Runs create durable artifacts, prompt traces, ranked files, and reviewable evidence instead of hidden reasoning.","bbox":[108,506,470,66]}
+{"kind":"shape","geometry":"roundRect","bbox":[628,446,568,144]}
+{"kind":"shape","geometry":"ellipse","bbox":[652,468,26,26]}
+{"kind":"textbox","text":"AI resilience","bbox":[694,464,474,22]}
+{"kind":"textbox","text":"OCI-backed prompt generation is optional and hybrid; safe template mode stays available for continuity.","bbox":[652,506,520,66]}
+{"kind":"textbox","text":"ODT makes risk visible before it becomes release risk.","bbox":[84,626,760,26]}
+{"kind":"shape","geometry":"ellipse","bbox":[918,-96,430,430]}
+{"kind":"shape","geometry":"ellipse","bbox":[-100,520,270,270]}
+{"kind":"shape","geometry":"ellipse","bbox":[1018,528,180,180]}
+{"kind":"shape","geometry":"rect","bbox":[0,0,1280,720]}
+{"kind":"textbox","text":"STRATEGIC VALUE","bbox":[78,40,280,20]}
+{"kind":"textbox","text":"09 / 10","bbox":[1090,40,110,20]}
+{"kind":"shape","geometry":"rect","bbox":[78,67,1124,1.5]}
+{"kind":"textbox","text":"What this brings to Oracle","bbox":[84,96,780,170]}
+{"kind":"textbox","text":"ODT is a reusable Oracle pattern for safer, faster software delivery.","bbox":[84,188,680,24]}
+{"kind":"shape","geometry":"ellipse","bbox":[474,252,332,332]}
+{"kind":"shape","geometry":"ellipse","bbox":[522,300,236,236]}
+{"kind":"textbox","text":"Reusable\nOracle pattern","bbox":[548,360,184,74]}
+{"kind":"textbox","text":"Governable AI\ndelivery","bbox":[556,442,168,40]}
+{"kind":"shape","geometry":"roundRect","bbox":[84,272,286,118]}
+{"kind":"shape","geometry":"rect","bbox":[84,272,8,118]}
+{"kind":"textbox","text":"Standardized readiness","bbox":[108,290,246,24]}
+{"kind":"textbox","text":"Brings consistency to intake, impact, test scope, and review evidence.","bbox":[108,324,246,52]}
+{"kind":"shape","geometry":"roundRect","bbox":[908,272,286,118]}
+{"kind":"shape","geometry":"rect","bbox":[908,272,8,118]}
+{"kind":"textbox","text":"Higher quality confidence","bbox":[932,290,246,24]}
+{"kind":"textbox","text":"Keeps accessibility and verification visible earlier in delivery.","bbox":[932,324,246,52]}
+{"kind":"shape","geometry":"roundRect","bbox":[84,440,286,118]}
+{"kind":"shape","geometry":"rect","bbox":[84,440,8,118]}
+{"kind":"textbox","text":"Faster onboarding and handoff","bbox":[108,458,246,24]}
+{"kind":"textbox","text":"Developers and agents receive clearer context instead of tribal knowledge.","bbox":[108,492,246,52]}
+{"kind":"shape","geometry":"roundRect","bbox":[908,440,286,118]}
+{"kind":"shape","geometry":"rect","bbox":[908,440,8,118]}
+{"kind":"textbox","text":"Foundation for scale","bbox":[932,458,246,24]}
+{"kind":"textbox","text":"The same pattern can expand beyond React and beyond frontend over time.","bbox":[932,492,246,52]}
+{"kind":"shape","geometry":"roundRect","bbox":[150,620,980,40]}
+{"kind":"textbox","text":"Frontend today","bbox":[186,632,180,16]}
+{"kind":"shape","geometry":"rightArrow","bbox":[370,624,70,30]}
+{"kind":"textbox","text":"More stacks next","bbox":[480,632,160,16]}
+{"kind":"shape","geometry":"rightArrow","bbox":[650,624,70,30]}
+{"kind":"textbox","text":"Broader digital workers later","bbox":[760,632,250,16]}
+{"kind":"shape","geometry":"ellipse","bbox":[808,-110,520,520]}
+{"kind":"shape","geometry":"ellipse","bbox":[864,-54,408,408]}
+{"kind":"shape","geometry":"ellipse","bbox":[906,-10,324,324]}
+{"kind":"shape","geometry":"ellipse","bbox":[-120,520,320,320]}
+{"kind":"shape","geometry":"rect","bbox":[920,0,180,720]}
+{"kind":"shape","geometry":"rect","bbox":[980,0,26,720]}
+{"kind":"shape","geometry":"rect","bbox":[1112,0,12,720]}
+{"kind":"textbox","text":"CLOSING TAKEAWAY","bbox":[78,40,280,20]}
+{"kind":"textbox","text":"10 / 10","bbox":[1090,40,110,20]}
+{"kind":"shape","geometry":"rect","bbox":[78,67,1124,1.5]}
+{"kind":"shape","geometry":"ellipse","bbox":[106.64,102,17.92,17.92]}
+{"kind":"shape","geometry":"rect","bbox":[114.47999999999999,113.2,2.24,12.32]}
+{"kind":"shape","geometry":"roundRect","bbox":[82,122.16,67.2,51.52]}
+{"kind":"shape","geometry":"ellipse","bbox":[96.56,140.08,11.200000000000001,11.200000000000001]}
+{"kind":"shape","geometry":"ellipse","bbox":[123.44,140.08,11.200000000000001,11.200000000000001]}
+{"kind":"shape","geometry":"roundRect","bbox":[101.04,156.88,29.12,7.840000000000001]}
+{"kind":"shape","geometry":"rect","bbox":[73.03999999999999,137.84,8.96,4.48]}
+{"kind":"shape","geometry":"rect","bbox":[149.2,137.84,8.96,4.48]}
+{"kind":"textbox","text":"From ticket to trust","bbox":[84,214,700,170]}
+{"kind":"textbox","text":"ODT makes the invisible work before coding visible, guided, and repeatable.","bbox":[86,396,640,82]}
+{"kind":"shape","geometry":"roundRect","bbox":[84,516,304,120]}
+{"kind":"shape","geometry":"rect","bbox":[84,516,8,120]}
+{"kind":"textbox","text":"REMOVES HIDDEN WORK","bbox":[108,536,262,28]}
+{"kind":"textbox","text":"It cuts the planning work that slows teams before code starts.","bbox":[108,578,260,36]}
+{"kind":"shape","geometry":"ellipse","bbox":[330,534,22,22]}
+{"kind":"shape","geometry":"roundRect","bbox":[404,516,304,120]}
+{"kind":"shape","geometry":"rect","bbox":[404,516,8,120]}
+{"kind":"textbox","text":"KEEPS OWNERSHIP HUMAN","bbox":[428,536,262,28]}
+{"kind":"textbox","text":"The worker prepares and explains. The developer still decides.","bbox":[428,578,260,36]}
+{"kind":"shape","geometry":"ellipse","bbox":[650,534,22,22]}
+{"kind":"shape","geometry":"roundRect","bbox":[724,516,304,120]}
+{"kind":"shape","geometry":"rect","bbox":[724,516,8,120]}
+{"kind":"textbox","text":"READY TO SCALE","bbox":[748,536,262,28]}
+{"kind":"textbox","text":"It is already live in FEDIT and ready to grow.","bbox":[748,578,260,36]}
+{"kind":"shape","geometry":"ellipse","bbox":[970,534,22,22]}
+{"kind":"shape","geometry":"roundRect","bbox":[878,198,304,34]}
+{"kind":"shape","geometry":"rect","bbox":[878,198,8,34]}
+{"kind":"textbox","text":"Run -> Review -> Delegate -> Approve","bbox":[896,208,272,16]}
+{"kind":"textbox","text":"This is not just faster AI. It is safer, review-ready delivery.","bbox":[876,268,288,92]}
+{"kind":"textbox","text":"That is the delivery value.","bbox":[878,376,220,24]}
