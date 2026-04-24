@@ -1,6 +1,6 @@
 # Codex Workpack: ODT Unit Test Generation
 
-Work Item: change the submit request button text to submit employee form
+Work Item: when attempting to add a Journey Note, after entering the note and clicking Add, the sc...
 
 Generate or update Jest/RTL tests for impacted behavior.
 Cover:
@@ -10,7 +10,12 @@ Cover:
 - Keyboard accessibility interactions where applicable
 
 Known related test files:
-- No direct tests matched; create nearest-module tests.
+- tests/jest/reducers/journey-builder-reducers/activities_reducer.test.js
+- tests/jest/reducers/journeys_reducer.test.js
+- tests/jest/reducers/journey-builder-reducers/events_reducers.test.js
+- tests/jest/modules/journey-builder/events/actions/events_actions.test.js
+- tests/jest/modals/roster_competency_modal.test.js
+- tests/jest/modules/journey-builder/events/presentational-components/roster_competency_details.test.js
 
 Prompt override (unit test stage):
 - None supplied

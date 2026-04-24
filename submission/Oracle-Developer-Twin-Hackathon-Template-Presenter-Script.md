@@ -1,57 +1,75 @@
-# Oracle Developer Twin Hackathon Template Presenter Script
+# Oracle Developer Twin Final Presenter Script
 
 Use this script with:
 
-- `docs/Oracle-Developer-Twin-Hackathon-Submission-Template-Deck.pptx`
+- `submission/Oracle-Developer-Twin-Presentation-Deck.pptx`
 
 ## Duration
 
-5 minutes total
+- 5 minutes total
 
 ## Slide 1 - Title
 
-"This is Oracle Developer Twin, or ODT. It is a Digital Worker for software delivery. Instead of starting with code generation, it starts with the work that usually slows teams down before coding even begins: understanding the request, finding repo impact, planning changes, checking accessibility, and preparing a safe handoff."
+"This is Oracle Developer Twin, or ODT. It is a human-reviewed Digital Worker for software delivery. Instead of starting with code generation, it starts by helping developers stay closer to the requirement, understand scope, and prepare a safe path to implementation."
 
 ## Slide 2 - Executive Brief
 
-"The core problem is that software delivery has a hidden preparation cost. Developers still need to translate business asks into engineering action, infer which files are impacted, decide what to test, and remember accessibility obligations. ODT solves that by creating a governed workflow around those steps. The people who feel this problem most are frontend developers, reviewers, and delivery leads."
+"In enterprise delivery, a significant amount of effort goes into turning a requirement into clear scope, impacted files, test direction, accessibility guidance, and reliable execution prompts before implementation begins."
+
+"Those activities are essential, but they are also repetitive and time-consuming. Oracle Developer Twin helps organize that necessary work so developers can focus on the decisions that matter most."
+
+"ODT turns one work item into a seven-stage, repo-aware, review-ready workflow with prompt hardening, hybrid Oracle Gen AI prompting, durable artifacts, and governed delegation to an OCA-backed execution session."
 
 ## Slide 3 - What the Digital Worker Does
 
-"ODT takes one work item and turns it into a structured seven-stage flow: intake, impact, design, code, tests, compliance, and verify. Human review is intentionally built in. A developer reviews the evidence, adds reviewer notes or stage-specific guidance if needed, re-analyzes, and only then delegates implementation. The unique value here is that ODT makes the work before coding visible, repeatable, and reviewable."
+"ODT acts as a human-reviewed SDLC co-worker. It helps with ticket intake, prompt hardening, repo impact analysis, hybrid prompt generation, code and test guidance, and execution handoff."
+
+"The workflow is requirement first: plan, review, delegate, and approve."
+
+"The key point is that ODT is not replacing developer expertise. It is organizing the inputs, evidence, and AI collaboration around that expertise."
 
 ## Slide 4 - Technical Architecture
 
-"Technically, the solution is simple and clear. The intake and planning engine live in the ODT CLI. A local context server handles repo inspection and execution control. The ODT dashboards make the workflow visible. OCA is used in the execution path when we delegate implementation, and OCI GenAI can be used to generate the seven stage prompts with a safe fallback path. ODT plans, OCA executes, and the human still decides."
-
-Short speaking line:
+"This is the architecture view of that workflow."
 
 "ODT plans and governs the work, OCI can optionally generate stage prompts, OCA executes the implementation path, and the human remains the approval gate."
 
-## Slide 5 - How It Works in Practice
+"That is the model we want to show clearly: governed planning, optional GenAI prompting, controlled execution, and human approval."
 
-"In practice, a developer opens ODT Workspace, pastes the requirement, selects the repo, and runs the Digital Worker. ODT generates the evidence package, highlights likely files, adds accessibility context, and prepares an execution prompt. The reviewer can add changes in the dashboard, rerun analysis, and then delegate. Guardrails include prompt hardening, repo validation, optional Git initialization, accessibility evidence, and visible execution status. This is what makes the solution feel enterprise-ready instead of experimental."
+## Slide 5 - How This Digital Worker Works
 
-Short speaking line:
+"In practice, a developer enters the work item, chooses the repository, reviews the generated evidence, and delegates only when ready."
 
-"The workflow is simple for the user: enter the request, review the generated evidence, refine it if needed, then delegate with control and traceability."
+"A reviewer or lead can add edits, provide stage overrides, and request re-analysis before implementation is handed off."
+
+"OCI GenAI can generate stage prompts using an LLM path, while fallback prompts and reviewer overrides keep the workflow resilient and customizable."
+
+"ODT governs the planning and evidence. OCA-backed Codex or Cline sessions execute implementation against the target repository."
+
+"Accessibility guidance aligned to Oracle expectations stays visible in the workflow, and human approval is still required before merge."
 
 ## Slide 6 - Business Impact and Close
 
-"The business value is straightforward. ODT reduces planning friction, improves delivery consistency, brings accessibility and verification forward, and keeps accountability human. Our demo shows a working dashboard, a repo-aware planning flow, controlled delegation to OCA, and a real React target app that can be changed and re-reviewed live. The takeaway is simple: ODT turns AI into a governed Digital Worker for software delivery, not just a coding shortcut."
+"The business value is straightforward."
 
-Short speaking line:
+"Oracle Developer Twin reduces repetitive delivery-preparation work, improves consistency, surfaces accessibility earlier, helps reduce backlog pressure, and enables better collaboration between developers and AI."
 
-"This is not just faster coding. It is safer, more reviewable, and more enterprise-ready delivery."
+"This is not about questioning developer capability. It is about reducing supporting effort around delivery while keeping developer judgment at the center."
+
+"The takeaway is simple: Oracle Developer Twin helps developers and AI collaborate in a governed way by keeping the requirement, the repository, and the human review step connected."
 
 ## Slide 7 - Appendix Technical Flow (Optional)
 
-"Use this slide only if judges ask for technical depth. It shows the detailed runtime path: requirement intake, ODT planning, human review, OCA-backed delegation, repo updates, and final human approval. The point is that automation accelerates the path, but it never removes the approval gate."
+"Use this slide only if judges ask for technical depth."
 
-Short speaking line:
+"It shows the governed sequence more precisely: requirement intake, prompt hardening, impact analysis, hybrid OCI or fallback prompt generation, and code plus test guidance."
 
-"ODT creates the evidence, OCA runs the implementation path, and the repo diff approval remains human."
+"The important addition is that accessibility guidance appears before delegation, not only at the end."
+
+"You can also see a human review checkpoint before OCA execution and a final approval gate after the returned changes are reviewed."
+
+"The message remains the same. Automation accelerates the path, but approval still stays with the developer."
 
 ## Strong Closing Line
 
-"Oracle Developer Twin does not remove developer judgement. It removes the hidden setup work that keeps slowing delivery, and it does that with visible governance."
+"Oracle Developer Twin does not replace developer judgment. It reduces the repetitive supporting work around delivery and helps teams move from requirement to governed implementation with more clarity, consistency, and control."

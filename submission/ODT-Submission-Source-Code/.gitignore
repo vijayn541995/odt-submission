@@ -1,0 +1,24 @@
+.DS_Store
+node_modules/
+demo-target-repo/node_modules/
+demo-target-repo/dist/
+demo-target-repo/.vite/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.env
+.env.*
+scripts/odt-oci-local.sh
+
+# Runtime/state artifacts
+reports/odt/runtime/
+reports/mcp/local-context.json
+reports/odt/execute/agent-launch.log
+reports/odt/execute/agent-response.md
+reports/odt/execute/applied.patch
+
+# macOS temp files
+**/.DS_Store
+**/~$*

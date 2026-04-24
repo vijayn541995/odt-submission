@@ -2,171 +2,300 @@
   "inference": {
     "mode": "repo_inferred_manifest",
     "keywords": [
-      "change",
-      "submit",
-      "request",
-      "button",
-      "text",
-      "employee",
-      "form",
-      "filter",
-      "activities",
-      "keyword",
-      "without",
-      "leaving",
+      "attempting",
+      "journey",
+      "note",
+      "after",
+      "entering",
+      "clicking",
+      "screen",
+      "will",
+      "white",
       "page",
-      "filtering",
-      "updates",
-      "announced",
-      "clearly",
-      "assistive",
-      "technology",
-      "users",
-      "keyboard",
-      "open",
-      "clear",
-      "navigate"
+      "found",
+      "error",
+      "displays",
+      "attachments",
+      "able",
+      "replicate",
+      "demo",
+      "environment",
+      "also",
+      "tested",
+      "adding",
+      "activity",
+      "event",
+      "experienced"
     ],
     "hintedAreas": [],
     "candidateFiles": [
-      "src/components/employeeFormUtils.js",
-      "src/components/EmployeeForm.jsx",
-      "src/data/fallbackEmployees.js",
-      "src/components/FilterBar.jsx",
-      "src/api/fetchEmployees.js",
-      "src/components/ActivityList.jsx",
-      "src/components/OracleLogo.js"
+      "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/journey_table.jsx",
+      "src/journey-builder-app/modules/journey-user/roster/modal/EventTable.jsx",
+      "src/journey-builder-app/utils/error_page.jsx",
+      "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_found.jsx",
+      "src/journey-builder-app/modules/journey-builder/events/container-components/home/no_table_content.jsx",
+      "src/journey-builder-app/modules/journey-reports/container-components/home/ReportGroupJourneySummaryTable.jsx",
+      "src/journey-builder-app/modules/journey-builder/journeys/container-components/resuable/no_activities_found.jsx",
+      "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/dnd_table/activity_reorder_component.jsx",
+      "src/journey-builder-app/modules/journey-builder/activities/container-components/reusable-components/modals/delete_activity_failure_modal.jsx",
+      "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/dnd_table/stage_activity_table.jsx",
+      "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/associate_activity/journey_resource_activity_library.jsx",
+      "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/activity_list.jsx"
     ],
     "candidateDetails": [
       {
-        "file": "src/components/employeeFormUtils.js",
-        "score": 111,
+        "file": "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/journey_table.jsx",
+        "score": 77,
         "exportNames": [
-          "INITIAL_FORM",
-          "EMAIL_PATTERN",
-          "MIN_SUMMARY_LENGTH",
-          "TEAM_OPTIONS",
-          "FIELD_CONFIG",
-          "REQUIRED_FIELDS",
-          "SUBMIT_STATUS_ID",
-          "normalizeText",
-          "hasAllRequiredFields",
-          "getFormErrors",
-          "isFormSubmittable",
-          "getFieldDescribedBy",
-          "getSubmitStatusMessage"
+          "JourneyTable"
         ],
-        "preview": "export const INITIAL_FORM = { requesterName: \"\", requesterEmail: \"\", team: \"\",",
+        "preview": "import ReactTable from 'react-table-6'; import 'react-table-6/react-table.css'; import React, { useMemo, useState, useEffect } from 'react' import moment from 'moment';",
         "reasons": [
-          "path:employee",
-          "path:form",
-          "export:INITIAL_FORM",
-          "export:SUBMIT_STATUS_ID",
-          "export:normalizeText",
-          "export:getFormErrors"
+          "path:journey",
+          "path:page",
+          "path:able",
+          "path:activity",
+          "export:JourneyTable",
+          "preview:able"
         ]
       },
       {
-        "file": "src/components/EmployeeForm.jsx",
+        "file": "src/journey-builder-app/modules/journey-user/roster/modal/EventTable.jsx",
+        "score": 66,
+        "exportNames": [
+          "EventTable"
+        ],
+        "preview": "import React, { useEffect, useState } from 'react' import IconChevronDown from 'terra-icon/lib/icon/IconChevronDown'; import ReactTable from 'react-table-6'; import 'react-table-6/react-table.css';",
+        "reasons": [
+          "path:journey",
+          "path:able",
+          "path:event",
+          "export:EventTable",
+          "preview:able"
+        ]
+      },
+      {
+        "file": "src/journey-builder-app/utils/error_page.jsx",
+        "score": 63,
+        "exportNames": [
+          "ErrorPage"
+        ],
+        "preview": "import React from 'react'; import PropTypes from 'prop-types'; import { useEffect } from 'react'; import { redirectToLogin } from './util';",
+        "reasons": [
+          "path:journey",
+          "path:page",
+          "path:error",
+          "export:ErrorPage"
+        ]
+      },
+      {
+        "file": "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_found.jsx",
+        "score": 59,
+        "exportNames": [
+          "NoActivitiesFound"
+        ],
+        "preview": "import React from 'react'; import { FaFileAlt } from 'react-icons/fa'; import 'react-table-6/react-table.css'; import '../../../assets/styles/base/media-home.scss';",
+        "reasons": [
+          "path:journey",
+          "path:page",
+          "path:found",
+          "path:activity",
+          "export:NoActivitiesFound",
+          "preview:able"
+        ]
+      },
+      {
+        "file": "src/journey-builder-app/modules/journey-builder/events/container-components/home/no_table_content.jsx",
         "score": 58,
         "exportNames": [
-          "EmployeeForm"
+          "NoTableContent"
         ],
-        "preview": "import React, { useMemo, useState } from \"react\"; import { FIELD_CONFIG, INITIAL_FORM,",
+        "preview": "import React from 'react'; import { noSessionsMsg, CLICK_ADD_RUBRIC_ACTIVITY_MSG, clickAddSessionMsg } from '../utils/event_constants'; import { TABLE_DISPLAY_TEXT } from '../../../journeys/container-components/Utils/Con",
         "reasons": [
-          "path:employee",
-          "path:form",
-          "export:EmployeeForm",
-          "preview:form"
+          "path:journey",
+          "path:able",
+          "path:event",
+          "export:NoTableContent",
+          "preview:journey",
+          "preview:able"
         ]
       },
       {
-        "file": "src/data/fallbackEmployees.js",
-        "score": 30,
+        "file": "src/journey-builder-app/modules/journey-reports/container-components/home/ReportGroupJourneySummaryTable.jsx",
+        "score": 58,
         "exportNames": [
-          "FALLBACK_EMPLOYEES"
+          "ReportGroupJourneySummaryTable"
         ],
-        "preview": "export const FALLBACK_EMPLOYEES = [ { id: 101, name: \"Amelia Hart\",",
+        "preview": "import React, { useMemo, useState, useEffect } from 'react'; import PropTypes from 'prop-types'; import ReactTable from 'react-table-6'; import withFixedColumns from 'react-table-hoc-fixed-columns';",
         "reasons": [
-          "path:employee",
-          "export:FALLBACK_EMPLOYEES",
-          "preview:employee"
+          "path:journey",
+          "path:able",
+          "export:ReportGroupJourneySummaryTable",
+          "preview:able"
         ]
       },
       {
-        "file": "src/components/FilterBar.jsx",
-        "score": 28,
+        "file": "src/journey-builder-app/modules/journey-builder/journeys/container-components/resuable/no_activities_found.jsx",
+        "score": 55,
         "exportNames": [
-          "FilterBar"
+          "NoActivitiesFound"
         ],
-        "preview": "import React from \"react\"; export default function FilterBar({ query, selectedDepartment,",
+        "preview": "import React from 'react'; import {addActivityText, noActivitiesToDisplayText} from \"../Utils/Constants\"; const NoActivitiesFound = () => ( <div className=\"react-table-no-data\">",
         "reasons": [
-          "path:filter",
-          "export:FilterBar",
-          "preview:filter"
+          "path:journey",
+          "path:found",
+          "path:able",
+          "export:NoActivitiesFound",
+          "preview:found",
+          "preview:able"
         ]
       },
       {
-        "file": "src/api/fetchEmployees.js",
-        "score": 23,
-        "exportNames": [],
-        "preview": "import { FALLBACK_EMPLOYEES } from \"../data/fallbackEmployees.js\"; const DEPARTMENTS = [ \"Platform Engineering\", \"Experience Design\",",
-        "reasons": [
-          "path:employee",
-          "preview:employee",
-          "preview:form"
-        ]
-      },
-      {
-        "file": "src/components/ActivityList.jsx",
-        "score": 4,
+        "file": "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/dnd_table/activity_reorder_component.jsx",
+        "score": 52,
         "exportNames": [
-          "ActivityList"
+          "ActivityReorderComponent"
         ],
-        "preview": "import React from \"react\"; function EmployeeCard({ employee, index }) { return ( <li className=\"employee-card\" style={{ \"--stagger\": `${index * 60}ms` }}>",
+        "preview": "import React from 'react'; import { FaArrowDown, FaArrowUp } from 'react-icons/fa'; import 'react-table-6/react-table.css'; import { MOVE_ACTIVITY_DOWN, MOVE_ACTIVITY_UP } from '../../Utils/Constants';",
         "reasons": [
-          "preview:employee"
+          "path:journey",
+          "path:able",
+          "path:activity",
+          "export:ActivityReorderComponent",
+          "preview:able",
+          "preview:activity"
         ]
       },
       {
-        "file": "src/components/OracleLogo.js",
-        "score": 1,
+        "file": "src/journey-builder-app/modules/journey-builder/activities/container-components/reusable-components/modals/delete_activity_failure_modal.jsx",
+        "score": 46,
         "exportNames": [
-          "OracleLogo",
-          "ORACLE_LOGO_LABEL"
+          "DeleteActivityFailureModal"
         ],
-        "preview": "import React from \"react\"; export const ORACLE_LOGO_LABEL = \"Oracle logo\"; export default function OracleLogo({ className = \"oracle-logo\" }) { return React.createElement(",
-        "reasons": []
+        "preview": "import React from 'react'; import DialogModal from 'terra-dialog-modal'; import ActionHeader from 'terra-action-header'; import Button from 'terra-button';",
+        "reasons": [
+          "path:journey",
+          "path:able",
+          "path:activity",
+          "export:DeleteActivityFailureModal"
+        ]
+      },
+      {
+        "file": "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/dnd_table/stage_activity_table.jsx",
+        "score": 44,
+        "exportNames": [
+          "withDisclosureManager"
+        ],
+        "preview": "import React, { useState, useEffect } from 'react'; import { withRouter } from 'react-router-dom'; import { useSelector } from 'react-redux'; import ModalManager from 'terra-modal-manager';",
+        "reasons": [
+          "path:journey",
+          "path:able",
+          "path:activity"
+        ]
+      },
+      {
+        "file": "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/associate_activity/journey_resource_activity_library.jsx",
+        "score": 41,
+        "exportNames": [
+          "connect"
+        ],
+        "preview": "import React, {useEffect, useState} from \"react\"; import PropTypes from \"prop-types\"; import {connect} from \"react-redux\"; const JourneyResourceActivityLibrary = (props) => {",
+        "reasons": [
+          "path:journey",
+          "path:activity",
+          "preview:journey",
+          "preview:activity"
+        ]
+      },
+      {
+        "file": "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/activity_list.jsx",
+        "score": 40,
+        "exportNames": [
+          "withRouter",
+          "sortDatesDescending"
+        ],
+        "preview": "import React, { useState, useEffect } from 'react'; import ReactTable from 'react-table-6'; import { Link, withRouter } from 'react-router-dom'; import PropTypes from 'prop-types';",
+        "reasons": [
+          "path:journey",
+          "path:page",
+          "path:activity",
+          "preview:able"
+        ]
       }
     ]
   },
   "moduleImpacts": [
     {
-      "modulePath": "src/components",
+      "modulePath": "src/journey-builder-app/modules/journey-builder/activities",
       "sourceFiles": [
-        "src/components/employeeFormUtils.js",
-        "src/components/EmployeeForm.jsx",
-        "src/components/FilterBar.jsx",
-        "src/components/ActivityList.jsx",
-        "src/components/OracleLogo.js"
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/journey_table.jsx",
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_found.jsx",
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/reusable-components/modals/delete_activity_failure_modal.jsx",
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/activity_list.jsx",
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/display_activity.jsx",
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/SearchHistoryList.jsx",
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/upload/upload_new_activity.jsx"
       ],
-      "testFiles": [],
-      "sourceFileCount": 5,
-      "testFileCount": 0
+      "testFiles": [
+        "tests/jest/reducers/journey-builder-reducers/activities_reducer.test.js"
+      ],
+      "sourceFileCount": 7,
+      "testFileCount": 1
     },
     {
-      "modulePath": "src/data",
+      "modulePath": "src/journey-builder-app/modules/journey-builder/journeys",
       "sourceFiles": [
-        "src/data/fallbackEmployees.js"
+        "src/journey-builder-app/modules/journey-builder/journeys/container-components/resuable/no_activities_found.jsx",
+        "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/dnd_table/activity_reorder_component.jsx",
+        "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/dnd_table/stage_activity_table.jsx",
+        "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/associate_activity/journey_resource_activity_library.jsx",
+        "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/associate_activity/no_activities_found.jsx"
+      ],
+      "testFiles": [
+        "tests/jest/reducers/journeys_reducer.test.js"
+      ],
+      "sourceFileCount": 5,
+      "testFileCount": 1
+    },
+    {
+      "modulePath": "src/journey-builder-app/modules/journey-builder/events",
+      "sourceFiles": [
+        "src/journey-builder-app/modules/journey-builder/events/container-components/home/no_table_content.jsx",
+        "src/journey-builder-app/modules/journey-builder/events/presentational-components/add_rubric_activity.jsx",
+        "src/journey-builder-app/modules/journey-builder/events/presentational-components/roaster_table.jsx"
+      ],
+      "testFiles": [
+        "tests/jest/reducers/journey-builder-reducers/events_reducers.test.js",
+        "tests/jest/modules/journey-builder/events/actions/events_actions.test.js"
+      ],
+      "sourceFileCount": 3,
+      "testFileCount": 2
+    },
+    {
+      "modulePath": "src/journey-builder-app/modules/journey-user/roster",
+      "sourceFiles": [
+        "src/journey-builder-app/modules/journey-user/roster/modal/EventTable.jsx"
+      ],
+      "testFiles": [
+        "tests/jest/modals/roster_competency_modal.test.js",
+        "tests/jest/modules/journey-builder/events/presentational-components/roster_competency_details.test.js"
+      ],
+      "sourceFileCount": 1,
+      "testFileCount": 2
+    },
+    {
+      "modulePath": "src/journey-builder-app/utils",
+      "sourceFiles": [
+        "src/journey-builder-app/utils/error_page.jsx"
       ],
       "testFiles": [],
       "sourceFileCount": 1,
       "testFileCount": 0
     },
     {
-      "modulePath": "src/api",
+      "modulePath": "src/journey-builder-app/modules/journey-reports/container-components",
       "sourceFiles": [
-        "src/api/fetchEmployees.js"
+        "src/journey-builder-app/modules/journey-reports/container-components/home/ReportGroupJourneySummaryTable.jsx"
       ],
       "testFiles": [],
       "sourceFileCount": 1,
@@ -174,22 +303,34 @@
     }
   ],
   "totals": {
-    "modules": 3,
-    "totalSourceFiles": 7,
-    "totalTestFiles": 0,
-    "blastRadius": 7
+    "modules": 6,
+    "totalSourceFiles": 18,
+    "totalTestFiles": 6,
+    "blastRadius": 24
   },
   "hotspots": [
     {
-      "modulePath": "src/components",
+      "modulePath": "src/journey-builder-app/modules/journey-builder/activities",
+      "blastRadius": 8
+    },
+    {
+      "modulePath": "src/journey-builder-app/modules/journey-builder/journeys",
+      "blastRadius": 6
+    },
+    {
+      "modulePath": "src/journey-builder-app/modules/journey-builder/events",
       "blastRadius": 5
     },
     {
-      "modulePath": "src/data",
+      "modulePath": "src/journey-builder-app/modules/journey-user/roster",
+      "blastRadius": 3
+    },
+    {
+      "modulePath": "src/journey-builder-app/utils",
       "blastRadius": 1
     },
     {
-      "modulePath": "src/api",
+      "modulePath": "src/journey-builder-app/modules/journey-reports/container-components",
       "blastRadius": 1
     }
   ]

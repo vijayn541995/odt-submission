@@ -4,7 +4,7 @@
 - Provider: template
 - Model: n/a
 - LatencyMs: 0
-- Generated At: 2026-04-23T16:20:00.408Z
+- Generated At: 2026-04-24T13:22:05.403Z
 
 # ODT Stage Prompt - 02-impact
 
@@ -21,33 +21,33 @@ Stage: Repo Impact
 ## Runtime Context
 ```json
 {
-  "generatedAt": "2026-04-23T16:20:00.407Z",
+  "generatedAt": "2026-04-24T13:22:05.403Z",
   "stage": "impact",
   "stageStatus": "completed",
   "stageDetail": {
-    "blastRadius": 7,
-    "modules": 3,
-    "sourceFiles": 7,
-    "testFiles": 0,
+    "blastRadius": 24,
+    "modules": 6,
+    "sourceFiles": 18,
+    "testFiles": 6,
     "inferenceMode": "repo_inferred_manifest",
-    "candidateFiles": 7,
+    "candidateFiles": 12,
     "keywords": [
-      "change",
-      "submit",
-      "request",
-      "button",
-      "text",
-      "employee",
-      "form",
-      "filter"
+      "attempting",
+      "journey",
+      "note",
+      "after",
+      "entering",
+      "clicking",
+      "screen",
+      "will"
     ],
-    "rankedFileCount": 7,
+    "rankedFileCount": 12,
     "topConfidence": 0.99,
     "regressionRisks": [
       "No critical planning risk detected. Keep human-in-loop for merge approvals."
     ]
   },
-  "targetRepoPath": "/Users/vn105957/Desktop/odt-submission/demo-target-repo/",
+  "targetRepoPath": "/Users/vn105957/Desktop/lpDev/journey-builder-js/",
   "workItemType": "feature"
 }
 ```
@@ -55,9 +55,9 @@ Stage: Repo Impact
 ## Sanitized Intake Context
 ```json
 {
-  "title": "change the submit request button text to submit employee form",
-  "featureName": "change the submit request button text to submit employee form",
-  "summary": "change the submit request button text to submit employee form",
+  "title": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc...",
+  "featureName": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc...",
+  "summary": "when attempting to add a Journey Note, after entering the note and clicking Add, the screen will go white and a 404 Page Not Found error displays. See attachments.\n\n \n\nI am able to replicate this in our demo environment and also tested adding a note to an activity and an event and experienced the same issue.",
   "reviewEdits": "",
   "workItemType": "feature",
   "jira": {
@@ -91,7 +91,7 @@ Stage: Repo Impact
     "intake": "",
     "impact": "",
     "design": "",
-    "code": "",
+    "code": "Dont use If  conditions you can change the entity_id to user_id for the fix",
     "unitTests": "",
     "compliance": "",
     "verify": ""

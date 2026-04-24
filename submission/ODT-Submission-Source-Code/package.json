@@ -1,0 +1,16 @@
+{
+  "name": "oracle-developer-twin-submission",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Submission-ready Oracle Developer Twin bundle",
+  "scripts": {
+    "odt:init": "node packages/accessibility-ai-shield/bin/a11y-shield.js odt:init --target-repo-path ./demo-target-repo",
+    "odt:run": "node packages/accessibility-ai-shield/bin/a11y-shield.js odt:run --withA11y --profile react-js --target-repo-path ./demo-target-repo",
+    "odt:run:oci-hybrid": "bash ./scripts/odt-run-oci-hybrid.sh",
+    "odt:execute": "node packages/accessibility-ai-shield/bin/a11y-shield.js odt:execute --target-repo-path ./demo-target-repo",
+    "odt:status": "node packages/accessibility-ai-shield/bin/a11y-shield.js odt:status --target-repo-path ./demo-target-repo",
+    "odt:clean": "node scripts/odt-clean.js",
+    "mcp:local:snapshot": "node packages/delivery-copilot/bin/delivery-copilot.js mcp:local snapshot --target-repo-path ./demo-target-repo",
+    "mcp:local:serve": "node packages/delivery-copilot/bin/delivery-copilot.js mcp:local serve --target-repo-path ./demo-target-repo"
+  }
+}

@@ -1,22 +1,22 @@
 {
-  "generatedAt": "2026-04-23T15:12:00.177Z",
+  "generatedAt": "2026-04-24T12:04:20.125Z",
   "workspaceRoot": "/Users/vn105957/Desktop/odt-submission",
-  "targetRepoPath": "/Users/vn105957/Desktop/odt-submission/demo-target-repo/",
+  "targetRepoPath": "/Users/vn105957/Desktop/lpDev/journey-builder-js/",
   "intake": {
-    "title": "change the submit request button text to submit employee form",
-    "featureName": "change the submit request button text to submit employee form",
-    "summary": "change the submit request button text to submit employee form",
+    "title": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc...",
+    "featureName": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc...",
+    "summary": "when attempting to add a Journey Note, after entering the note and clicking Add, the screen will go white and a 404 Page Not Found error displays. See attachments.\n\n \n\nI am able to replicate this in our demo environment and also tested adding a note to an activity and an event and experienced the same issue.",
     "reviewEdits": "",
     "promptOverrides": {
       "intake": "",
       "impact": "",
       "design": "",
-      "code": "",
+      "code": "Dont use If  conditions you can change the entity_id to user_id for the fix",
       "unitTests": "",
       "compliance": "",
       "verify": ""
     },
-    "targetRepoPath": "/Users/vn105957/Desktop/odt-submission/demo-target-repo/",
+    "targetRepoPath": "/Users/vn105957/Desktop/lpDev/journey-builder-js/",
     "workItemType": "feature",
     "jira": {
       "ticketId": "",
@@ -67,7 +67,7 @@
   },
   "odt": {
     "summary": {
-      "generatedAt": "2026-04-23T15:12:00.166Z",
+      "generatedAt": "2026-04-24T12:04:20.114Z",
       "totalStages": 7,
       "completedStages": 7,
       "failedStages": 0,
@@ -77,47 +77,47 @@
       {
         "name": "intake",
         "status": "completed",
-        "startedAt": "2026-04-23T15:11:58.203Z",
-        "finishedAt": "2026-04-23T15:11:58.222Z",
+        "startedAt": "2026-04-24T12:04:18.200Z",
+        "finishedAt": "2026-04-24T12:04:18.215Z",
         "detail": {
           "intakeFile": "reports/dev-twin/intake.json",
           "intakeQuestionsFile": "reports/dev-twin/intake-questions.md",
           "missingFieldsFile": "reports/dev-twin/intake-missing-fields.md",
           "intakeStatus": "ready",
           "missingFieldCount": 0,
-          "featureName": "change the submit request button text to submit employee form",
+          "featureName": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc...",
           "workItemType": "feature",
           "reviewEditsActive": false,
-          "promptOverridesActive": 0,
+          "promptOverridesActive": 1,
           "complexity": "medium",
           "imageInputs": [],
           "workspaceRoot": "/Users/vn105957/Desktop/odt-submission",
-          "targetRepoPath": "/Users/vn105957/Desktop/odt-submission/demo-target-repo/"
+          "targetRepoPath": "/Users/vn105957/Desktop/lpDev/journey-builder-js/"
         }
       },
       {
         "name": "impact",
         "status": "completed",
-        "startedAt": "2026-04-23T15:11:58.236Z",
-        "finishedAt": "2026-04-23T15:11:58.665Z",
+        "startedAt": "2026-04-24T12:04:18.225Z",
+        "finishedAt": "2026-04-24T12:04:18.927Z",
         "detail": {
-          "blastRadius": 7,
-          "modules": 3,
-          "sourceFiles": 7,
+          "blastRadius": 18,
+          "modules": 6,
+          "sourceFiles": 18,
           "testFiles": 0,
           "inferenceMode": "repo_inferred_manifest",
-          "candidateFiles": 7,
+          "candidateFiles": 12,
           "keywords": [
-            "change",
-            "submit",
-            "request",
-            "button",
-            "text",
-            "employee",
-            "form",
-            "filter"
+            "attempting",
+            "journey",
+            "note",
+            "after",
+            "entering",
+            "clicking",
+            "screen",
+            "will"
           ],
-          "rankedFileCount": 7,
+          "rankedFileCount": 12,
           "topConfidence": 0.99,
           "regressionRisks": [
             "No critical planning risk detected. Keep human-in-loop for merge approvals."
@@ -127,15 +127,15 @@
       {
         "name": "compliance",
         "status": "completed",
-        "startedAt": "2026-04-23T15:11:58.236Z",
-        "finishedAt": "2026-04-23T15:12:00.079Z",
+        "startedAt": "2026-04-24T12:04:18.225Z",
+        "finishedAt": "2026-04-24T12:04:20.035Z",
         "detail": {
           "status": "completed",
-          "blockers": 0,
-          "verifyStatus": "pass",
+          "blockers": 501,
+          "verifyStatus": "action_required",
           "dashboard": "reports/a11y-twin/index.html",
           "complianceMapFile": "reports/odt/compliance-mapping.md",
-          "topRules": 0,
+          "topRules": 3,
           "repoMode": "external_target",
           "note": "A11y scan executed against the selected target repo and reports were saved in the ODT workspace artifacts."
         }
@@ -143,8 +143,8 @@
       {
         "name": "design",
         "status": "completed",
-        "startedAt": "2026-04-23T15:12:00.090Z",
-        "finishedAt": "2026-04-23T15:12:00.100Z",
+        "startedAt": "2026-04-24T12:04:20.047Z",
+        "finishedAt": "2026-04-24T12:04:20.057Z",
         "detail": {
           "designFile": "reports/odt/tech-design.md",
           "designJsonFile": "reports/odt/tech-design.json",
@@ -154,21 +154,21 @@
       {
         "name": "code-workpack",
         "status": "completed",
-        "startedAt": "2026-04-23T15:12:00.110Z",
-        "finishedAt": "2026-04-23T15:12:00.120Z",
+        "startedAt": "2026-04-24T12:04:20.068Z",
+        "finishedAt": "2026-04-24T12:04:20.078Z",
         "detail": {
           "codeWorkpack": "reports/dev-twin/code-workpack.md",
           "available": true,
           "patchPlanFile": "reports/odt/code-patch-plan.md",
-          "targetFiles": 7,
+          "targetFiles": 8,
           "noNewDependencies": true
         }
       },
       {
         "name": "test-workpack",
         "status": "completed",
-        "startedAt": "2026-04-23T15:12:00.110Z",
-        "finishedAt": "2026-04-23T15:12:00.129Z",
+        "startedAt": "2026-04-24T12:04:20.068Z",
+        "finishedAt": "2026-04-24T12:04:20.086Z",
         "detail": {
           "testWorkpack": "reports/dev-twin/unit-test-workpack.md",
           "available": true,
@@ -179,12 +179,12 @@
       {
         "name": "verify-summary",
         "status": "completed",
-        "startedAt": "2026-04-23T15:12:00.142Z",
-        "finishedAt": "2026-04-23T15:12:00.154Z",
+        "startedAt": "2026-04-24T12:04:20.096Z",
+        "finishedAt": "2026-04-24T12:04:20.104Z",
         "detail": {
           "note": "Run summary generated for human review.",
-          "decision": "go",
-          "blockerCount": 0,
+          "decision": "go_with_conditions",
+          "blockerCount": 1,
           "verifyChecklistFile": "reports/odt/verify-checklist.md"
         }
       }
@@ -206,20 +206,20 @@
       ]
     },
     "intake": {
-      "title": "change the submit request button text to submit employee form",
-      "featureName": "change the submit request button text to submit employee form",
-      "summary": "change the submit request button text to submit employee form",
+      "title": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc...",
+      "featureName": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc...",
+      "summary": "when attempting to add a Journey Note, after entering the note and clicking Add, the screen will go white and a 404 Page Not Found error displays. See attachments.\n\n \n\nI am able to replicate this in our demo environment and also tested adding a note to an activity and an event and experienced the same issue.",
       "reviewEdits": "",
       "promptOverrides": {
         "intake": "",
         "impact": "",
         "design": "",
-        "code": "",
+        "code": "Dont use If  conditions you can change the entity_id to user_id for the fix",
         "unitTests": "",
         "compliance": "",
         "verify": ""
       },
-      "targetRepoPath": "/Users/vn105957/Desktop/odt-submission/demo-target-repo/",
+      "targetRepoPath": "/Users/vn105957/Desktop/lpDev/journey-builder-js/",
       "workItemType": "feature",
       "jira": {
         "ticketId": "",
@@ -271,21 +271,21 @@
     "kpis": {
       "automationCoverage": 100,
       "impact": {
-        "blastRadius": 7,
-        "modules": 3,
-        "sourceFiles": 7,
+        "blastRadius": 18,
+        "modules": 6,
+        "sourceFiles": 18,
         "testFiles": 0,
         "inferenceMode": "repo_inferred_manifest",
-        "candidateFiles": 7,
+        "candidateFiles": 12,
         "keywords": [
-          "change",
-          "submit",
-          "request",
-          "button",
-          "text",
-          "employee",
-          "form",
-          "filter"
+          "attempting",
+          "journey",
+          "note",
+          "after",
+          "entering",
+          "clicking",
+          "screen",
+          "will"
         ]
       },
       "tests": {
@@ -294,8 +294,8 @@
       },
       "compliance": {
         "status": "completed",
-        "blockers": 0,
-        "verifyStatus": "pass"
+        "blockers": 501,
+        "verifyStatus": "action_required"
       },
       "design": {
         "available": true
@@ -309,7 +309,7 @@
       },
       "trend": {
         "totalRunsStored": 60,
-        "lastRunAt": "2026-04-23T15:12:00.166Z",
+        "lastRunAt": "2026-04-24T12:04:20.114Z",
         "blockerDelta": 0,
         "averageAutomationCoverage5Runs": 100,
         "runSuccessRate10Runs": 100,
@@ -413,22 +413,22 @@
     }
   },
   "devTwin": {
-    "generatedAt": "2026-04-23T15:11:58.657Z",
+    "generatedAt": "2026-04-24T12:04:18.920Z",
     "intake": {
-      "title": "change the submit request button text to submit employee form",
-      "featureName": "change the submit request button text to submit employee form",
-      "summary": "change the submit request button text to submit employee form",
+      "title": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc...",
+      "featureName": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc...",
+      "summary": "when attempting to add a Journey Note, after entering the note and clicking Add, the screen will go white and a 404 Page Not Found error displays. See attachments.\n\n \n\nI am able to replicate this in our demo environment and also tested adding a note to an activity and an event and experienced the same issue.",
       "reviewEdits": "",
       "promptOverrides": {
         "intake": "",
         "impact": "",
         "design": "",
-        "code": "",
+        "code": "Dont use If  conditions you can change the entity_id to user_id for the fix",
         "unitTests": "",
         "compliance": "",
         "verify": ""
       },
-      "targetRepoPath": "/Users/vn105957/Desktop/odt-submission/demo-target-repo/",
+      "targetRepoPath": "/Users/vn105957/Desktop/lpDev/journey-builder-js/",
       "workItemType": "feature",
       "jira": {
         "ticketId": "",
@@ -478,7 +478,7 @@
       }
     },
     "workspaceRoot": "/Users/vn105957/Desktop/odt-submission",
-    "targetRepoPath": "/Users/vn105957/Desktop/odt-submission/demo-target-repo/",
+    "targetRepoPath": "/Users/vn105957/Desktop/lpDev/journey-builder-js/",
     "estimate": {
       "assumptions": {
         "complexity": "medium",
@@ -515,171 +515,290 @@
       "inference": {
         "mode": "repo_inferred_manifest",
         "keywords": [
-          "change",
-          "submit",
-          "request",
-          "button",
-          "text",
-          "employee",
-          "form",
-          "filter",
-          "activities",
-          "keyword",
-          "without",
-          "leaving",
+          "attempting",
+          "journey",
+          "note",
+          "after",
+          "entering",
+          "clicking",
+          "screen",
+          "will",
+          "white",
           "page",
-          "filtering",
-          "updates",
-          "announced",
-          "clearly",
-          "assistive",
-          "technology",
-          "users",
-          "keyboard",
-          "open",
-          "clear",
-          "navigate"
+          "found",
+          "error",
+          "displays",
+          "attachments",
+          "able",
+          "replicate",
+          "demo",
+          "environment",
+          "also",
+          "tested",
+          "adding",
+          "activity",
+          "event",
+          "experienced"
         ],
         "hintedAreas": [],
         "candidateFiles": [
-          "src/components/employeeFormUtils.js",
-          "src/components/EmployeeForm.jsx",
-          "src/data/fallbackEmployees.js",
-          "src/components/FilterBar.jsx",
-          "src/api/fetchEmployees.js",
-          "src/components/ActivityList.jsx",
-          "src/components/OracleLogo.js"
+          "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/journey_table.jsx",
+          "src/journey-builder-app/modules/journey-user/roster/modal/EventTable.jsx",
+          "src/journey-builder-app/utils/error_page.jsx",
+          "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_found.jsx",
+          "src/journey-builder-app/modules/journey-builder/events/container-components/home/no_table_content.jsx",
+          "src/journey-builder-app/modules/journey-reports/container-components/home/ReportGroupJourneySummaryTable.jsx",
+          "src/journey-builder-app/modules/journey-builder/journeys/container-components/resuable/no_activities_found.jsx",
+          "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/dnd_table/activity_reorder_component.jsx",
+          "src/journey-builder-app/modules/journey-builder/activities/container-components/reusable-components/modals/delete_activity_failure_modal.jsx",
+          "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/dnd_table/stage_activity_table.jsx",
+          "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/associate_activity/journey_resource_activity_library.jsx",
+          "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/activity_list.jsx"
         ],
         "candidateDetails": [
           {
-            "file": "src/components/employeeFormUtils.js",
-            "score": 111,
+            "file": "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/journey_table.jsx",
+            "score": 77,
             "exportNames": [
-              "INITIAL_FORM",
-              "EMAIL_PATTERN",
-              "MIN_SUMMARY_LENGTH",
-              "TEAM_OPTIONS",
-              "FIELD_CONFIG",
-              "REQUIRED_FIELDS",
-              "SUBMIT_STATUS_ID",
-              "normalizeText",
-              "hasAllRequiredFields",
-              "getFormErrors",
-              "isFormSubmittable",
-              "getFieldDescribedBy",
-              "getSubmitStatusMessage"
+              "JourneyTable"
             ],
-            "preview": "export const INITIAL_FORM = { requesterName: \"\", requesterEmail: \"\", team: \"\",",
+            "preview": "import ReactTable from 'react-table-6'; import 'react-table-6/react-table.css'; import React, { useMemo, useState, useEffect } from 'react' import moment from 'moment';",
             "reasons": [
-              "path:employee",
-              "path:form",
-              "export:INITIAL_FORM",
-              "export:SUBMIT_STATUS_ID",
-              "export:normalizeText",
-              "export:getFormErrors"
+              "path:journey",
+              "path:page",
+              "path:able",
+              "path:activity",
+              "export:JourneyTable",
+              "preview:able"
             ]
           },
           {
-            "file": "src/components/EmployeeForm.jsx",
+            "file": "src/journey-builder-app/modules/journey-user/roster/modal/EventTable.jsx",
+            "score": 66,
+            "exportNames": [
+              "EventTable"
+            ],
+            "preview": "import React, { useEffect, useState } from 'react' import IconChevronDown from 'terra-icon/lib/icon/IconChevronDown'; import ReactTable from 'react-table-6'; import 'react-table-6/react-table.css';",
+            "reasons": [
+              "path:journey",
+              "path:able",
+              "path:event",
+              "export:EventTable",
+              "preview:able"
+            ]
+          },
+          {
+            "file": "src/journey-builder-app/utils/error_page.jsx",
+            "score": 63,
+            "exportNames": [
+              "ErrorPage"
+            ],
+            "preview": "import React from 'react'; import PropTypes from 'prop-types'; import { useEffect } from 'react'; import { redirectToLogin } from './util';",
+            "reasons": [
+              "path:journey",
+              "path:page",
+              "path:error",
+              "export:ErrorPage"
+            ]
+          },
+          {
+            "file": "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_found.jsx",
+            "score": 59,
+            "exportNames": [
+              "NoActivitiesFound"
+            ],
+            "preview": "import React from 'react'; import { FaFileAlt } from 'react-icons/fa'; import 'react-table-6/react-table.css'; import '../../../assets/styles/base/media-home.scss';",
+            "reasons": [
+              "path:journey",
+              "path:page",
+              "path:found",
+              "path:activity",
+              "export:NoActivitiesFound",
+              "preview:able"
+            ]
+          },
+          {
+            "file": "src/journey-builder-app/modules/journey-builder/events/container-components/home/no_table_content.jsx",
             "score": 58,
             "exportNames": [
-              "EmployeeForm"
+              "NoTableContent"
             ],
-            "preview": "import React, { useMemo, useState } from \"react\"; import { FIELD_CONFIG, INITIAL_FORM,",
+            "preview": "import React from 'react'; import { noSessionsMsg, CLICK_ADD_RUBRIC_ACTIVITY_MSG, clickAddSessionMsg } from '../utils/event_constants'; import { TABLE_DISPLAY_TEXT } from '../../../journeys/container-components/Utils/Con",
             "reasons": [
-              "path:employee",
-              "path:form",
-              "export:EmployeeForm",
-              "preview:form"
+              "path:journey",
+              "path:able",
+              "path:event",
+              "export:NoTableContent",
+              "preview:journey",
+              "preview:able"
             ]
           },
           {
-            "file": "src/data/fallbackEmployees.js",
-            "score": 30,
+            "file": "src/journey-builder-app/modules/journey-reports/container-components/home/ReportGroupJourneySummaryTable.jsx",
+            "score": 58,
             "exportNames": [
-              "FALLBACK_EMPLOYEES"
+              "ReportGroupJourneySummaryTable"
             ],
-            "preview": "export const FALLBACK_EMPLOYEES = [ { id: 101, name: \"Amelia Hart\",",
+            "preview": "import React, { useMemo, useState, useEffect } from 'react'; import PropTypes from 'prop-types'; import ReactTable from 'react-table-6'; import withFixedColumns from 'react-table-hoc-fixed-columns';",
             "reasons": [
-              "path:employee",
-              "export:FALLBACK_EMPLOYEES",
-              "preview:employee"
+              "path:journey",
+              "path:able",
+              "export:ReportGroupJourneySummaryTable",
+              "preview:able"
             ]
           },
           {
-            "file": "src/components/FilterBar.jsx",
-            "score": 28,
+            "file": "src/journey-builder-app/modules/journey-builder/journeys/container-components/resuable/no_activities_found.jsx",
+            "score": 55,
             "exportNames": [
-              "FilterBar"
+              "NoActivitiesFound"
             ],
-            "preview": "import React from \"react\"; export default function FilterBar({ query, selectedDepartment,",
+            "preview": "import React from 'react'; import {addActivityText, noActivitiesToDisplayText} from \"../Utils/Constants\"; const NoActivitiesFound = () => ( <div className=\"react-table-no-data\">",
             "reasons": [
-              "path:filter",
-              "export:FilterBar",
-              "preview:filter"
+              "path:journey",
+              "path:found",
+              "path:able",
+              "export:NoActivitiesFound",
+              "preview:found",
+              "preview:able"
             ]
           },
           {
-            "file": "src/api/fetchEmployees.js",
-            "score": 23,
-            "exportNames": [],
-            "preview": "import { FALLBACK_EMPLOYEES } from \"../data/fallbackEmployees.js\"; const DEPARTMENTS = [ \"Platform Engineering\", \"Experience Design\",",
-            "reasons": [
-              "path:employee",
-              "preview:employee",
-              "preview:form"
-            ]
-          },
-          {
-            "file": "src/components/ActivityList.jsx",
-            "score": 4,
+            "file": "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/dnd_table/activity_reorder_component.jsx",
+            "score": 52,
             "exportNames": [
-              "ActivityList"
+              "ActivityReorderComponent"
             ],
-            "preview": "import React from \"react\"; function EmployeeCard({ employee, index }) { return ( <li className=\"employee-card\" style={{ \"--stagger\": `${index * 60}ms` }}>",
+            "preview": "import React from 'react'; import { FaArrowDown, FaArrowUp } from 'react-icons/fa'; import 'react-table-6/react-table.css'; import { MOVE_ACTIVITY_DOWN, MOVE_ACTIVITY_UP } from '../../Utils/Constants';",
             "reasons": [
-              "preview:employee"
+              "path:journey",
+              "path:able",
+              "path:activity",
+              "export:ActivityReorderComponent",
+              "preview:able",
+              "preview:activity"
             ]
           },
           {
-            "file": "src/components/OracleLogo.js",
-            "score": 1,
+            "file": "src/journey-builder-app/modules/journey-builder/activities/container-components/reusable-components/modals/delete_activity_failure_modal.jsx",
+            "score": 46,
             "exportNames": [
-              "OracleLogo",
-              "ORACLE_LOGO_LABEL"
+              "DeleteActivityFailureModal"
             ],
-            "preview": "import React from \"react\"; export const ORACLE_LOGO_LABEL = \"Oracle logo\"; export default function OracleLogo({ className = \"oracle-logo\" }) { return React.createElement(",
-            "reasons": []
+            "preview": "import React from 'react'; import DialogModal from 'terra-dialog-modal'; import ActionHeader from 'terra-action-header'; import Button from 'terra-button';",
+            "reasons": [
+              "path:journey",
+              "path:able",
+              "path:activity",
+              "export:DeleteActivityFailureModal"
+            ]
+          },
+          {
+            "file": "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/dnd_table/stage_activity_table.jsx",
+            "score": 44,
+            "exportNames": [
+              "withDisclosureManager"
+            ],
+            "preview": "import React, { useState, useEffect } from 'react'; import { withRouter } from 'react-router-dom'; import { useSelector } from 'react-redux'; import ModalManager from 'terra-modal-manager';",
+            "reasons": [
+              "path:journey",
+              "path:able",
+              "path:activity"
+            ]
+          },
+          {
+            "file": "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/associate_activity/journey_resource_activity_library.jsx",
+            "score": 41,
+            "exportNames": [
+              "connect"
+            ],
+            "preview": "import React, {useEffect, useState} from \"react\"; import PropTypes from \"prop-types\"; import {connect} from \"react-redux\"; const JourneyResourceActivityLibrary = (props) => {",
+            "reasons": [
+              "path:journey",
+              "path:activity",
+              "preview:journey",
+              "preview:activity"
+            ]
+          },
+          {
+            "file": "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/activity_list.jsx",
+            "score": 40,
+            "exportNames": [
+              "withRouter",
+              "sortDatesDescending"
+            ],
+            "preview": "import React, { useState, useEffect } from 'react'; import ReactTable from 'react-table-6'; import { Link, withRouter } from 'react-router-dom'; import PropTypes from 'prop-types';",
+            "reasons": [
+              "path:journey",
+              "path:page",
+              "path:activity",
+              "preview:able"
+            ]
           }
         ]
       },
       "moduleImpacts": [
         {
-          "modulePath": "src/components",
+          "modulePath": "src/journey-builder-app/modules/journey-builder/activities",
           "sourceFiles": [
-            "src/components/employeeFormUtils.js",
-            "src/components/EmployeeForm.jsx",
-            "src/components/FilterBar.jsx",
-            "src/components/ActivityList.jsx",
-            "src/components/OracleLogo.js"
+            "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/journey_table.jsx",
+            "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_found.jsx",
+            "src/journey-builder-app/modules/journey-builder/activities/container-components/reusable-components/modals/delete_activity_failure_modal.jsx",
+            "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/activity_list.jsx",
+            "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/display_activity.jsx",
+            "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/SearchHistoryList.jsx",
+            "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/upload/upload_new_activity.jsx"
+          ],
+          "testFiles": [],
+          "sourceFileCount": 7,
+          "testFileCount": 0
+        },
+        {
+          "modulePath": "src/journey-builder-app/modules/journey-builder/journeys",
+          "sourceFiles": [
+            "src/journey-builder-app/modules/journey-builder/journeys/container-components/resuable/no_activities_found.jsx",
+            "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/dnd_table/activity_reorder_component.jsx",
+            "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/dnd_table/stage_activity_table.jsx",
+            "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/associate_activity/journey_resource_activity_library.jsx",
+            "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/associate_activity/no_activities_found.jsx"
           ],
           "testFiles": [],
           "sourceFileCount": 5,
           "testFileCount": 0
         },
         {
-          "modulePath": "src/data",
+          "modulePath": "src/journey-builder-app/modules/journey-builder/events",
           "sourceFiles": [
-            "src/data/fallbackEmployees.js"
+            "src/journey-builder-app/modules/journey-builder/events/container-components/home/no_table_content.jsx",
+            "src/journey-builder-app/modules/journey-builder/events/presentational-components/add_rubric_activity.jsx",
+            "src/journey-builder-app/modules/journey-builder/events/presentational-components/roaster_table.jsx"
+          ],
+          "testFiles": [],
+          "sourceFileCount": 3,
+          "testFileCount": 0
+        },
+        {
+          "modulePath": "src/journey-builder-app/modules/journey-user/roster",
+          "sourceFiles": [
+            "src/journey-builder-app/modules/journey-user/roster/modal/EventTable.jsx"
           ],
           "testFiles": [],
           "sourceFileCount": 1,
           "testFileCount": 0
         },
         {
-          "modulePath": "src/api",
+          "modulePath": "src/journey-builder-app/utils",
           "sourceFiles": [
-            "src/api/fetchEmployees.js"
+            "src/journey-builder-app/utils/error_page.jsx"
+          ],
+          "testFiles": [],
+          "sourceFileCount": 1,
+          "testFileCount": 0
+        },
+        {
+          "modulePath": "src/journey-builder-app/modules/journey-reports/container-components",
+          "sourceFiles": [
+            "src/journey-builder-app/modules/journey-reports/container-components/home/ReportGroupJourneySummaryTable.jsx"
           ],
           "testFiles": [],
           "sourceFileCount": 1,
@@ -687,22 +806,34 @@
         }
       ],
       "totals": {
-        "modules": 3,
-        "totalSourceFiles": 7,
+        "modules": 6,
+        "totalSourceFiles": 18,
         "totalTestFiles": 0,
-        "blastRadius": 7
+        "blastRadius": 18
       },
       "hotspots": [
         {
-          "modulePath": "src/components",
+          "modulePath": "src/journey-builder-app/modules/journey-builder/activities",
+          "blastRadius": 7
+        },
+        {
+          "modulePath": "src/journey-builder-app/modules/journey-builder/journeys",
           "blastRadius": 5
         },
         {
-          "modulePath": "src/data",
+          "modulePath": "src/journey-builder-app/modules/journey-builder/events",
+          "blastRadius": 3
+        },
+        {
+          "modulePath": "src/journey-builder-app/modules/journey-user/roster",
           "blastRadius": 1
         },
         {
-          "modulePath": "src/api",
+          "modulePath": "src/journey-builder-app/utils",
+          "blastRadius": 1
+        },
+        {
+          "modulePath": "src/journey-builder-app/modules/journey-reports/container-components",
           "blastRadius": 1
         }
       ]
@@ -712,12 +843,12 @@
     ]
   },
   "a11ySummary": {
-    "generatedAt": "2026-04-23T15:12:00.074Z",
+    "generatedAt": "2026-04-24T12:04:20.026Z",
     "metadata": {
-      "generatedAt": "2026-04-23T15:12:00.072Z",
+      "generatedAt": "2026-04-24T12:04:20.018Z",
       "mode": "ci",
-      "scanRoot": "/Users/vn105957/Desktop/odt-submission/demo-target-repo/",
-      "filesScanned": 9,
+      "scanRoot": "/Users/vn105957/Desktop/lpDev/journey-builder-js/",
+      "filesScanned": 458,
       "standardPrimary": "Oracle VPAT guidance (internal Confluence source of truth)",
       "standardFallback": "WCAG 2.1 AA",
       "policySource": {
@@ -727,24 +858,637 @@
       }
     },
     "summary": {
-      "blockers": 0,
+      "blockers": 501,
       "warnings": 0,
       "infos": 0,
-      "total": 0
+      "total": 501
     },
-    "ruleSummary": [],
-    "hotspots": [],
-    "priorityQueue": [],
-    "recommendationBacklog": [],
+    "ruleSummary": [
+      {
+        "ruleId": "custom/icon-a11y-label",
+        "count": 309,
+        "playbook": {
+          "title": "Add icon accessibility labels",
+          "whyItMatters": "Unlabeled functional icons are silent for assistive technology users.",
+          "implementationHint": "Add a11yLabel to functional Terra icons. Hide decorative icons with aria-hidden.",
+          "estimatedMinutesPerFinding": 2
+        }
+      },
+      {
+        "ruleId": "custom/click-keyboard-parity",
+        "count": 162,
+        "playbook": {
+          "title": "Restore keyboard parity for click handlers",
+          "whyItMatters": "Mouse-only interactions block keyboard and switch-device users.",
+          "implementationHint": "Use semantic button/link elements or add role, tabIndex, Enter/Space key handlers.",
+          "estimatedMinutesPerFinding": 4
+        }
+      },
+      {
+        "ruleId": "custom/form-control-label",
+        "count": 30,
+        "playbook": {
+          "title": "Attach explicit form labels",
+          "whyItMatters": "Form fields without labels create ambiguity for screen readers.",
+          "implementationHint": "Connect label and control via htmlFor/id or aria-labelledby.",
+          "estimatedMinutesPerFinding": 3
+        }
+      }
+    ],
+    "hotspots": [
+      {
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/core-components/hamburger_menu/mobile_components/mobile_navigation.jsx",
+        "count": 23
+      },
+      {
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/modules/journey-builder/events/presentational-components/session.jsx",
+        "count": 21
+      },
+      {
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/display_activity.jsx",
+        "count": 18
+      },
+      {
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/mobile_components/journey-user/users/container-components/users_list_container_mobile.jsx",
+        "count": 17
+      },
+      {
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/activity_list.jsx",
+        "count": 16
+      },
+      {
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/modules/journey-builder/events/presentational-components/roaster_table.jsx",
+        "count": 14
+      },
+      {
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/modules/journey-user/groups/presentaional-components/add_members_stepper_container.jsx",
+        "count": 14
+      },
+      {
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/modules/journey-user/groups/presentaional-components/add_members_stepper.jsx",
+        "count": 14
+      },
+      {
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/modules/journey-user/users/presentaional-components/assigned_journey_table.jsx",
+        "count": 12
+      },
+      {
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/mobile_components/journey-builder/events/eventListContainerMobile.jsx",
+        "count": 11
+      },
+      {
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/core-components/hamburger_menu/hamburger_menu.jsx",
+        "count": 10
+      },
+      {
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/modules/admin-notifications/pages/home/notification_list.jsx",
+        "count": 9
+      },
+      {
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/modules/journey-user/users/presentaional-components/group_association_table.jsx",
+        "count": 9
+      },
+      {
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/mobile_components/journey-user/users/container-components/modal/MobilePaginationComponent.jsx",
+        "count": 8
+      },
+      {
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/mobile_components/journey-user/users/container-components/user_session_list_mobile.jsx",
+        "count": 8
+      },
+      {
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/modules/journey-builder/journeys/container-components/home/load_journeys_list.jsx",
+        "count": 8
+      },
+      {
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/modules/journey-builder/events/presentational-components/event_list.jsx",
+        "count": 7
+      },
+      {
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/modules/journey-user/groups/container-components/groups_list_container.jsx",
+        "count": 7
+      },
+      {
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/modules/journey-user/roster/modal/session_assignment_report_container.jsx",
+        "count": 7
+      },
+      {
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/edit/components/publish.jsx",
+        "count": 6
+      }
+    ],
+    "priorityQueue": [
+      {
+        "ruleId": "custom/click-keyboard-parity",
+        "wcagRef": "2.1.1",
+        "severity": "blocker",
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/core-components/hamburger_menu/mobile_components/mobile_navigation.jsx",
+        "line": 54,
+        "message": "Clickable non-interactive element lacks keyboard interaction support.",
+        "suggestedFix": "Use a semantic button/link, or add role=\"button\", tabIndex=\"0\", and key handlers.",
+        "policyCriterion": "2.1.1",
+        "policyTitle": "Keyboard accessibility",
+        "policyPriority": "high",
+        "score": 160,
+        "playbook": {
+          "title": "Restore keyboard parity for click handlers",
+          "whyItMatters": "Mouse-only interactions block keyboard and switch-device users.",
+          "implementationHint": "Use semantic button/link elements or add role, tabIndex, Enter/Space key handlers.",
+          "estimatedMinutesPerFinding": 4
+        }
+      },
+      {
+        "ruleId": "custom/click-keyboard-parity",
+        "wcagRef": "2.1.1",
+        "severity": "blocker",
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/core-components/hamburger_menu/mobile_components/mobile_navigation.jsx",
+        "line": 62,
+        "message": "Clickable non-interactive element lacks keyboard interaction support.",
+        "suggestedFix": "Use a semantic button/link, or add role=\"button\", tabIndex=\"0\", and key handlers.",
+        "policyCriterion": "2.1.1",
+        "policyTitle": "Keyboard accessibility",
+        "policyPriority": "high",
+        "score": 160,
+        "playbook": {
+          "title": "Restore keyboard parity for click handlers",
+          "whyItMatters": "Mouse-only interactions block keyboard and switch-device users.",
+          "implementationHint": "Use semantic button/link elements or add role, tabIndex, Enter/Space key handlers.",
+          "estimatedMinutesPerFinding": 4
+        }
+      },
+      {
+        "ruleId": "custom/icon-a11y-label",
+        "wcagRef": "1.1.1",
+        "severity": "blocker",
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/core-components/hamburger_menu/mobile_components/mobile_navigation.jsx",
+        "line": 66,
+        "message": "Terra icon is missing a11y label.",
+        "suggestedFix": "Add a11yLabel for functional icons; hide decorative icons from assistive tech.",
+        "policyCriterion": "1.1.1",
+        "policyTitle": "Non-text content alternatives",
+        "policyPriority": "high",
+        "score": 160,
+        "playbook": {
+          "title": "Add icon accessibility labels",
+          "whyItMatters": "Unlabeled functional icons are silent for assistive technology users.",
+          "implementationHint": "Add a11yLabel to functional Terra icons. Hide decorative icons with aria-hidden.",
+          "estimatedMinutesPerFinding": 2
+        }
+      },
+      {
+        "ruleId": "custom/click-keyboard-parity",
+        "wcagRef": "2.1.1",
+        "severity": "blocker",
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/core-components/hamburger_menu/mobile_components/mobile_navigation.jsx",
+        "line": 69,
+        "message": "Clickable non-interactive element lacks keyboard interaction support.",
+        "suggestedFix": "Use a semantic button/link, or add role=\"button\", tabIndex=\"0\", and key handlers.",
+        "policyCriterion": "2.1.1",
+        "policyTitle": "Keyboard accessibility",
+        "policyPriority": "high",
+        "score": 160,
+        "playbook": {
+          "title": "Restore keyboard parity for click handlers",
+          "whyItMatters": "Mouse-only interactions block keyboard and switch-device users.",
+          "implementationHint": "Use semantic button/link elements or add role, tabIndex, Enter/Space key handlers.",
+          "estimatedMinutesPerFinding": 4
+        }
+      },
+      {
+        "ruleId": "custom/icon-a11y-label",
+        "wcagRef": "1.1.1",
+        "severity": "blocker",
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/core-components/hamburger_menu/mobile_components/mobile_navigation.jsx",
+        "line": 73,
+        "message": "Terra icon is missing a11y label.",
+        "suggestedFix": "Add a11yLabel for functional icons; hide decorative icons from assistive tech.",
+        "policyCriterion": "1.1.1",
+        "policyTitle": "Non-text content alternatives",
+        "policyPriority": "high",
+        "score": 160,
+        "playbook": {
+          "title": "Add icon accessibility labels",
+          "whyItMatters": "Unlabeled functional icons are silent for assistive technology users.",
+          "implementationHint": "Add a11yLabel to functional Terra icons. Hide decorative icons with aria-hidden.",
+          "estimatedMinutesPerFinding": 2
+        }
+      },
+      {
+        "ruleId": "custom/icon-a11y-label",
+        "wcagRef": "1.1.1",
+        "severity": "blocker",
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/core-components/hamburger_menu/mobile_components/mobile_navigation.jsx",
+        "line": 75,
+        "message": "Terra icon is missing a11y label.",
+        "suggestedFix": "Add a11yLabel for functional icons; hide decorative icons from assistive tech.",
+        "policyCriterion": "1.1.1",
+        "policyTitle": "Non-text content alternatives",
+        "policyPriority": "high",
+        "score": 160,
+        "playbook": {
+          "title": "Add icon accessibility labels",
+          "whyItMatters": "Unlabeled functional icons are silent for assistive technology users.",
+          "implementationHint": "Add a11yLabel to functional Terra icons. Hide decorative icons with aria-hidden.",
+          "estimatedMinutesPerFinding": 2
+        }
+      },
+      {
+        "ruleId": "custom/click-keyboard-parity",
+        "wcagRef": "2.1.1",
+        "severity": "blocker",
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/core-components/hamburger_menu/mobile_components/mobile_navigation.jsx",
+        "line": 84,
+        "message": "Clickable non-interactive element lacks keyboard interaction support.",
+        "suggestedFix": "Use a semantic button/link, or add role=\"button\", tabIndex=\"0\", and key handlers.",
+        "policyCriterion": "2.1.1",
+        "policyTitle": "Keyboard accessibility",
+        "policyPriority": "high",
+        "score": 160,
+        "playbook": {
+          "title": "Restore keyboard parity for click handlers",
+          "whyItMatters": "Mouse-only interactions block keyboard and switch-device users.",
+          "implementationHint": "Use semantic button/link elements or add role, tabIndex, Enter/Space key handlers.",
+          "estimatedMinutesPerFinding": 4
+        }
+      },
+      {
+        "ruleId": "custom/click-keyboard-parity",
+        "wcagRef": "2.1.1",
+        "severity": "blocker",
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/core-components/hamburger_menu/mobile_components/mobile_navigation.jsx",
+        "line": 89,
+        "message": "Clickable non-interactive element lacks keyboard interaction support.",
+        "suggestedFix": "Use a semantic button/link, or add role=\"button\", tabIndex=\"0\", and key handlers.",
+        "policyCriterion": "2.1.1",
+        "policyTitle": "Keyboard accessibility",
+        "policyPriority": "high",
+        "score": 160,
+        "playbook": {
+          "title": "Restore keyboard parity for click handlers",
+          "whyItMatters": "Mouse-only interactions block keyboard and switch-device users.",
+          "implementationHint": "Use semantic button/link elements or add role, tabIndex, Enter/Space key handlers.",
+          "estimatedMinutesPerFinding": 4
+        }
+      },
+      {
+        "ruleId": "custom/click-keyboard-parity",
+        "wcagRef": "2.1.1",
+        "severity": "blocker",
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/core-components/hamburger_menu/mobile_components/mobile_navigation.jsx",
+        "line": 94,
+        "message": "Clickable non-interactive element lacks keyboard interaction support.",
+        "suggestedFix": "Use a semantic button/link, or add role=\"button\", tabIndex=\"0\", and key handlers.",
+        "policyCriterion": "2.1.1",
+        "policyTitle": "Keyboard accessibility",
+        "policyPriority": "high",
+        "score": 160,
+        "playbook": {
+          "title": "Restore keyboard parity for click handlers",
+          "whyItMatters": "Mouse-only interactions block keyboard and switch-device users.",
+          "implementationHint": "Use semantic button/link elements or add role, tabIndex, Enter/Space key handlers.",
+          "estimatedMinutesPerFinding": 4
+        }
+      },
+      {
+        "ruleId": "custom/click-keyboard-parity",
+        "wcagRef": "2.1.1",
+        "severity": "blocker",
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/core-components/hamburger_menu/mobile_components/mobile_navigation.jsx",
+        "line": 100,
+        "message": "Clickable non-interactive element lacks keyboard interaction support.",
+        "suggestedFix": "Use a semantic button/link, or add role=\"button\", tabIndex=\"0\", and key handlers.",
+        "policyCriterion": "2.1.1",
+        "policyTitle": "Keyboard accessibility",
+        "policyPriority": "high",
+        "score": 160,
+        "playbook": {
+          "title": "Restore keyboard parity for click handlers",
+          "whyItMatters": "Mouse-only interactions block keyboard and switch-device users.",
+          "implementationHint": "Use semantic button/link elements or add role, tabIndex, Enter/Space key handlers.",
+          "estimatedMinutesPerFinding": 4
+        }
+      },
+      {
+        "ruleId": "custom/icon-a11y-label",
+        "wcagRef": "1.1.1",
+        "severity": "blocker",
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/core-components/hamburger_menu/mobile_components/mobile_navigation.jsx",
+        "line": 104,
+        "message": "Terra icon is missing a11y label.",
+        "suggestedFix": "Add a11yLabel for functional icons; hide decorative icons from assistive tech.",
+        "policyCriterion": "1.1.1",
+        "policyTitle": "Non-text content alternatives",
+        "policyPriority": "high",
+        "score": 160,
+        "playbook": {
+          "title": "Add icon accessibility labels",
+          "whyItMatters": "Unlabeled functional icons are silent for assistive technology users.",
+          "implementationHint": "Add a11yLabel to functional Terra icons. Hide decorative icons with aria-hidden.",
+          "estimatedMinutesPerFinding": 2
+        }
+      },
+      {
+        "ruleId": "custom/icon-a11y-label",
+        "wcagRef": "1.1.1",
+        "severity": "blocker",
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/core-components/hamburger_menu/mobile_components/mobile_navigation.jsx",
+        "line": 106,
+        "message": "Terra icon is missing a11y label.",
+        "suggestedFix": "Add a11yLabel for functional icons; hide decorative icons from assistive tech.",
+        "policyCriterion": "1.1.1",
+        "policyTitle": "Non-text content alternatives",
+        "policyPriority": "high",
+        "score": 160,
+        "playbook": {
+          "title": "Add icon accessibility labels",
+          "whyItMatters": "Unlabeled functional icons are silent for assistive technology users.",
+          "implementationHint": "Add a11yLabel to functional Terra icons. Hide decorative icons with aria-hidden.",
+          "estimatedMinutesPerFinding": 2
+        }
+      },
+      {
+        "ruleId": "custom/click-keyboard-parity",
+        "wcagRef": "2.1.1",
+        "severity": "blocker",
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/core-components/hamburger_menu/mobile_components/mobile_navigation.jsx",
+        "line": 115,
+        "message": "Clickable non-interactive element lacks keyboard interaction support.",
+        "suggestedFix": "Use a semantic button/link, or add role=\"button\", tabIndex=\"0\", and key handlers.",
+        "policyCriterion": "2.1.1",
+        "policyTitle": "Keyboard accessibility",
+        "policyPriority": "high",
+        "score": 160,
+        "playbook": {
+          "title": "Restore keyboard parity for click handlers",
+          "whyItMatters": "Mouse-only interactions block keyboard and switch-device users.",
+          "implementationHint": "Use semantic button/link elements or add role, tabIndex, Enter/Space key handlers.",
+          "estimatedMinutesPerFinding": 4
+        }
+      },
+      {
+        "ruleId": "custom/click-keyboard-parity",
+        "wcagRef": "2.1.1",
+        "severity": "blocker",
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/core-components/hamburger_menu/mobile_components/mobile_navigation.jsx",
+        "line": 120,
+        "message": "Clickable non-interactive element lacks keyboard interaction support.",
+        "suggestedFix": "Use a semantic button/link, or add role=\"button\", tabIndex=\"0\", and key handlers.",
+        "policyCriterion": "2.1.1",
+        "policyTitle": "Keyboard accessibility",
+        "policyPriority": "high",
+        "score": 160,
+        "playbook": {
+          "title": "Restore keyboard parity for click handlers",
+          "whyItMatters": "Mouse-only interactions block keyboard and switch-device users.",
+          "implementationHint": "Use semantic button/link elements or add role, tabIndex, Enter/Space key handlers.",
+          "estimatedMinutesPerFinding": 4
+        }
+      },
+      {
+        "ruleId": "custom/click-keyboard-parity",
+        "wcagRef": "2.1.1",
+        "severity": "blocker",
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/core-components/hamburger_menu/mobile_components/mobile_navigation.jsx",
+        "line": 125,
+        "message": "Clickable non-interactive element lacks keyboard interaction support.",
+        "suggestedFix": "Use a semantic button/link, or add role=\"button\", tabIndex=\"0\", and key handlers.",
+        "policyCriterion": "2.1.1",
+        "policyTitle": "Keyboard accessibility",
+        "policyPriority": "high",
+        "score": 160,
+        "playbook": {
+          "title": "Restore keyboard parity for click handlers",
+          "whyItMatters": "Mouse-only interactions block keyboard and switch-device users.",
+          "implementationHint": "Use semantic button/link elements or add role, tabIndex, Enter/Space key handlers.",
+          "estimatedMinutesPerFinding": 4
+        }
+      },
+      {
+        "ruleId": "custom/click-keyboard-parity",
+        "wcagRef": "2.1.1",
+        "severity": "blocker",
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/core-components/hamburger_menu/mobile_components/mobile_navigation.jsx",
+        "line": 134,
+        "message": "Clickable non-interactive element lacks keyboard interaction support.",
+        "suggestedFix": "Use a semantic button/link, or add role=\"button\", tabIndex=\"0\", and key handlers.",
+        "policyCriterion": "2.1.1",
+        "policyTitle": "Keyboard accessibility",
+        "policyPriority": "high",
+        "score": 160,
+        "playbook": {
+          "title": "Restore keyboard parity for click handlers",
+          "whyItMatters": "Mouse-only interactions block keyboard and switch-device users.",
+          "implementationHint": "Use semantic button/link elements or add role, tabIndex, Enter/Space key handlers.",
+          "estimatedMinutesPerFinding": 4
+        }
+      },
+      {
+        "ruleId": "custom/click-keyboard-parity",
+        "wcagRef": "2.1.1",
+        "severity": "blocker",
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/core-components/hamburger_menu/mobile_components/mobile_navigation.jsx",
+        "line": 145,
+        "message": "Clickable non-interactive element lacks keyboard interaction support.",
+        "suggestedFix": "Use a semantic button/link, or add role=\"button\", tabIndex=\"0\", and key handlers.",
+        "policyCriterion": "2.1.1",
+        "policyTitle": "Keyboard accessibility",
+        "policyPriority": "high",
+        "score": 160,
+        "playbook": {
+          "title": "Restore keyboard parity for click handlers",
+          "whyItMatters": "Mouse-only interactions block keyboard and switch-device users.",
+          "implementationHint": "Use semantic button/link elements or add role, tabIndex, Enter/Space key handlers.",
+          "estimatedMinutesPerFinding": 4
+        }
+      },
+      {
+        "ruleId": "custom/click-keyboard-parity",
+        "wcagRef": "2.1.1",
+        "severity": "blocker",
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/core-components/hamburger_menu/mobile_components/mobile_navigation.jsx",
+        "line": 151,
+        "message": "Clickable non-interactive element lacks keyboard interaction support.",
+        "suggestedFix": "Use a semantic button/link, or add role=\"button\", tabIndex=\"0\", and key handlers.",
+        "policyCriterion": "2.1.1",
+        "policyTitle": "Keyboard accessibility",
+        "policyPriority": "high",
+        "score": 160,
+        "playbook": {
+          "title": "Restore keyboard parity for click handlers",
+          "whyItMatters": "Mouse-only interactions block keyboard and switch-device users.",
+          "implementationHint": "Use semantic button/link elements or add role, tabIndex, Enter/Space key handlers.",
+          "estimatedMinutesPerFinding": 4
+        }
+      },
+      {
+        "ruleId": "custom/icon-a11y-label",
+        "wcagRef": "1.1.1",
+        "severity": "blocker",
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/core-components/hamburger_menu/mobile_components/mobile_navigation.jsx",
+        "line": 156,
+        "message": "Terra icon is missing a11y label.",
+        "suggestedFix": "Add a11yLabel for functional icons; hide decorative icons from assistive tech.",
+        "policyCriterion": "1.1.1",
+        "policyTitle": "Non-text content alternatives",
+        "policyPriority": "high",
+        "score": 160,
+        "playbook": {
+          "title": "Add icon accessibility labels",
+          "whyItMatters": "Unlabeled functional icons are silent for assistive technology users.",
+          "implementationHint": "Add a11yLabel to functional Terra icons. Hide decorative icons with aria-hidden.",
+          "estimatedMinutesPerFinding": 2
+        }
+      },
+      {
+        "ruleId": "custom/click-keyboard-parity",
+        "wcagRef": "2.1.1",
+        "severity": "blocker",
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/core-components/hamburger_menu/mobile_components/mobile_navigation.jsx",
+        "line": 167,
+        "message": "Clickable non-interactive element lacks keyboard interaction support.",
+        "suggestedFix": "Use a semantic button/link, or add role=\"button\", tabIndex=\"0\", and key handlers.",
+        "policyCriterion": "2.1.1",
+        "policyTitle": "Keyboard accessibility",
+        "policyPriority": "high",
+        "score": 160,
+        "playbook": {
+          "title": "Restore keyboard parity for click handlers",
+          "whyItMatters": "Mouse-only interactions block keyboard and switch-device users.",
+          "implementationHint": "Use semantic button/link elements or add role, tabIndex, Enter/Space key handlers.",
+          "estimatedMinutesPerFinding": 4
+        }
+      },
+      {
+        "ruleId": "custom/click-keyboard-parity",
+        "wcagRef": "2.1.1",
+        "severity": "blocker",
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/core-components/hamburger_menu/mobile_components/mobile_navigation.jsx",
+        "line": 176,
+        "message": "Clickable non-interactive element lacks keyboard interaction support.",
+        "suggestedFix": "Use a semantic button/link, or add role=\"button\", tabIndex=\"0\", and key handlers.",
+        "policyCriterion": "2.1.1",
+        "policyTitle": "Keyboard accessibility",
+        "policyPriority": "high",
+        "score": 160,
+        "playbook": {
+          "title": "Restore keyboard parity for click handlers",
+          "whyItMatters": "Mouse-only interactions block keyboard and switch-device users.",
+          "implementationHint": "Use semantic button/link elements or add role, tabIndex, Enter/Space key handlers.",
+          "estimatedMinutesPerFinding": 4
+        }
+      },
+      {
+        "ruleId": "custom/click-keyboard-parity",
+        "wcagRef": "2.1.1",
+        "severity": "blocker",
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/core-components/hamburger_menu/mobile_components/mobile_navigation.jsx",
+        "line": 183,
+        "message": "Clickable non-interactive element lacks keyboard interaction support.",
+        "suggestedFix": "Use a semantic button/link, or add role=\"button\", tabIndex=\"0\", and key handlers.",
+        "policyCriterion": "2.1.1",
+        "policyTitle": "Keyboard accessibility",
+        "policyPriority": "high",
+        "score": 160,
+        "playbook": {
+          "title": "Restore keyboard parity for click handlers",
+          "whyItMatters": "Mouse-only interactions block keyboard and switch-device users.",
+          "implementationHint": "Use semantic button/link elements or add role, tabIndex, Enter/Space key handlers.",
+          "estimatedMinutesPerFinding": 4
+        }
+      },
+      {
+        "ruleId": "custom/click-keyboard-parity",
+        "wcagRef": "2.1.1",
+        "severity": "blocker",
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/core-components/hamburger_menu/mobile_components/mobile_navigation.jsx",
+        "line": 188,
+        "message": "Clickable non-interactive element lacks keyboard interaction support.",
+        "suggestedFix": "Use a semantic button/link, or add role=\"button\", tabIndex=\"0\", and key handlers.",
+        "policyCriterion": "2.1.1",
+        "policyTitle": "Keyboard accessibility",
+        "policyPriority": "high",
+        "score": 160,
+        "playbook": {
+          "title": "Restore keyboard parity for click handlers",
+          "whyItMatters": "Mouse-only interactions block keyboard and switch-device users.",
+          "implementationHint": "Use semantic button/link elements or add role, tabIndex, Enter/Space key handlers.",
+          "estimatedMinutesPerFinding": 4
+        }
+      },
+      {
+        "ruleId": "custom/icon-a11y-label",
+        "wcagRef": "1.1.1",
+        "severity": "blocker",
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/mobile_components/journey-user/users/container-components/users_list_container_mobile.jsx",
+        "line": 201,
+        "message": "Terra icon is missing a11y label.",
+        "suggestedFix": "Add a11yLabel for functional icons; hide decorative icons from assistive tech.",
+        "policyCriterion": "1.1.1",
+        "policyTitle": "Non-text content alternatives",
+        "policyPriority": "high",
+        "score": 160,
+        "playbook": {
+          "title": "Add icon accessibility labels",
+          "whyItMatters": "Unlabeled functional icons are silent for assistive technology users.",
+          "implementationHint": "Add a11yLabel to functional Terra icons. Hide decorative icons with aria-hidden.",
+          "estimatedMinutesPerFinding": 2
+        }
+      },
+      {
+        "ruleId": "custom/icon-a11y-label",
+        "wcagRef": "1.1.1",
+        "severity": "blocker",
+        "file": "/Users/vn105957/Desktop/lpDev/journey-builder-js/src/journey-builder-app/mobile_components/journey-user/users/container-components/users_list_container_mobile.jsx",
+        "line": 220,
+        "message": "Terra icon is missing a11y label.",
+        "suggestedFix": "Add a11yLabel for functional icons; hide decorative icons from assistive tech.",
+        "policyCriterion": "1.1.1",
+        "policyTitle": "Non-text content alternatives",
+        "policyPriority": "high",
+        "score": 160,
+        "playbook": {
+          "title": "Add icon accessibility labels",
+          "whyItMatters": "Unlabeled functional icons are silent for assistive technology users.",
+          "implementationHint": "Add a11yLabel to functional Terra icons. Hide decorative icons with aria-hidden.",
+          "estimatedMinutesPerFinding": 2
+        }
+      }
+    ],
+    "recommendationBacklog": [
+      {
+        "rank": 1,
+        "ruleId": "custom/icon-a11y-label",
+        "count": 309,
+        "action": "Add icon accessibility labels",
+        "whyItMatters": "Unlabeled functional icons are silent for assistive technology users.",
+        "implementationHint": "Add a11yLabel to functional Terra icons. Hide decorative icons with aria-hidden."
+      },
+      {
+        "rank": 2,
+        "ruleId": "custom/click-keyboard-parity",
+        "count": 162,
+        "action": "Restore keyboard parity for click handlers",
+        "whyItMatters": "Mouse-only interactions block keyboard and switch-device users.",
+        "implementationHint": "Use semantic button/link elements or add role, tabIndex, Enter/Space key handlers."
+      },
+      {
+        "rank": 3,
+        "ruleId": "custom/form-control-label",
+        "count": 30,
+        "action": "Attach explicit form labels",
+        "whyItMatters": "Form fields without labels create ambiguity for screen readers.",
+        "implementationHint": "Connect label and control via htmlFor/id or aria-labelledby."
+      }
+    ],
     "effort": {
-      "remediationMinutes": 0,
-      "remediationHours": 0,
-      "triageMinutesWithoutTwin": 0,
-      "triageMinutesWithTwin": 0,
-      "triageReductionPercent": null
+      "remediationMinutes": 84,
+      "remediationHours": 1.4,
+      "triageMinutesWithoutTwin": 75,
+      "triageMinutesWithTwin": 13,
+      "triageReductionPercent": 83
     }
   },
-  "techDesignMarkdown": "# ODT Tech Design\n\n- Feature: change the submit request button text to submit employee form\n- Target repo: /Users/vn105957/Desktop/odt-submission/demo-target-repo/\n- UI: React/Terra minimal-blast-radius update\n- API strategy: reuse current contracts unless explicitly approved\n- State strategy: incremental updates in existing store/actions\n- Error handling: loading/empty/error states with deterministic behavior\n- Testing: Jest/RTL unit coverage for happy/edge/error paths\n- Accessibility: VPAT/WCAG and keyboard parity validation\n- Governance: human-reviewed approvals before merge\n\n## Prompt Override (Design Stage)\n- No design-stage prompt override supplied.\n\n## Quality Gates\n- No unauthorized dependencies\n- Backward compatibility preserved\n- Keyboard and ARIA behavior validated\n- Deterministic unit tests updated\n",
-  "codeWorkpack": "# Codex Workpack: ODT Code Implementation\n\nWork Item: change the submit request button text to submit employee form\n\nYou are a senior frontend developer assistant.\nUse the intake, inferred repo impact, and compliance guidance below to implement a reviewable patch.\n\nExecution steps:\n1) Ask clarifying questions only for safety-critical ambiguities.\n2) Review existing patterns in the inferred source files before editing.\n3) Implement code changes with backward compatibility.\n4) Include keyboard accessibility and semantic HTML by default.\n5) Summarize edge cases and regression risk after patching.\n\nScope summary:\n- src/components (source: 5, tests: 0)\n- src/data (source: 1, tests: 0)\n- src/api (source: 1, tests: 0)\n\nRepo-analysis evidence:\n- Target repo path: /Users/vn105957/Desktop/odt-submission/demo-target-repo/\n- Analysis mode: repo_inferred_manifest\n- Keywords: change, submit, request, button, text, employee, form, filter, activities, keyword, without, leaving, page, filtering, updates, announced, clearly, assistive, technology, users, keyboard, open, clear, navigate\n- Mockup image: none supplied\n- Reference doc: none supplied\n- Candidate file: src/components/employeeFormUtils.js [score=111] exports=INITIAL_FORM, EMAIL_PATTERN, MIN_SUMMARY_LENGTH, TEAM_OPTIONS, FIELD_CONFIG, REQUIRED_FIELDS, SUBMIT_STATUS_ID, normalizeText, hasAllRequiredFields, getFormErrors, isFormSubmittable, getFieldDescribedBy, getSubmitStatusMessage signals=path:employee, path:form, export:INITIAL_FORM, export:SUBMIT_STATUS_ID, export:normalizeText, export:getFormErrors\n- Candidate file: src/components/EmployeeForm.jsx [score=58] exports=EmployeeForm signals=path:employee, path:form, export:EmployeeForm, preview:form\n- Candidate file: src/data/fallbackEmployees.js [score=30] exports=FALLBACK_EMPLOYEES signals=path:employee, export:FALLBACK_EMPLOYEES, preview:employee\n- Candidate file: src/components/FilterBar.jsx [score=28] exports=FilterBar signals=path:filter, export:FilterBar, preview:filter\n- Candidate file: src/api/fetchEmployees.js [score=23] exports=none signals=path:employee, preview:employee, preview:form\n- Candidate file: src/components/ActivityList.jsx [score=4] exports=ActivityList signals=preview:employee\n- Candidate file: src/components/OracleLogo.js [score=1] exports=OracleLogo, ORACLE_LOGO_LABEL signals=path-ranked\n\nReviewer refinements:\n- None supplied\n\nPrompt override (code stage):\n- None supplied\n\nQuality gates to run after implementation:\n- npm run a11y:scan:ci || true\n- npm run a11y:twin:verify\n\nFeature payload:\n```json\n{\n  \"title\": \"change the submit request button text to submit employee form\",\n  \"featureName\": \"change the submit request button text to submit employee form\",\n  \"summary\": \"change the submit request button text to submit employee form\",\n  \"reviewEdits\": \"\",\n  \"promptOverrides\": {\n    \"intake\": \"\",\n    \"impact\": \"\",\n    \"design\": \"\",\n    \"code\": \"\",\n    \"unitTests\": \"\",\n    \"compliance\": \"\",\n    \"verify\": \"\"\n  },\n  \"targetRepoPath\": \"/Users/vn105957/Desktop/odt-submission/demo-target-repo/\",\n  \"workItemType\": \"feature\",\n  \"jira\": {\n    \"ticketId\": \"\",\n    \"url\": \"\"\n  },\n  \"scope\": {\n    \"uiSurface\": \"web\",\n    \"complexity\": \"medium\",\n    \"repoScan\": \"full\"\n  },\n  \"requirements\": {\n    \"acceptanceCriteria\": [\n      \"User can filter activities by keyword without leaving the page\",\n      \"Filtering updates are announced clearly for assistive technology users\",\n      \"Keyboard users can open, clear, and navigate filter controls\"\n    ],\n    \"nonFunctional\": [\n      \"a11y\",\n      \"performance\",\n      \"analytics\"\n    ],\n    \"outOfScope\": [\n      \"No backend API changes\",\n      \"Do not alter existing permissions behavior\"\n    ]\n  },\n  \"designInputs\": {\n    \"mockupImages\": [],\n    \"referenceDocs\": [],\n    \"jiraLinks\": []\n  },\n  \"constraints\": {\n    \"noNewDependencies\": true,\n    \"releaseWindowDays\": 10,\n    \"approvedLibrariesOnly\": true\n  },\n  \"developerHints\": {\n    \"suspectedAreas\": [],\n    \"relatedComponents\": [],\n    \"notes\": \"Optional only. ODT should infer impact areas from the repo when hints are not provided.\"\n  },\n  \"defectContext\": {\n    \"defectId\": \"\",\n    \"observedBehavior\": \"\",\n    \"expectedBehavior\": \"\",\n    \"severity\": \"medium\"\n  }\n}\n```\n\n",
-  "testWorkpack": "# Codex Workpack: ODT Unit Test Generation\n\nWork Item: change the submit request button text to submit employee form\n\nGenerate or update Jest/RTL tests for impacted behavior.\nCover:\n- Happy path\n- Error path\n- Empty/loading states\n- Keyboard accessibility interactions where applicable\n\nKnown related test files:\n- No direct tests matched; create nearest-module tests.\n\nPrompt override (unit test stage):\n- None supplied\n\nRules:\n- Keep tests deterministic and isolated.\n- Avoid snapshot-only validation for behavior-heavy flows.\n- Assert accessibility roles/labels when adding interactive UI.\n\nVerification command:\n- npm test -- --watch=false --runInBand\n\n"
+  "techDesignMarkdown": "# ODT Tech Design\n\n- Feature: when attempting to add a Journey Note, after entering the note and clicking Add, the sc...\n- Target repo: /Users/vn105957/Desktop/lpDev/journey-builder-js/\n- UI: React/Terra minimal-blast-radius update\n- API strategy: reuse current contracts unless explicitly approved\n- State strategy: incremental updates in existing store/actions\n- Error handling: loading/empty/error states with deterministic behavior\n- Testing: Jest/RTL unit coverage for happy/edge/error paths\n- Accessibility: VPAT/WCAG and keyboard parity validation\n- Governance: human-reviewed approvals before merge\n\n## Prompt Override (Design Stage)\n- No design-stage prompt override supplied.\n\n## Quality Gates\n- No unauthorized dependencies\n- Backward compatibility preserved\n- Keyboard and ARIA behavior validated\n- Deterministic unit tests updated\n",
+  "codeWorkpack": "# Codex Workpack: ODT Code Implementation\n\nWork Item: when attempting to add a Journey Note, after entering the note and clicking Add, the sc...\n\nYou are a senior frontend developer assistant.\nUse the intake, inferred repo impact, and compliance guidance below to implement a reviewable patch.\n\nExecution steps:\n1) Ask clarifying questions only for safety-critical ambiguities.\n2) Review existing patterns in the inferred source files before editing.\n3) Implement code changes with backward compatibility.\n4) Include keyboard accessibility and semantic HTML by default.\n5) Summarize edge cases and regression risk after patching.\n\nScope summary:\n- src/journey-builder-app/modules/journey-builder/activities (source: 7, tests: 0)\n- src/journey-builder-app/modules/journey-builder/journeys (source: 5, tests: 0)\n- src/journey-builder-app/modules/journey-builder/events (source: 3, tests: 0)\n- src/journey-builder-app/modules/journey-user/roster (source: 1, tests: 0)\n- src/journey-builder-app/utils (source: 1, tests: 0)\n- src/journey-builder-app/modules/journey-reports/container-components (source: 1, tests: 0)\n\nRepo-analysis evidence:\n- Target repo path: /Users/vn105957/Desktop/lpDev/journey-builder-js/\n- Analysis mode: repo_inferred_manifest\n- Keywords: attempting, journey, note, after, entering, clicking, screen, will, white, page, found, error, displays, attachments, able, replicate, demo, environment, also, tested, adding, activity, event, experienced\n- Mockup image: none supplied\n- Reference doc: none supplied\n- Candidate file: src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/journey_table.jsx [score=77] exports=JourneyTable signals=path:journey, path:page, path:able, path:activity, export:JourneyTable, preview:able\n- Candidate file: src/journey-builder-app/modules/journey-user/roster/modal/EventTable.jsx [score=66] exports=EventTable signals=path:journey, path:able, path:event, export:EventTable, preview:able\n- Candidate file: src/journey-builder-app/utils/error_page.jsx [score=63] exports=ErrorPage signals=path:journey, path:page, path:error, export:ErrorPage\n- Candidate file: src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_found.jsx [score=59] exports=NoActivitiesFound signals=path:journey, path:page, path:found, path:activity, export:NoActivitiesFound, preview:able\n- Candidate file: src/journey-builder-app/modules/journey-builder/events/container-components/home/no_table_content.jsx [score=58] exports=NoTableContent signals=path:journey, path:able, path:event, export:NoTableContent, preview:journey, preview:able\n- Candidate file: src/journey-builder-app/modules/journey-reports/container-components/home/ReportGroupJourneySummaryTable.jsx [score=58] exports=ReportGroupJourneySummaryTable signals=path:journey, path:able, export:ReportGroupJourneySummaryTable, preview:able\n- Candidate file: src/journey-builder-app/modules/journey-builder/journeys/container-components/resuable/no_activities_found.jsx [score=55] exports=NoActivitiesFound signals=path:journey, path:found, path:able, export:NoActivitiesFound, preview:found, preview:able\n- Candidate file: src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/dnd_table/activity_reorder_component.jsx [score=52] exports=ActivityReorderComponent signals=path:journey, path:able, path:activity, export:ActivityReorderComponent, preview:able, preview:activity\n\nReviewer refinements:\n- None supplied\n\nPrompt override (code stage):\nDont use If  conditions you can change the entity_id to user_id for the fix\n\nQuality gates to run after implementation:\n- npm run a11y:scan:ci || true\n- npm run a11y:twin:verify\n\nFeature payload:\n```json\n{\n  \"title\": \"when attempting to add a Journey Note, after entering the note and clicking Add, the sc...\",\n  \"featureName\": \"when attempting to add a Journey Note, after entering the note and clicking Add, the sc...\",\n  \"summary\": \"when attempting to add a Journey Note, after entering the note and clicking Add, the screen will go white and a 404 Page Not Found error displays. See attachments.\\n\\n \\n\\nI am able to replicate this in our demo environment and also tested adding a note to an activity and an event and experienced the same issue.\",\n  \"reviewEdits\": \"\",\n  \"promptOverrides\": {\n    \"intake\": \"\",\n    \"impact\": \"\",\n    \"design\": \"\",\n    \"code\": \"Dont use If  conditions you can change the entity_id to user_id for the fix\",\n    \"unitTests\": \"\",\n    \"compliance\": \"\",\n    \"verify\": \"\"\n  },\n  \"targetRepoPath\": \"/Users/vn105957/Desktop/lpDev/journey-builder-js/\",\n  \"workItemType\": \"feature\",\n  \"jira\": {\n    \"ticketId\": \"\",\n    \"url\": \"\"\n  },\n  \"scope\": {\n    \"uiSurface\": \"web\",\n    \"complexity\": \"medium\",\n    \"repoScan\": \"full\"\n  },\n  \"requirements\": {\n    \"acceptanceCriteria\": [\n      \"User can filter activities by keyword without leaving the page\",\n      \"Filtering updates are announced clearly for assistive technology users\",\n      \"Keyboard users can open, clear, and navigate filter controls\"\n    ],\n    \"nonFunctional\": [\n      \"a11y\",\n      \"performance\",\n      \"analytics\"\n    ],\n    \"outOfScope\": [\n      \"No backend API changes\",\n      \"Do not alter existing permissions behavior\"\n    ]\n  },\n  \"designInputs\": {\n    \"mockupImages\": [],\n    \"referenceDocs\": [],\n    \"jiraLinks\": []\n  },\n  \"constraints\": {\n    \"noNewDependencies\": true,\n    \"releaseWindowDays\": 10,\n    \"approvedLibrariesOnly\": true\n  },\n  \"developerHints\": {\n    \"suspectedAreas\": [],\n    \"relatedComponents\": [],\n    \"notes\": \"Optional only. ODT should infer impact areas from the repo when hints are not provided.\"\n  },\n  \"defectContext\": {\n    \"defectId\": \"\",\n    \"observedBehavior\": \"\",\n    \"expectedBehavior\": \"\",\n    \"severity\": \"medium\"\n  }\n}\n```\n\n",
+  "testWorkpack": "# Codex Workpack: ODT Unit Test Generation\n\nWork Item: when attempting to add a Journey Note, after entering the note and clicking Add, the sc...\n\nGenerate or update Jest/RTL tests for impacted behavior.\nCover:\n- Happy path\n- Error path\n- Empty/loading states\n- Keyboard accessibility interactions where applicable\n\nKnown related test files:\n- No direct tests matched; create nearest-module tests.\n\nPrompt override (unit test stage):\n- None supplied\n\nRules:\n- Keep tests deterministic and isolated.\n- Avoid snapshot-only validation for behavior-heavy flows.\n- Assert accessibility roles/labels when adding interactive UI.\n\nVerification command:\n- npm test -- --watch=false --runInBand\n\n"
 }

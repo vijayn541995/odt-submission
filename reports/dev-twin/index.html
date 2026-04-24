@@ -80,12 +80,12 @@
     </section>
 
     <section class="grid">
-      <article class="card"><div class="metric-label">Work Item</div><div class="metric-value">change the submit request button text to submit employee form</div></article>
+      <article class="card"><div class="metric-label">Work Item</div><div class="metric-value">when attempting to add a Journey Note, after entering the note and clicking Add, the sc...</div></article>
       <article class="card"><div class="metric-label">Repo Analysis Mode</div><div class="metric-value">repo_inferred_manifest</div></article>
-      <article class="card"><div class="metric-label">Candidate Modules</div><div class="metric-value">3</div></article>
-      <article class="card"><div class="metric-label">Candidate Files</div><div class="metric-value">7</div></article>
-      <article class="card"><div class="metric-label">Related Tests</div><div class="metric-value">0</div></article>
-      <article class="card"><div class="metric-label">Blast Radius</div><div class="metric-value">7</div></article>
+      <article class="card"><div class="metric-label">Candidate Modules</div><div class="metric-value">6</div></article>
+      <article class="card"><div class="metric-label">Candidate Files</div><div class="metric-value">18</div></article>
+      <article class="card"><div class="metric-label">Related Tests</div><div class="metric-value">6</div></article>
+      <article class="card"><div class="metric-label">Blast Radius</div><div class="metric-value">24</div></article>
     </section>
 
     <section class="two">
@@ -102,14 +102,14 @@
       <article class="card">
         <h2>What The Agent Inferred</h2>
         <div>
-          <span class="pill">change</span><span class="pill">submit</span><span class="pill">request</span><span class="pill">button</span><span class="pill">text</span><span class="pill">employee</span><span class="pill">form</span><span class="pill">filter</span><span class="pill">activities</span><span class="pill">keyword</span>
+          <span class="pill">attempting</span><span class="pill">journey</span><span class="pill">note</span><span class="pill">after</span><span class="pill">entering</span><span class="pill">clicking</span><span class="pill">screen</span><span class="pill">will</span><span class="pill">white</span><span class="pill">page</span>
         </div>
         <table style="margin-top:10px;">
           <thead><tr><th>Signal</th><th>Value</th></tr></thead>
           <tbody>
             <tr><td>Inference Mode</td><td>repo_inferred_manifest</td></tr>
             <tr><td>Hinted Areas Used</td><td>0</td></tr>
-            <tr><td>Candidate Files Surfaced</td><td>7</td></tr>
+            <tr><td>Candidate Files Surfaced</td><td>12</td></tr>
           </tbody>
         </table>
       </article>
@@ -118,11 +118,11 @@
     <section class="three">
       <article class="card">
         <h2>Candidate Files</h2>
-        <ul><li><strong>src/components/employeeFormUtils.js</strong><div><small>score: 111 | exports: INITIAL_FORM, EMAIL_PATTERN, MIN_SUMMARY_LENGTH, TEAM_OPTIONS, FIELD_CONFIG, REQUIRED_FIELDS, SUBMIT_STATUS_ID, normalizeText, hasAllRequiredFields, getFormErrors, isFormSubmittable, getFieldDescribedBy, getSubmitStatusMessage</small></div><div><small>signals: path:employee, path:form, export:INITIAL_FORM, export:SUBMIT_STATUS_ID, export:normalizeText, export:getFormErrors</small></div><div><small>export const INITIAL_FORM = { requesterName: &quot;&quot;, requesterEmail: &quot;&quot;, team: &quot;&quot;,</small></div></li><li><strong>src/components/EmployeeForm.jsx</strong><div><small>score: 58 | exports: EmployeeForm</small></div><div><small>signals: path:employee, path:form, export:EmployeeForm, preview:form</small></div><div><small>import React, { useMemo, useState } from &quot;react&quot;; import { FIELD_CONFIG, INITIAL_FORM,</small></div></li><li><strong>src/data/fallbackEmployees.js</strong><div><small>score: 30 | exports: FALLBACK_EMPLOYEES</small></div><div><small>signals: path:employee, export:FALLBACK_EMPLOYEES, preview:employee</small></div><div><small>export const FALLBACK_EMPLOYEES = [ { id: 101, name: &quot;Amelia Hart&quot;,</small></div></li><li><strong>src/components/FilterBar.jsx</strong><div><small>score: 28 | exports: FilterBar</small></div><div><small>signals: path:filter, export:FilterBar, preview:filter</small></div><div><small>import React from &quot;react&quot;; export default function FilterBar({ query, selectedDepartment,</small></div></li><li><strong>src/api/fetchEmployees.js</strong><div><small>score: 23 | exports: none</small></div><div><small>signals: path:employee, preview:employee, preview:form</small></div><div><small>import { FALLBACK_EMPLOYEES } from &quot;../data/fallbackEmployees.js&quot;; const DEPARTMENTS = [ &quot;Platform Engineering&quot;, &quot;Experience Design&quot;,</small></div></li><li><strong>src/components/ActivityList.jsx</strong><div><small>score: 4 | exports: ActivityList</small></div><div><small>signals: preview:employee</small></div><div><small>import React from &quot;react&quot;; function EmployeeCard({ employee, index }) { return ( &lt;li className=&quot;employee-card&quot; style={{ &quot;--stagger&quot;: `${index * 60}ms` }}&gt;</small></div></li><li><strong>src/components/OracleLogo.js</strong><div><small>score: 1 | exports: OracleLogo, ORACLE_LOGO_LABEL</small></div><div><small>signals: path-ranked</small></div><div><small>import React from &quot;react&quot;; export const ORACLE_LOGO_LABEL = &quot;Oracle logo&quot;; export default function OracleLogo({ className = &quot;oracle-logo&quot; }) { return React.createElement(</small></div></li></ul>
+        <ul><li><strong>src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/journey_table.jsx</strong><div><small>score: 77 | exports: JourneyTable</small></div><div><small>signals: path:journey, path:page, path:able, path:activity, export:JourneyTable, preview:able</small></div><div><small>import ReactTable from &#39;react-table-6&#39;; import &#39;react-table-6/react-table.css&#39;; import React, { useMemo, useState, useEffect } from &#39;react&#39; import moment from &#39;moment&#39;;</small></div></li><li><strong>src/journey-builder-app/modules/journey-user/roster/modal/EventTable.jsx</strong><div><small>score: 66 | exports: EventTable</small></div><div><small>signals: path:journey, path:able, path:event, export:EventTable, preview:able</small></div><div><small>import React, { useEffect, useState } from &#39;react&#39; import IconChevronDown from &#39;terra-icon/lib/icon/IconChevronDown&#39;; import ReactTable from &#39;react-table-6&#39;; import &#39;react-table-6/react-table.css&#39;;</small></div></li><li><strong>src/journey-builder-app/utils/error_page.jsx</strong><div><small>score: 63 | exports: ErrorPage</small></div><div><small>signals: path:journey, path:page, path:error, export:ErrorPage</small></div><div><small>import React from &#39;react&#39;; import PropTypes from &#39;prop-types&#39;; import { useEffect } from &#39;react&#39;; import { redirectToLogin } from &#39;./util&#39;;</small></div></li><li><strong>src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_found.jsx</strong><div><small>score: 59 | exports: NoActivitiesFound</small></div><div><small>signals: path:journey, path:page, path:found, path:activity, export:NoActivitiesFound, preview:able</small></div><div><small>import React from &#39;react&#39;; import { FaFileAlt } from &#39;react-icons/fa&#39;; import &#39;react-table-6/react-table.css&#39;; import &#39;../../../assets/styles/base/media-home.scss&#39;;</small></div></li><li><strong>src/journey-builder-app/modules/journey-builder/events/container-components/home/no_table_content.jsx</strong><div><small>score: 58 | exports: NoTableContent</small></div><div><small>signals: path:journey, path:able, path:event, export:NoTableContent, preview:journey, preview:able</small></div><div><small>import React from &#39;react&#39;; import { noSessionsMsg, CLICK_ADD_RUBRIC_ACTIVITY_MSG, clickAddSessionMsg } from &#39;../utils/event_constants&#39;; import { TABLE_DISPLAY_TEXT } from &#39;../../../journeys/container-components/Utils/Con</small></div></li><li><strong>src/journey-builder-app/modules/journey-reports/container-components/home/ReportGroupJourneySummaryTable.jsx</strong><div><small>score: 58 | exports: ReportGroupJourneySummaryTable</small></div><div><small>signals: path:journey, path:able, export:ReportGroupJourneySummaryTable, preview:able</small></div><div><small>import React, { useMemo, useState, useEffect } from &#39;react&#39;; import PropTypes from &#39;prop-types&#39;; import ReactTable from &#39;react-table-6&#39;; import withFixedColumns from &#39;react-table-hoc-fixed-columns&#39;;</small></div></li><li><strong>src/journey-builder-app/modules/journey-builder/journeys/container-components/resuable/no_activities_found.jsx</strong><div><small>score: 55 | exports: NoActivitiesFound</small></div><div><small>signals: path:journey, path:found, path:able, export:NoActivitiesFound, preview:found, preview:able</small></div><div><small>import React from &#39;react&#39;; import {addActivityText, noActivitiesToDisplayText} from &quot;../Utils/Constants&quot;; const NoActivitiesFound = () =&gt; ( &lt;div className=&quot;react-table-no-data&quot;&gt;</small></div></li><li><strong>src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/dnd_table/activity_reorder_component.jsx</strong><div><small>score: 52 | exports: ActivityReorderComponent</small></div><div><small>signals: path:journey, path:able, path:activity, export:ActivityReorderComponent, preview:able, preview:activity</small></div><div><small>import React from &#39;react&#39;; import { FaArrowDown, FaArrowUp } from &#39;react-icons/fa&#39;; import &#39;react-table-6/react-table.css&#39;; import { MOVE_ACTIVITY_DOWN, MOVE_ACTIVITY_UP } from &#39;../../Utils/Constants&#39;;</small></div></li></ul>
       </article>
       <article class="card">
         <h2>Impact Hotspots</h2>
-        <ul><li>src/components (5)</li><li>src/data (1)</li><li>src/api (1)</li></ul>
+        <ul><li>src/journey-builder-app/modules/journey-builder/activities (8)</li><li>src/journey-builder-app/modules/journey-builder/journeys (6)</li><li>src/journey-builder-app/modules/journey-builder/events (5)</li><li>src/journey-builder-app/modules/journey-user/roster (3)</li><li>src/journey-builder-app/utils (1)</li><li>src/journey-builder-app/modules/journey-reports/container-components (1)</li></ul>
       </article>
       <article class="card">
         <h2>Review Gates</h2>
@@ -145,7 +145,7 @@
       </article>
     </section>
 
-    <p class="foot">Generated at: 2026-04-23T16:20:00.392Z</p>
+    <p class="foot">Generated at: 2026-04-24T13:22:05.391Z</p>
   </main>
 </body>
 </html>

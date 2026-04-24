@@ -7,53 +7,67 @@ Use this as the backup source for the technical architecture slide.
 ODT is the governed planning and review layer.
 OCA is the execution path.
 OCI GenAI is optional for stage-prompt generation.
-Human review remains mandatory before merge.
+Accessibility guidance is introduced before delegation.
+Human review remains mandatory before delegation and before merge.
 
 ## Recommended Visual Structure
 
-1. Input layer
-2. ODT planning engine
-3. Control plane and review surface
-4. OCA execution path
-5. Final human approval
+1. Three columns with three stacked steps each
+2. Phase 1: understand and scope
+3. Phase 2: prepare and govern
+4. Phase 3: execute and approve
+5. Highlight review checkpoints in a governance color
+6. Call out OCI as optional inside the hybrid prompt step
+7. Add a bottom strip saying a11y enters before delegation and is revalidated at final review
 
-Keep OCI as an optional side feed into planning, not the center of the slide.
-Keep human review as a bottom governance strip, not a footnote.
+Keep OCI as an optional prompt path, not the center of the slide.
+Keep human review visible both before delegation and at final approval.
 
 ## Slide-Ready Copy
 
-- Input layer: ticket, repo path, mockups, reviewer notes
-- ODT planning engine: intake, impact, design, code, tests, compliance, verify
-- Control plane: ODT Workspace, local context server, execution health, review surface
-- OCA execution path: delegate to Codex or Cline, execute against target repo, return patch/status
-- Human gate: review evidence, add notes and re-analyze, approve repo diff before merge
+- Phase 1:
+  Requirement / Jira / Reviewer Input
+  ODT Intake + Prompt Hardening
+  Repo Impact Analysis
+- Phase 2:
+  Hybrid Prompt Generation
+  Code + Unit Tests + Oracle A11y Guidance
+  Human Review + Refine + Re-analyze
+- Phase 3:
+  Delegation to OCA Codex / Cline
+  Review Changed Files + Fill Gaps
+  Final Human Approval + Deliver
+- Governance line:
+  Accessibility enters at step 5 before delegation.
+  Human review happens at step 6 before OCA execution and at step 9 before delivery.
 
 ## Mermaid Diagram
 
 ```mermaid
-flowchart LR
-    A["Input Layer<br/>Ticket<br/>Repo path<br/>Mockups<br/>Reviewer notes"] --> B["ODT Planning Engine<br/>Intake -> Impact -> Design<br/>Code -> Tests -> Compliance -> Verify"]
-    B --> C["Control Plane<br/>ODT Workspace<br/>Local context server<br/>Execution health + review surface"]
-    C --> D["OCA Execution Path<br/>Delegate to Codex/Cline<br/>Run in target repo<br/>Return patch/status"]
-    D --> E["Final Human Approval<br/>Changed files<br/>Git diff review<br/>Merge / submit"]
+flowchart TD
+    A["Requirement / Jira / Reviewer Input"] --> B["ODT Intake + Prompt Hardening"]
+    B --> C["Repo Impact Analysis"]
+    C --> D["Hybrid Prompt Generation<br/>OCI GenAI + Fallback + Overrides"]
+    D --> E["Code + Unit Tests + Oracle Accessibility Guidance"]
+    E --> F["Human Review + Refine + Re-analyze"]
+    F --> G["Delegation to OCA Codex / Cline"]
+    G --> H["Review Changed Files + Fill Gaps"]
+    H --> I["Final Human Approval + Deliver"]
 
-    O["OCI GenAI (Optional)<br/>Per-stage prompt generation<br/>Fallback: template prompts"] -.-> B
-
-    H1["Review evidence"] -.-> B
-    H2["Add reviewer notes<br/>and re-analyze"] -.-> C
-    H3["Approve repo diff"] -.-> E
+    classDef gate fill:#fff3ed,stroke:#c74634,color:#6f2119,stroke-width:2px;
+    class F,I gate;
 ```
 
 ## Presenter Notes
 
 Say it in one sentence:
 
-"ODT plans and governs, OCI can optionally improve stage prompt generation, OCA executes the implementation path, and the human still owns the approval decision."
+"ODT plans and governs, OCI can optionally improve stage prompt generation, accessibility guidance appears before delegation, OCA executes, and the human still owns the approval decision."
 
 Alternative short line:
 
-"ODT plans and governs the work, OCI can optionally generate stage prompts, OCA executes the implementation path, and the human remains the approval gate."
+"ODT plans and governs the work, OCI can optionally generate stage prompts, OCA executes the implementation path, and the human remains the approval gate before and after execution."
 
 Optional appendix note:
 
-"If judges want technical depth, use the appendix slide to show the detailed OCA execution path and reinforce that no direct auto-merge path exists."
+"If judges want technical depth, use the appendix slide to show where accessibility enters, where human review can refine before delegation, and reinforce that no direct auto-merge path exists."

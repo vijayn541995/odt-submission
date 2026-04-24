@@ -1,0 +1,16 @@
+{
+  "id": "react-js",
+  "name": "React",
+  "status": "active",
+  "description": "Frontend profile with Jest/RTL and Oracle a11y checks.",
+  "commands": {
+    "test": "npm test -- --watch=false --runInBand",
+    "lint": "npx eslint src",
+    "a11y": "npm run a11y:twin:demo"
+  },
+  "qualityGates": [
+    "VPAT/WCAG findings reviewed",
+    "Keyboard accessibility parity",
+    "Unit tests updated for impacted behavior"
+  ]
+}

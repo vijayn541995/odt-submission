@@ -2,11 +2,11 @@
 
 ## 300-Character Abstract
 
-Oracle Developer Twin is a human-reviewed AI workflow for frontend teams. It turns tickets, mockups, and requirements into repo-aware impact analysis, code and test workpacks, and VPAT/WCAG plus keyboard accessibility review, with a dashboard that keeps developers in control.
+Oracle Developer Twin is a governed Digital Worker that turns requirements into review-ready execution. It analyzes repo impact, prepares code, test, and accessibility workpacks, can use OCI GenAI and OCA-backed agents, and keeps humans in control before changes are accepted.
 
 ## 1-Paragraph Pitch
 
-Oracle Developer Twin (ODT) is a Digital Worker for frontend SDLC. A developer provides a Jira ticket, acceptance criteria, mockups, and optional hints. ODT analyzes the repository to infer likely impact areas, prepares implementation and unit-test workpacks, runs accessibility and compliance checks, and presents everything in a reviewable dashboard before code is accepted. It does not replace the developer; it removes repetitive orchestration and makes delivery more consistent, explainable, and standards-aligned.
+Oracle Developer Twin (ODT) is a governed Digital Worker for software delivery. A developer or reviewer provides a story, defect, mockup, or requirement, and ODT turns that input into a review-ready path by analyzing repo impact, preparing staged design, code, test, compliance, and verification guidance, and supporting optional OCI GenAI prompt generation plus OCA-backed execution. It does not replace the human; it reduces repetitive orchestration while keeping review, refinement, and final acceptance under human control.
 
 ## Problem Statement
 

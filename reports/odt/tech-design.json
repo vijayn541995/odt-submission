@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-23T16:20:01.819Z",
-  "featureName": "change the submit request button text to submit employee form",
+  "generatedAt": "2026-04-24T13:22:05.408Z",
+  "featureName": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc...",
   "architecture": {
     "uiLayer": "React/Terra components",
     "apiStrategy": "Reuse existing API contracts; avoid backend changes unless explicitly in scope.",

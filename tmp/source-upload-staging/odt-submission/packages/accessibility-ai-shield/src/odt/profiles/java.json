@@ -1,0 +1,16 @@
+{
+  "id": "java",
+  "name": "Java Service",
+  "status": "scaffold",
+  "description": "Placeholder profile for future Java adapter.",
+  "commands": {
+    "test": "mvn test",
+    "lint": "mvn -q checkstyle:check",
+    "quality": "mvn -q verify"
+  },
+  "qualityGates": [
+    "Unit tests and integration tests",
+    "Static analysis and style checks",
+    "API compatibility and regression checks"
+  ]
+}

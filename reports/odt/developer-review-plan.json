@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-04-23T16:20:01.867Z",
+  "generatedAt": "2026-04-24T13:22:05.439Z",
   "stage": "review",
-  "workItem": "change the submit request button text to submit employee form",
+  "workItem": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc...",
   "status": "ready_for_review",
-  "summary": "change the submit request button text to submit employee form should be implemented as a minimal blast-radius change starting with 6 ranked file candidate(s) already inferred from the repository. Dependency policy already indicates no new packages should be introduced.",
+  "summary": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc... should be implemented as a minimal blast-radius change starting with 6 ranked file candidate(s) already inferred from the repository. Dependency policy already indicates no new packages should be introduced.",
   "phases": [
     {
       "title": "Confirm intent and guardrails",
@@ -28,77 +28,90 @@
   ],
   "fileActions": [
     {
-      "file": "src/components/employeeFormUtils.js",
-      "score": 111,
+      "file": "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/journey_table.jsx",
+      "score": 77,
       "confidence": 0.99,
       "reasons": [
-        "path:employee",
-        "path:form",
-        "export:INITIAL_FORM",
-        "export:SUBMIT_STATUS_ID",
-        "export:normalizeText",
-        "export:getFormErrors"
+        "path:journey",
+        "path:page",
+        "path:able",
+        "path:activity",
+        "export:JourneyTable",
+        "preview:able"
       ],
-      "intent": "Review and, if confirmed in scope, apply the smallest safe edit in src/components/employeeFormUtils.js."
+      "intent": "Review and, if confirmed in scope, apply the smallest safe edit in src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/journey_table.jsx."
     },
     {
-      "file": "src/components/EmployeeForm.jsx",
+      "file": "src/journey-builder-app/modules/journey-user/roster/modal/EventTable.jsx",
+      "score": 66,
+      "confidence": 0.99,
+      "reasons": [
+        "path:journey",
+        "path:able",
+        "path:event",
+        "export:EventTable",
+        "preview:able"
+      ],
+      "intent": "Review and, if confirmed in scope, apply the smallest safe edit in src/journey-builder-app/modules/journey-user/roster/modal/EventTable.jsx."
+    },
+    {
+      "file": "src/journey-builder-app/utils/error_page.jsx",
+      "score": 63,
+      "confidence": 0.99,
+      "reasons": [
+        "path:journey",
+        "path:page",
+        "path:error",
+        "export:ErrorPage"
+      ],
+      "intent": "Review and, if confirmed in scope, apply the smallest safe edit in src/journey-builder-app/utils/error_page.jsx."
+    },
+    {
+      "file": "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_found.jsx",
+      "score": 59,
+      "confidence": 0.98,
+      "reasons": [
+        "path:journey",
+        "path:page",
+        "path:found",
+        "path:activity",
+        "export:NoActivitiesFound",
+        "preview:able"
+      ],
+      "intent": "Review and, if confirmed in scope, apply the smallest safe edit in src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_found.jsx."
+    },
+    {
+      "file": "src/journey-builder-app/modules/journey-builder/events/container-components/home/no_table_content.jsx",
       "score": 58,
       "confidence": 0.97,
       "reasons": [
-        "path:employee",
-        "path:form",
-        "export:EmployeeForm",
-        "preview:form"
+        "path:journey",
+        "path:able",
+        "path:event",
+        "export:NoTableContent",
+        "preview:journey",
+        "preview:able"
       ],
-      "intent": "Review and, if confirmed in scope, apply the smallest safe edit in src/components/EmployeeForm.jsx."
+      "intent": "Review and, if confirmed in scope, apply the smallest safe edit in src/journey-builder-app/modules/journey-builder/events/container-components/home/no_table_content.jsx."
     },
     {
-      "file": "src/data/fallbackEmployees.js",
-      "score": 30,
-      "confidence": 0.5,
+      "file": "src/journey-builder-app/modules/journey-reports/container-components/home/ReportGroupJourneySummaryTable.jsx",
+      "score": 58,
+      "confidence": 0.97,
       "reasons": [
-        "path:employee",
-        "export:FALLBACK_EMPLOYEES",
-        "preview:employee"
+        "path:journey",
+        "path:able",
+        "export:ReportGroupJourneySummaryTable",
+        "preview:able"
       ],
-      "intent": "Review and, if confirmed in scope, apply the smallest safe edit in src/data/fallbackEmployees.js."
-    },
-    {
-      "file": "src/components/FilterBar.jsx",
-      "score": 28,
-      "confidence": 0.47,
-      "reasons": [
-        "path:filter",
-        "export:FilterBar",
-        "preview:filter"
-      ],
-      "intent": "Review and, if confirmed in scope, apply the smallest safe edit in src/components/FilterBar.jsx."
-    },
-    {
-      "file": "src/api/fetchEmployees.js",
-      "score": 23,
-      "confidence": 0.38,
-      "reasons": [
-        "path:employee",
-        "preview:employee",
-        "preview:form"
-      ],
-      "intent": "Review and, if confirmed in scope, apply the smallest safe edit in src/api/fetchEmployees.js."
-    },
-    {
-      "file": "src/components/ActivityList.jsx",
-      "score": 4,
-      "confidence": 0.07,
-      "reasons": [
-        "preview:employee"
-      ],
-      "intent": "Review and, if confirmed in scope, apply the smallest safe edit in src/components/ActivityList.jsx."
+      "intent": "Review and, if confirmed in scope, apply the smallest safe edit in src/journey-builder-app/modules/journey-reports/container-components/home/ReportGroupJourneySummaryTable.jsx."
     }
   ],
   "reviewerInputs": {
     "reviewEdits": "",
-    "activePromptOverrides": []
+    "activePromptOverrides": [
+      "Code Workpack"
+    ]
   },
   "risks": [
     "No critical planning risk detected. Keep human-in-loop for merge approvals."

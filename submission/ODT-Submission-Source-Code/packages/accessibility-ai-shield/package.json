@@ -1,0 +1,11 @@
+{
+  "name": "@cerner/accessibility-ai-shield",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CLI-first accessibility scanner/fix assistant for React + Terra",
+  "main": "src/index.js",
+  "bin": {
+    "a11y-shield": "bin/a11y-shield.js"
+  },
+  "license": "UNLICENSED"
+}

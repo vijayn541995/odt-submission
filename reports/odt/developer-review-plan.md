@@ -1,11 +1,11 @@
 # ODT Developer Review Plan
 
-- Generated At: 2026-04-23T16:20:01.867Z
-- Work Item: change the submit request button text to submit employee form
+- Generated At: 2026-04-24T13:22:05.439Z
+- Work Item: when attempting to add a Journey Note, after entering the note and clicking Add, the sc...
 - Review Status: ready_for_review
 
 ## Executive Summary
-change the submit request button text to submit employee form should be implemented as a minimal blast-radius change starting with 6 ranked file candidate(s) already inferred from the repository. Dependency policy already indicates no new packages should be introduced.
+when attempting to add a Journey Note, after entering the note and clicking Add, the sc... should be implemented as a minimal blast-radius change starting with 6 ranked file candidate(s) already inferred from the repository. Dependency policy already indicates no new packages should be introduced.
 
 ## Review Workflow
 1. **Confirm intent and guardrails** - Review the intake summary, acceptance criteria, design inputs, and reviewer notes before touching code. Work item type: feature.
@@ -15,18 +15,18 @@ change the submit request button text to submit employee form should be implemen
 5. **Complete human review** - Use this plan, the run summary, and generated workpacks as review evidence before delegation approval, patch application, or merge.
 
 ## Planned File Actions
-- src/components/employeeFormUtils.js | score=111 | confidence=0.99 | intent=Review and, if confirmed in scope, apply the smallest safe edit in src/components/employeeFormUtils.js. | signals=path:employee, path:form, export:INITIAL_FORM, export:SUBMIT_STATUS_ID, export:normalizeText, export:getFormErrors
-- src/components/EmployeeForm.jsx | score=58 | confidence=0.97 | intent=Review and, if confirmed in scope, apply the smallest safe edit in src/components/EmployeeForm.jsx. | signals=path:employee, path:form, export:EmployeeForm, preview:form
-- src/data/fallbackEmployees.js | score=30 | confidence=0.5 | intent=Review and, if confirmed in scope, apply the smallest safe edit in src/data/fallbackEmployees.js. | signals=path:employee, export:FALLBACK_EMPLOYEES, preview:employee
-- src/components/FilterBar.jsx | score=28 | confidence=0.47 | intent=Review and, if confirmed in scope, apply the smallest safe edit in src/components/FilterBar.jsx. | signals=path:filter, export:FilterBar, preview:filter
-- src/api/fetchEmployees.js | score=23 | confidence=0.38 | intent=Review and, if confirmed in scope, apply the smallest safe edit in src/api/fetchEmployees.js. | signals=path:employee, preview:employee, preview:form
-- src/components/ActivityList.jsx | score=4 | confidence=0.07 | intent=Review and, if confirmed in scope, apply the smallest safe edit in src/components/ActivityList.jsx. | signals=preview:employee
+- src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/journey_table.jsx | score=77 | confidence=0.99 | intent=Review and, if confirmed in scope, apply the smallest safe edit in src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/journey_table.jsx. | signals=path:journey, path:page, path:able, path:activity, export:JourneyTable, preview:able
+- src/journey-builder-app/modules/journey-user/roster/modal/EventTable.jsx | score=66 | confidence=0.99 | intent=Review and, if confirmed in scope, apply the smallest safe edit in src/journey-builder-app/modules/journey-user/roster/modal/EventTable.jsx. | signals=path:journey, path:able, path:event, export:EventTable, preview:able
+- src/journey-builder-app/utils/error_page.jsx | score=63 | confidence=0.99 | intent=Review and, if confirmed in scope, apply the smallest safe edit in src/journey-builder-app/utils/error_page.jsx. | signals=path:journey, path:page, path:error, export:ErrorPage
+- src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_found.jsx | score=59 | confidence=0.98 | intent=Review and, if confirmed in scope, apply the smallest safe edit in src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_found.jsx. | signals=path:journey, path:page, path:found, path:activity, export:NoActivitiesFound, preview:able
+- src/journey-builder-app/modules/journey-builder/events/container-components/home/no_table_content.jsx | score=58 | confidence=0.97 | intent=Review and, if confirmed in scope, apply the smallest safe edit in src/journey-builder-app/modules/journey-builder/events/container-components/home/no_table_content.jsx. | signals=path:journey, path:able, path:event, export:NoTableContent, preview:journey, preview:able
+- src/journey-builder-app/modules/journey-reports/container-components/home/ReportGroupJourneySummaryTable.jsx | score=58 | confidence=0.97 | intent=Review and, if confirmed in scope, apply the smallest safe edit in src/journey-builder-app/modules/journey-reports/container-components/home/ReportGroupJourneySummaryTable.jsx. | signals=path:journey, path:able, export:ReportGroupJourneySummaryTable, preview:able
 
 ## Reviewer Inputs
 - No reviewer edits supplied.
 
 ### Active Prompt Overrides
-- None
+- Code Workpack
 
 ## Risk Watchpoints
 - No critical planning risk detected. Keep human-in-loop for merge approvals.

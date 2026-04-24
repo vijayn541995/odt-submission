@@ -4,7 +4,7 @@
 - Provider: template
 - Model: n/a
 - LatencyMs: 0
-- Generated At: 2026-04-23T16:20:01.850Z
+- Generated At: 2026-04-24T13:22:05.427Z
 
 # ODT Stage Prompt - 05-unit-tests
 
@@ -21,16 +21,16 @@ Stage: Unit Tests
 ## Runtime Context
 ```json
 {
-  "generatedAt": "2026-04-23T16:20:01.850Z",
+  "generatedAt": "2026-04-24T13:22:05.427Z",
   "stage": "test-workpack",
   "stageStatus": "completed",
   "stageDetail": {
     "testWorkpack": "reports/dev-twin/unit-test-workpack.md",
     "available": true,
     "testMatrixFile": "reports/odt/unit-test-matrix.md",
-    "relatedTestFiles": 0
+    "relatedTestFiles": 6
   },
-  "targetRepoPath": "/Users/vn105957/Desktop/odt-submission/demo-target-repo/",
+  "targetRepoPath": "/Users/vn105957/Desktop/lpDev/journey-builder-js/",
   "workItemType": "feature"
 }
 ```
@@ -38,9 +38,9 @@ Stage: Unit Tests
 ## Sanitized Intake Context
 ```json
 {
-  "title": "change the submit request button text to submit employee form",
-  "featureName": "change the submit request button text to submit employee form",
-  "summary": "change the submit request button text to submit employee form",
+  "title": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc...",
+  "featureName": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc...",
+  "summary": "when attempting to add a Journey Note, after entering the note and clicking Add, the screen will go white and a 404 Page Not Found error displays. See attachments.\n\n \n\nI am able to replicate this in our demo environment and also tested adding a note to an activity and an event and experienced the same issue.",
   "reviewEdits": "",
   "workItemType": "feature",
   "jira": {
@@ -74,7 +74,7 @@ Stage: Unit Tests
     "intake": "",
     "impact": "",
     "design": "",
-    "code": "",
+    "code": "Dont use If  conditions you can change the entity_id to user_id for the fix",
     "unitTests": "",
     "compliance": "",
     "verify": ""

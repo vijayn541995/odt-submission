@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-23T16:20:01.867Z",
+  "generatedAt": "2026-04-24T13:22:05.439Z",
   "provider": "template",
   "oci": {
     "profile": "",
@@ -30,18 +30,6 @@
       "error": ""
     },
     {
-      "stage": "impact",
-      "slug": "impact",
-      "provider": "template",
-      "model": "",
-      "latencyMs": 0,
-      "fallback": false,
-      "status": "generated",
-      "requestFile": "reports/odt/prompts/generated/02-impact.request.md",
-      "outputFile": "reports/odt/prompts/generated/02-impact.generated.md",
-      "error": ""
-    },
-    {
       "stage": "compliance",
       "slug": "compliance",
       "provider": "template",
@@ -51,6 +39,18 @@
       "status": "generated",
       "requestFile": "reports/odt/prompts/generated/06-compliance.request.md",
       "outputFile": "reports/odt/prompts/generated/06-compliance.generated.md",
+      "error": ""
+    },
+    {
+      "stage": "impact",
+      "slug": "impact",
+      "provider": "template",
+      "model": "",
+      "latencyMs": 0,
+      "fallback": false,
+      "status": "generated",
+      "requestFile": "reports/odt/prompts/generated/02-impact.request.md",
+      "outputFile": "reports/odt/prompts/generated/02-impact.generated.md",
       "error": ""
     },
     {

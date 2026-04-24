@@ -1,7 +1,7 @@
 # ODT Tech Design
 
-- Feature: change the submit request button text to submit employee form
-- Target repo: /Users/vn105957/Desktop/odt-submission/demo-target-repo/
+- Feature: when attempting to add a Journey Note, after entering the note and clicking Add, the sc...
+- Target repo: /Users/vn105957/Desktop/lpDev/journey-builder-js/
 - UI: React/Terra minimal-blast-radius update
 - API strategy: reuse current contracts unless explicitly approved
 - State strategy: incremental updates in existing store/actions

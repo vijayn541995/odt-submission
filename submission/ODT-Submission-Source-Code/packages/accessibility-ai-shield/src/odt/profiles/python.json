@@ -1,0 +1,16 @@
+{
+  "id": "python",
+  "name": "Python Service",
+  "status": "scaffold",
+  "description": "Placeholder profile for future Python adapter.",
+  "commands": {
+    "test": "pytest -q",
+    "lint": "ruff check .",
+    "types": "mypy ."
+  },
+  "qualityGates": [
+    "Unit and integration tests",
+    "Static typing and lint checks",
+    "Security and dependency review"
+  ]
+}

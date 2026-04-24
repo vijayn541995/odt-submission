@@ -1,6 +1,6 @@
 #!/bin/bash
 set -u
-cd '/Users/vn105957/Desktop/odt-submission/demo-target-repo/'
+cd '/Users/vn105957/Desktop/lpDev/journey-builder-js/'
 PROMPT_FILE='/Users/vn105957/Desktop/odt-submission/reports/odt/execute/prompt.md'
 RESPONSE_FILE='/Users/vn105957/Desktop/odt-submission/reports/odt/execute/agent-response.md'
 LOG_FILE='/Users/vn105957/Desktop/odt-submission/reports/odt/execute/agent-launch.log'
@@ -17,7 +17,7 @@ if [ -s "$HOME/.nvm/nvm.sh" ]; then
   . "$NVM_DIR/nvm.sh"
 fi
 set +e
-codex exec -C "$PWD" -s workspace-write -o "$RESPONSE_FILE" --skip-git-repo-check - < "$PROMPT_FILE" 2>&1 | tee -a "$LOG_FILE"
+codex exec -C "$PWD" -s workspace-write -o "$RESPONSE_FILE" - < "$PROMPT_FILE" 2>&1 | tee -a "$LOG_FILE"
 EXIT_CODE=${PIPESTATUS[0]}
 set -e
 echo "" | tee -a "$LOG_FILE"

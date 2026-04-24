@@ -1,6 +1,6 @@
 {
   "summary": {
-    "generatedAt": "2026-04-23T16:20:01.866Z",
+    "generatedAt": "2026-04-24T13:22:05.438Z",
     "totalStages": 7,
     "completedStages": 7,
     "failedStages": 0,
@@ -10,47 +10,47 @@
     {
       "name": "intake",
       "status": "completed",
-      "startedAt": "2026-04-23T16:20:00.112Z",
-      "finishedAt": "2026-04-23T16:20:00.125Z",
+      "startedAt": "2026-04-24T13:22:04.808Z",
+      "finishedAt": "2026-04-24T13:22:04.823Z",
       "detail": {
         "intakeFile": "reports/dev-twin/intake.json",
         "intakeQuestionsFile": "reports/dev-twin/intake-questions.md",
         "missingFieldsFile": "reports/dev-twin/intake-missing-fields.md",
         "intakeStatus": "ready",
         "missingFieldCount": 0,
-        "featureName": "change the submit request button text to submit employee form",
+        "featureName": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc...",
         "workItemType": "feature",
         "reviewEditsActive": false,
-        "promptOverridesActive": 0,
+        "promptOverridesActive": 1,
         "complexity": "medium",
         "imageInputs": [],
         "workspaceRoot": "/Users/vn105957/Desktop/odt-submission",
-        "targetRepoPath": "/Users/vn105957/Desktop/odt-submission/demo-target-repo/"
+        "targetRepoPath": "/Users/vn105957/Desktop/lpDev/journey-builder-js/"
       }
     },
     {
       "name": "impact",
       "status": "completed",
-      "startedAt": "2026-04-23T16:20:00.133Z",
-      "finishedAt": "2026-04-23T16:20:00.400Z",
+      "startedAt": "2026-04-24T13:22:04.833Z",
+      "finishedAt": "2026-04-24T13:22:05.398Z",
       "detail": {
-        "blastRadius": 7,
-        "modules": 3,
-        "sourceFiles": 7,
-        "testFiles": 0,
+        "blastRadius": 24,
+        "modules": 6,
+        "sourceFiles": 18,
+        "testFiles": 6,
         "inferenceMode": "repo_inferred_manifest",
-        "candidateFiles": 7,
+        "candidateFiles": 12,
         "keywords": [
-          "change",
-          "submit",
-          "request",
-          "button",
-          "text",
-          "employee",
-          "form",
-          "filter"
+          "attempting",
+          "journey",
+          "note",
+          "after",
+          "entering",
+          "clicking",
+          "screen",
+          "will"
         ],
-        "rankedFileCount": 7,
+        "rankedFileCount": 12,
         "topConfidence": 0.99,
         "regressionRisks": [
           "No critical planning risk detected. Keep human-in-loop for merge approvals."
@@ -60,8 +60,8 @@
     {
       "name": "compliance",
       "status": "completed",
-      "startedAt": "2026-04-23T16:20:00.133Z",
-      "finishedAt": "2026-04-23T16:20:01.803Z",
+      "startedAt": "2026-04-24T13:22:04.833Z",
+      "finishedAt": "2026-04-24T13:22:04.926Z",
       "detail": {
         "status": "completed",
         "blockers": 0,
@@ -76,8 +76,8 @@
     {
       "name": "design",
       "status": "completed",
-      "startedAt": "2026-04-23T16:20:01.811Z",
-      "finishedAt": "2026-04-23T16:20:01.820Z",
+      "startedAt": "2026-04-24T13:22:05.404Z",
+      "finishedAt": "2026-04-24T13:22:05.408Z",
       "detail": {
         "designFile": "reports/odt/tech-design.md",
         "designJsonFile": "reports/odt/tech-design.json",
@@ -87,33 +87,33 @@
     {
       "name": "code-workpack",
       "status": "completed",
-      "startedAt": "2026-04-23T16:20:01.827Z",
-      "finishedAt": "2026-04-23T16:20:01.835Z",
+      "startedAt": "2026-04-24T13:22:05.413Z",
+      "finishedAt": "2026-04-24T13:22:05.418Z",
       "detail": {
         "codeWorkpack": "reports/dev-twin/code-workpack.md",
         "available": true,
         "patchPlanFile": "reports/odt/code-patch-plan.md",
-        "targetFiles": 7,
+        "targetFiles": 8,
         "noNewDependencies": true
       }
     },
     {
       "name": "test-workpack",
       "status": "completed",
-      "startedAt": "2026-04-23T16:20:01.827Z",
-      "finishedAt": "2026-04-23T16:20:01.843Z",
+      "startedAt": "2026-04-24T13:22:05.413Z",
+      "finishedAt": "2026-04-24T13:22:05.423Z",
       "detail": {
         "testWorkpack": "reports/dev-twin/unit-test-workpack.md",
         "available": true,
         "testMatrixFile": "reports/odt/unit-test-matrix.md",
-        "relatedTestFiles": 0
+        "relatedTestFiles": 6
       }
     },
     {
       "name": "verify-summary",
       "status": "completed",
-      "startedAt": "2026-04-23T16:20:01.851Z",
-      "finishedAt": "2026-04-23T16:20:01.858Z",
+      "startedAt": "2026-04-24T13:22:05.428Z",
+      "finishedAt": "2026-04-24T13:22:05.432Z",
       "detail": {
         "note": "Run summary generated for human review.",
         "decision": "go",
@@ -139,20 +139,20 @@
     ]
   },
   "intake": {
-    "title": "change the submit request button text to submit employee form",
-    "featureName": "change the submit request button text to submit employee form",
-    "summary": "change the submit request button text to submit employee form",
+    "title": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc...",
+    "featureName": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc...",
+    "summary": "when attempting to add a Journey Note, after entering the note and clicking Add, the screen will go white and a 404 Page Not Found error displays. See attachments.\n\n \n\nI am able to replicate this in our demo environment and also tested adding a note to an activity and an event and experienced the same issue.",
     "reviewEdits": "",
     "promptOverrides": {
       "intake": "",
       "impact": "",
       "design": "",
-      "code": "",
+      "code": "Dont use If  conditions you can change the entity_id to user_id for the fix",
       "unitTests": "",
       "compliance": "",
       "verify": ""
     },
-    "targetRepoPath": "/Users/vn105957/Desktop/odt-submission/demo-target-repo/",
+    "targetRepoPath": "/Users/vn105957/Desktop/lpDev/journey-builder-js/",
     "workItemType": "feature",
     "jira": {
       "ticketId": "",
@@ -204,26 +204,26 @@
   "kpis": {
     "automationCoverage": 100,
     "impact": {
-      "blastRadius": 7,
-      "modules": 3,
-      "sourceFiles": 7,
-      "testFiles": 0,
+      "blastRadius": 24,
+      "modules": 6,
+      "sourceFiles": 18,
+      "testFiles": 6,
       "inferenceMode": "repo_inferred_manifest",
-      "candidateFiles": 7,
+      "candidateFiles": 12,
       "keywords": [
-        "change",
-        "submit",
-        "request",
-        "button",
-        "text",
-        "employee",
-        "form",
-        "filter"
+        "attempting",
+        "journey",
+        "note",
+        "after",
+        "entering",
+        "clicking",
+        "screen",
+        "will"
       ]
     },
     "tests": {
       "available": true,
-      "testFiles": 0
+      "testFiles": 6
     },
     "compliance": {
       "status": "completed",
@@ -242,8 +242,8 @@
     },
     "trend": {
       "totalRunsStored": 60,
-      "lastRunAt": "2026-04-23T16:20:01.866Z",
-      "blockerDelta": 0,
+      "lastRunAt": "2026-04-24T13:22:05.438Z",
+      "blockerDelta": 501,
       "averageAutomationCoverage5Runs": 100,
       "runSuccessRate10Runs": 100,
       "reviewReadyRuns5": 5
@@ -265,18 +265,6 @@
         "error": ""
       },
       {
-        "stage": "impact",
-        "slug": "impact",
-        "provider": "template",
-        "model": "",
-        "latencyMs": 0,
-        "fallback": false,
-        "status": "generated",
-        "requestFile": "reports/odt/prompts/generated/02-impact.request.md",
-        "outputFile": "reports/odt/prompts/generated/02-impact.generated.md",
-        "error": ""
-      },
-      {
         "stage": "compliance",
         "slug": "compliance",
         "provider": "template",
@@ -286,6 +274,18 @@
         "status": "generated",
         "requestFile": "reports/odt/prompts/generated/06-compliance.request.md",
         "outputFile": "reports/odt/prompts/generated/06-compliance.generated.md",
+        "error": ""
+      },
+      {
+        "stage": "impact",
+        "slug": "impact",
+        "provider": "template",
+        "model": "",
+        "latencyMs": 0,
+        "fallback": false,
+        "status": "generated",
+        "requestFile": "reports/odt/prompts/generated/02-impact.request.md",
+        "outputFile": "reports/odt/prompts/generated/02-impact.generated.md",
         "error": ""
       },
       {

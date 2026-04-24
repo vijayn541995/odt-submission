@@ -14,8 +14,11 @@
 - `Oracle-Developer-Twin-Technical-Handout.md`
 - `Oracle-Developer-Twin-User-Guide.md`
 - `Oracle-Developer-Twin-Hackathon-Template-Presenter-Script.md`
+- `Oracle-Developer-Twin-Demo-Video-Caption-Ready-Script.md`
 - `Oracle-Developer-Twin-Demo-Video-Plan.md`
 - `Oracle-Developer-Twin-Architecture-Note.md`
+- `Oracle-Developer-Twin-Architecture-Slide.md`
+- `Oracle-Developer-Twin-Slide-by-Slide-PPT-Text.md`
 - `Oracle-Developer-Twin-Submission-Checklist.md`
 
 ## Deck Choice
@@ -40,6 +43,7 @@ Use this language consistently:
 
 ## Final Notes
 
+- Package refreshed on `2026-04-24` after deck, architecture-flow, and presenter-script updates.
 - `node_modules`, `.git`, `.DS_Store`, temp scratch folders, and runtime logs were excluded from the packaged zip files.
 - The current demo target app includes the Oracle logo and the `Submit Employee Form` button text update.
 - The `.mp4` demo video still needs to be recorded and added separately before final upload.

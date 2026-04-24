@@ -1,6 +1,6 @@
 # Oracle Developer Twin Run Summary
 
-- Generated At: 2026-04-23T16:20:01.866Z
+- Generated At: 2026-04-24T13:22:05.438Z
 - Profile: react-js (React)
 - Work Item Type: feature
 - Status: ready_for_review
@@ -8,18 +8,21 @@
 - Runs Stored (ODT DB): 60
 - Prompt Provider: template
 - Reviewer edits supplied: no
-- Active prompt overrides: 0
+- Active prompt overrides: 1
 - Developer Review Plan: reports/odt/developer-review-plan.md
 
 ## Stage Prompt Generation
 - intake -> template (0ms)
-- impact -> template (0ms)
 - compliance -> template (0ms)
+- impact -> template (0ms)
 - design -> template (0ms)
 - code-workpack -> template (0ms)
 - test-workpack -> template (0ms)
 - verify-summary -> template (0ms)
 
+
+## Active Prompt Overrides
+- Code Workpack
 
 
 ## Stages

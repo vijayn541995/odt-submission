@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-04-23T15:12:00.178Z",
+  "generatedAt": "2026-04-24T12:04:20.127Z",
   "workspaceRoot": "/Users/vn105957/Desktop/odt-submission",
-  "targetRepoPath": "/Users/vn105957/Desktop/odt-submission/demo-target-repo/",
+  "targetRepoPath": "/Users/vn105957/Desktop/lpDev/journey-builder-js/",
   "bundle": "reports/odt/execute/bundle.json",
   "prompt": "reports/odt/execute/prompt.md",
   "responseTemplate": "reports/odt/execute/response-template.md",
   "apply": {
-    "generatedAt": "2026-04-23T15:12:00.178Z",
+    "generatedAt": "2026-04-24T12:04:20.127Z",
     "status": "awaiting_agent_patch",
     "note": "Bundle created at reports/odt/execute. Produce a unified diff via reports/odt/execute/prompt.md and re-run with --response-file or --patch-file."
   }
