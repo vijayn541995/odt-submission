@@ -1045,6 +1045,7 @@ function StandardsPage({ setActivePage, data }) {
   const blockers = gate.unresolvedBlockers;
   const reviewBlockers = gate.reviewBlockers || [];
   const reviewedBlockers = gate.blockerFindings;
+  const hardSafetyBlockers = gate.hardSafetyBlockers || [];
   const approvals = evidence.approvals || [];
   const writeApproved = gate.writeApproved;
   const approvalBlockedByDecision = workflow?.blockedReasons?.some((reason) => reason.category === 'approval');
@@ -1054,6 +1055,8 @@ function StandardsPage({ setActivePage, data }) {
     ? 'Approval Captured'
     : approvalBlockedByDecision
       ? 'Clear Block And Approve Write'
+      : hardSafetyBlockers.length
+      ? 'Record Review, Keep Safety Block'
       : blockers.length
       ? 'Override Reviewed Blockers'
       : 'Approve With Warnings';
@@ -1133,21 +1136,25 @@ function StandardsPage({ setActivePage, data }) {
         status: 'approved',
         notes
       });
-      await postJson('/api/approvals', {
-        assignmentId: 'assignment-local-mvp',
-        approvalType: 'write_scope',
-        status: 'approved',
-        notes: approvalBlockedByDecision
-          ? 'Write scope approved with a newer decision, clearing the prior implementation block.'
+      if (hardSafetyBlockers.length) {
+        setNotice(`${hardSafetyBlockers.length} hard safety blocker(s) were reviewed, but write approval remains locked. Resolve frontend secrets/destructive-action findings or use the separate dependency approval path, then rerun Standards Check.`);
+      } else {
+        await postJson('/api/approvals', {
+          assignmentId: 'assignment-local-mvp',
+          approvalType: 'write_scope',
+          status: 'approved',
+          notes: approvalBlockedByDecision
+            ? 'Write scope approved with a newer decision, clearing the prior implementation block.'
+            : blockers.length
+            ? 'Write scope approved after reviewed blocker override for latest standards findings.'
+            : 'Write scope approved with non-critical standards warnings accepted.'
+        });
+        setNotice(approvalBlockedByDecision
+          ? 'Prior implementation block was reviewed and cleared with a newer write approval. Agent delegation is now available if no other blockers remain.'
           : blockers.length
-          ? 'Write scope approved after reviewed blocker override for latest standards findings.'
-          : 'Write scope approved with non-critical standards warnings accepted.'
-      });
-      setNotice(approvalBlockedByDecision
-        ? 'Prior implementation block was reviewed and cleared with a newer write approval. Agent delegation is now available if no other blockers remain.'
-        : blockers.length
-        ? 'Reviewed blockers were overridden with notes and write scope was captured. Agent delegation is now available from Planner or Agent Team.'
-        : 'Warnings approved and write scope captured. Agent delegation is now available from Planner or Agent Team.');
+          ? 'Reviewed blockers were overridden with notes and write scope was captured. Agent delegation is now available from Planner or Agent Team.'
+          : 'Warnings approved and write scope captured. Agent delegation is now available from Planner or Agent Team.');
+      }
       await data.refresh();
     } catch (err) {
       setNotice(err.message || 'Approval recording failed.');
@@ -1291,7 +1298,7 @@ function StandardsPage({ setActivePage, data }) {
             items={[
               ['Theme / UX text', flexibility?.themeAndUxCanBeOverridden ? 'Override allowed' : 'Configured'],
               ['Warnings', flexibility?.nonCriticalWarningsCanBeApprovedWithNotes ? 'Approve with notes' : 'Resolve only'],
-              ['Blockers', reviewedBlockers.length ? gate.blockerOverride ? 'Reviewed override captured' : 'Review or override required' : 'None open'],
+              ['Blockers', hardSafetyBlockers.length ? `${hardSafetyBlockers.length} hard safety blocker(s)` : reviewedBlockers.length ? gate.blockerOverride ? 'Reviewed override captured' : 'Review or override required' : 'None open'],
               ['Review decision', gate.implementationBlocked ? 'Implementation blocked' : 'No active block'],
               ['Standards version', data.standards?.registry?.standardsVersion || 'odt-baseline-1.0']
             ]}
@@ -1338,7 +1345,9 @@ function StandardsPage({ setActivePage, data }) {
             finding.message,
             finding.recommendation,
             finding.status === 'BLOCKER'
-              ? <StatusBadge label={gate.blockerOverride ? 'Reviewed Override' : 'Open'} tone={gate.blockerOverride ? 'success' : 'danger'} />
+              ? isHardSafetyBlocker(finding)
+                ? <StatusBadge label="Hard Safety Block" tone="danger" />
+                : <StatusBadge label={gate.blockerOverride ? 'Reviewed Override' : 'Open'} tone={gate.blockerOverride ? 'success' : 'danger'} />
               : finding.status === 'WARNING' || finding.status === 'APPROVAL_REQUIRED'
                 ? <StatusBadge label={gate.warningOverride || writeApproved ? 'Accepted' : 'Review'} tone={gate.warningOverride || writeApproved ? 'success' : 'warning'} />
                 : <StatusBadge label="Clear" tone="success" />
@@ -1615,7 +1624,11 @@ function AgentFoundryPanel({ setActivePage, data }) {
 function AgentTeamPage({ setActivePage, data }) {
   const storedAgent = getStoredSetting(data, 'executionAgent', 'codex');
   const [selectedAgent, setSelectedAgent] = useState(storedAgent);
-  const [selectedWorkerRole, setSelectedWorkerRole] = useState('lead-planner');
+  const [selectedWorkerRole, setSelectedWorkerRole] = useState('fullstack-dev');
+  const [selectedWorkerRunId, setSelectedWorkerRunId] = useState('');
+  const [selectedRelayId, setSelectedRelayId] = useState('');
+  const [relayDecision, setRelayDecision] = useState('');
+  const [relayTargetRole, setRelayTargetRole] = useState('');
   const [agentNotice, setAgentNotice] = useState('');
   const [handoffBusy, setHandoffBusy] = useState(false);
   const selectedAgentConfig = executionAgents.find((agent) => agent.id === selectedAgent) || executionAgents[0];
@@ -1631,12 +1644,40 @@ function AgentTeamPage({ setActivePage, data }) {
   const approvedDependencies = (data.evidence?.dependencyRequests || []).filter((request) => request.status === 'approved');
   const pendingDependencies = (data.evidence?.dependencyRequests || []).filter((request) => request.status === 'pending');
   const workerRuns = data.evidence?.agentWorkerRuns || [];
+  const relayItems = data.evidence?.agentRelayItems || [];
+  const selectedWorkerRun = workerRuns.find((run) => run.id === selectedWorkerRunId) || workerRuns[0] || null;
+  const selectedRelayItem = relayItems.find((item) => item.id === selectedRelayId) || relayItems[0] || null;
   const latestPlan = data.evidence?.implementationPlans?.[0]?.planJson || {};
   const sharedTaskItems = normalizeList(latestPlan.frontendTasks || latestPlan.scope).slice(0, 5);
 
   useEffect(() => {
     setSelectedAgent(storedAgent);
   }, [storedAgent]);
+
+  useEffect(() => {
+    if (!workerRuns.length) {
+      setSelectedWorkerRunId('');
+      return;
+    }
+    setSelectedWorkerRunId((current) => workerRuns.some((run) => run.id === current) ? current : workerRuns[0].id);
+  }, [workerRuns]);
+
+  useEffect(() => {
+    if (!relayItems.length) {
+      setSelectedRelayId('');
+      setRelayTargetRole('');
+      return;
+    }
+    const nextRelay = relayItems.find((item) => item.id === selectedRelayId) || relayItems[0];
+    setSelectedRelayId(nextRelay.id);
+    setRelayTargetRole((current) => current || nextRelay.targetWorkerRole || '');
+  }, [relayItems, selectedRelayId]);
+
+  useEffect(() => {
+    if (!selectedRelayItem) return;
+    setRelayTargetRole(selectedRelayItem.targetWorkerRole || '');
+    setRelayDecision(selectedRelayItem.decision?.decision || '');
+  }, [selectedRelayItem?.id]);
 
   async function chooseAgent(agentId) {
     setSelectedAgent(agentId);
@@ -1749,6 +1790,69 @@ function AgentTeamPage({ setActivePage, data }) {
     } finally {
       setHandoffBusy(false);
     }
+  }
+
+  async function refreshWorkerRunStatus(workerRunId) {
+    setHandoffBusy(true);
+    setAgentNotice('');
+    try {
+      const result = await postJson(`/api/agents/worker-runs/${encodeURIComponent(workerRunId)}/status`, {
+        assignmentId: 'assignment-local-mvp'
+      });
+      const worker = result.workerRun || {};
+      setAgentNotice(`${worker.workerRoleLabel || 'Worker'} status refreshed: ${titleCase(worker.status || 'unknown')}. Response: ${formatBytes(result.responseBytes || 0)}. Log: ${formatBytes(result.logBytes || 0)}.`);
+      await data.refresh();
+    } catch (err) {
+      setAgentNotice(err.message || 'Unable to refresh worker status.');
+      await data.refresh();
+    } finally {
+      setHandoffBusy(false);
+    }
+  }
+
+  function useRelayForNextWorker(relayItem) {
+    if (!relayItem) return;
+    const nextRole = relayItem.targetWorkerRole || relayTargetRole || 'reviewer';
+    setSelectedRelayId(relayItem.id);
+    setSelectedWorkerRole(nextRole);
+    setRelayTargetRole(nextRole);
+    setAgentNotice(`${relayItem.title || 'Relay item'} is selected. Launch ${teamRoles.find((role) => role.id === nextRole)?.name || titleCase(nextRole)} to receive this context in the worker prompt.`);
+  }
+
+  async function decideRelayItem(action) {
+    if (!selectedRelayItem) {
+      setAgentNotice('No relay item is selected.');
+      return;
+    }
+    if (['answer', 'resolve'].includes(action) && !relayDecision.trim()) {
+      setAgentNotice('Add decision notes before answering or resolving a relay item.');
+      return;
+    }
+    setHandoffBusy(true);
+    setAgentNotice('');
+    try {
+      const result = await postJson(`/api/agents/relay/${encodeURIComponent(selectedRelayItem.id)}/decision`, {
+        assignmentId: 'assignment-local-mvp',
+        action,
+        decision: relayDecision,
+        targetWorkerRole: relayTargetRole || selectedRelayItem.targetWorkerRole || '',
+        targetLane: teamRoles.find((role) => role.id === (relayTargetRole || selectedRelayItem.targetWorkerRole))?.name || selectedRelayItem.targetLane || '',
+        decidedBy: 'local-user'
+      });
+      const relay = result.relayItem || {};
+      setAgentNotice(`Relay item ${shortId(relay.id)} marked ${titleCase(relay.status || action)}. Future worker prompts will include the updated relay context.`);
+      await data.refresh();
+    } catch (err) {
+      setAgentNotice(err.message || 'Unable to update relay item.');
+      await data.refresh();
+    } finally {
+      setHandoffBusy(false);
+    }
+  }
+
+  async function copyWorkerRunText(value, label) {
+    const copied = await copyTextToClipboard(value || '');
+    setAgentNotice(copied ? `${label} copied.` : `${label} is available in Worker Run Detail, but clipboard access was blocked.`);
   }
 
   return (
@@ -1878,12 +1982,89 @@ function AgentTeamPage({ setActivePage, data }) {
               Copy Read-only Handoff
             </button>
           </div>
-        </div>
-        {agentNotice ? <p className="muted-copy">{agentNotice}</p> : null}
-      </Panel>
-      <div className="two-column">
-        <Panel title="Shared Task List" eyebrow="Execution">
-          <Checklist items={sharedTaskItems.length ? sharedTaskItems : ['Review generated plan', 'Implement approved scope', 'Add tests', 'Capture evidence']} />
+	        </div>
+	        {agentNotice ? <p className="muted-copy">{agentNotice}</p> : null}
+	      </Panel>
+	      <Panel title="Agent Relay Inbox" eyebrow="Cross-Lane Context">
+	        <p className="muted-copy">Relay items are durable evidence extracted from worker output. Use them to route questions, capture human decisions, and make sure the next worker receives the right context in its prompt.</p>
+	        <SimpleTable
+	          columns={['Status', 'Target Lane', 'Source', 'Relay Item', 'Action']}
+	          rows={relayItems.slice(0, 8).map((item) => [
+	            <StatusBadge label={titleCase(item.status)} tone={toneFor(item.status)} />,
+	            teamRoles.find((role) => role.id === item.targetWorkerRole)?.name || item.targetLane || 'Next lane',
+	            item.sourceWorkerRoleLabel || titleCase(item.sourceWorkerRole),
+	            <div className="relay-table-cell">
+	              <strong>{item.title}</strong>
+	              <span>{item.message}</span>
+	              {item.decision?.decision ? <em>Decision: {item.decision.decision}</em> : null}
+	            </div>,
+	            <div className="button-row compact-buttons">
+	              <button className="table-button" type="button" onClick={() => {
+	                setSelectedRelayId(item.id);
+	                setRelayTargetRole(item.targetWorkerRole || '');
+	                setRelayDecision(item.decision?.decision || '');
+	              }}>
+	                Review
+	              </button>
+	              <button className="table-button" type="button" onClick={() => useRelayForNextWorker(item)}>
+	                Use Next
+	              </button>
+	            </div>
+	          ])}
+	          empty="No relay items yet. Ingest worker output with questions to create cross-lane relay evidence."
+	        />
+	        {selectedRelayItem ? (
+	          <div className="relay-detail-panel">
+	            <div>
+	              <span className="eyebrow">Selected Relay</span>
+	              <h4>{selectedRelayItem.title}</h4>
+	              <p>{selectedRelayItem.message}</p>
+	            </div>
+	            <div className="form-grid two">
+	              <label className="field" htmlFor="relay-target-worker">
+	                <span>Target worker lane</span>
+	                <select id="relay-target-worker" value={relayTargetRole} onChange={(event) => setRelayTargetRole(event.target.value)}>
+	                  <option value="">Auto route</option>
+	                  {teamRoles.map((role) => (
+	                    <option value={role.id} key={role.id}>{role.name}</option>
+	                  ))}
+	                </select>
+	              </label>
+	              <label className="field" htmlFor="relay-status-readout">
+	                <span>Relay status</span>
+	                <input id="relay-status-readout" value={titleCase(selectedRelayItem.status)} readOnly />
+	              </label>
+	            </div>
+	            <label className="field" htmlFor="relay-decision-notes">
+	              <span>Human decision or answer notes</span>
+	              <textarea
+	                id="relay-decision-notes"
+	                className="notes-input compact-notes"
+	                value={relayDecision}
+	                onChange={(event) => setRelayDecision(event.target.value)}
+	                placeholder="Example: Keep update API payload id/removal rules in the same PR because preview gating depends on persisted DB semantics."
+	              />
+	            </label>
+	            <div className="button-row">
+	              <button className="secondary-button" type="button" onClick={() => decideRelayItem('assign')} disabled={handoffBusy}>
+	                Assign Lane
+	              </button>
+	              <button className="secondary-button" type="button" onClick={() => decideRelayItem('answer')} disabled={handoffBusy || !relayDecision.trim()}>
+	                Record Answer
+	              </button>
+	              <button className="secondary-button" type="button" onClick={() => decideRelayItem('reopen')} disabled={handoffBusy}>
+	                Reopen
+	              </button>
+	              <button className="primary-button" type="button" onClick={() => useRelayForNextWorker(selectedRelayItem)} disabled={handoffBusy}>
+	                Use For Next Worker
+	              </button>
+	            </div>
+	          </div>
+	        ) : null}
+	      </Panel>
+	      <div className="two-column">
+	        <Panel title="Shared Task List" eyebrow="Execution">
+	          <Checklist items={sharedTaskItems.length ? sharedTaskItems : ['Review generated plan', 'Implement approved scope', 'Add tests', 'Capture evidence']} />
         </Panel>
         <Panel title="Worker Queue" eyebrow="Sequential Relay">
           <SimpleTable
@@ -1891,15 +2072,106 @@ function AgentTeamPage({ setActivePage, data }) {
             rows={workerRuns.slice(0, 8).map((run) => [
               run.workerRoleLabel,
               <StatusBadge label={titleCase(run.status)} tone={toneFor(run.status)} />,
-              run.output?.summary || run.responseFile || 'Waiting for worker output.',
-              <button className="table-button" type="button" onClick={() => ingestWorkerRun(run.id)} disabled={handoffBusy || !run.responseFile}>
-                Ingest Output
-              </button>
+              <WorkerRunOutput run={run} />,
+              <div className="button-row compact-buttons">
+	                <button className="table-button" type="button" onClick={() => setSelectedWorkerRunId(run.id)}>
+	                  Review
+	                </button>
+	                <button className="table-button" type="button" onClick={() => refreshWorkerRunStatus(run.id)} disabled={handoffBusy || !run.statusFile}>
+	                  Refresh
+	                </button>
+	                <button className="table-button" type="button" onClick={() => ingestWorkerRun(run.id)} disabled={handoffBusy || !run.responseFile}>
+	                  Ingest Output
+	                </button>
+              </div>
             ])}
             empty="No worker lanes launched yet. Start with Lead Planner or Senior Full Stack Dev."
           />
         </Panel>
       </div>
+      {selectedWorkerRun ? (
+        <Panel title="Worker Run Detail" eyebrow="Evidence Relay">
+          <div className="worker-run-detail">
+            <InfoList
+              items={[
+                ['Lane', selectedWorkerRun.workerRoleLabel],
+                ['Engine', titleCase(selectedWorkerRun.executionAgent)],
+                ['Mode', titleCase(selectedWorkerRun.mode)],
+	                ['Status', titleCase(selectedWorkerRun.status)],
+	                ['Sandbox', selectedWorkerRun.sandboxMode],
+	                ['Response size', formatBytes(selectedWorkerRun.output?.responseBytes || 0)],
+	                ['Log size', formatBytes(selectedWorkerRun.output?.logBytes || 0)],
+	                ['Last refresh', selectedWorkerRun.output?.refreshedAt ? formatTime(selectedWorkerRun.output.refreshedAt) : 'Not refreshed'],
+	                ['Created', formatTime(selectedWorkerRun.createdAt)]
+	              ]}
+	            />
+            <SimpleTable
+              columns={['Artifact', 'Path']}
+              rows={[
+                ['Bundle', selectedWorkerRun.bundleDir || 'Not captured'],
+                ['Handoff', selectedWorkerRun.handoffFile || 'Not captured'],
+                ['Prompt', selectedWorkerRun.promptFile || 'Not captured'],
+                ['Response', selectedWorkerRun.responseFile || 'Not captured'],
+                ['Log', selectedWorkerRun.logFile || 'Not captured']
+              ]}
+            />
+            <div className="button-row">
+              <button className="secondary-button" type="button" onClick={() => copyWorkerRunText(selectedWorkerRun.manualCommand, 'Manual command')} disabled={!selectedWorkerRun.manualCommand}>
+                Copy Manual Command
+              </button>
+              <button className="secondary-button" type="button" onClick={() => copyWorkerRunText(selectedWorkerRun.promptFile, 'Prompt path')} disabled={!selectedWorkerRun.promptFile}>
+                Copy Prompt Path
+              </button>
+	              <button className="secondary-button" type="button" onClick={() => copyWorkerRunText(selectedWorkerRun.responseFile, 'Response path')} disabled={!selectedWorkerRun.responseFile}>
+	                Copy Response Path
+	              </button>
+	              <button className="secondary-button" type="button" onClick={() => refreshWorkerRunStatus(selectedWorkerRun.id)} disabled={handoffBusy || !selectedWorkerRun.statusFile}>
+	                Refresh Status
+	              </button>
+	              <button className="primary-button" type="button" onClick={() => ingestWorkerRun(selectedWorkerRun.id)} disabled={handoffBusy || !(selectedWorkerRun.output?.responseBytes > 0 || ['response_ready', 'completed', 'needs_input'].includes(String(selectedWorkerRun.status || '').toLowerCase()))}>
+	                Ingest Output
+	              </button>
+	            </div>
+	            {selectedWorkerRun.output?.launchStatus ? (
+	              <div className="worker-status-card">
+	                <div>
+	                  <span className="eyebrow">Launch Status</span>
+	                  <strong>{titleCase(selectedWorkerRun.output.launchStatus.status || selectedWorkerRun.status)}</strong>
+	                  <p>{selectedWorkerRun.output.launchStatus.note || selectedWorkerRun.output.summary || 'Status file was read by ODT.'}</p>
+	                </div>
+	                <InfoList
+	                  items={[
+	                    ['Started', selectedWorkerRun.output.launchStatus.startedAt ? formatTime(selectedWorkerRun.output.launchStatus.startedAt) : 'Not captured'],
+	                    ['Completed', selectedWorkerRun.output.launchStatus.completedAt ? formatTime(selectedWorkerRun.output.launchStatus.completedAt) : 'Not complete'],
+	                    ['Exit code', selectedWorkerRun.output.launchStatus.exitCode ?? 'Not captured']
+	                  ]}
+	                />
+	              </div>
+	            ) : null}
+	            {selectedWorkerRun.output?.logTail ? (
+	              <div className="log-tail">
+	                <span className="eyebrow">Log Tail</span>
+	                <pre>{selectedWorkerRun.output.logTail}</pre>
+	              </div>
+	            ) : null}
+	            {selectedWorkerRun.questions?.length ? (
+              <div className="worker-question-list">
+                <strong>Open relay questions</strong>
+                <ul>
+                  {selectedWorkerRun.questions.map((item, index) => (
+                    <li key={`${selectedWorkerRun.id}-detail-question-${index}`}>
+                      <span>{item.targetLane || 'Next lane'}</span>
+                      {item.question}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p className="muted-copy">No cross-lane questions captured for this worker run.</p>
+            )}
+          </div>
+        </Panel>
+      ) : null}
       <Panel title="Quality Gates" eyebrow="Control">
         <Checklist items={qualityGates} />
       </Panel>
@@ -2470,6 +2742,7 @@ function ArtifactsPage({ data }) {
   const latestImplementationEvidence = implementationEvidence[0];
   const assets = evidence.intakeAssets || [];
   const workerRuns = evidence.agentWorkerRuns || [];
+  const relayItems = evidence.agentRelayItems || [];
   const agentFoundryRuns = evidence.agentFoundryRuns || [];
   const latestFoundryRunId = agentFoundryRuns[0]?.runId || '';
   const latestFoundryEntries = latestFoundryRunId ? agentFoundryRuns.filter((entry) => entry.runId === latestFoundryRunId) : [];
@@ -2499,8 +2772,9 @@ function ArtifactsPage({ data }) {
 	        standardsChecks: evidence.standardsChecks?.length || 0,
 	        reviewComments: evidence.reviewComments?.length || 0,
 	        implementationEvidence: implementationEvidence.length,
-		        agentWorkerRuns: workerRuns.length,
-		        agentFoundryRuns: agentFoundryRuns.length,
+			        agentWorkerRuns: workerRuns.length,
+			        agentRelayItems: relayItems.length,
+			        agentFoundryRuns: agentFoundryRuns.length,
 	        agentHandoffs: evidence.agentEvents?.length || 0,
 	        prReadinessReports: evidence.prReadinessReports?.length || 0
 	      }
@@ -2562,15 +2836,17 @@ function ArtifactsPage({ data }) {
       action: 'View Worker',
       content: latestAgentWorker?.detailJson || latestAgentHandoff?.detailJson || { status: 'waiting', message: 'Launch or delegate from Agent Team to create governed worker evidence.' }
     },
-    {
-      title: 'Worker Relay Queue',
-      copy: 'Sequential worker runs, parsed outputs, questions for other lanes, response files, and relay context for the next agent.',
-      action: 'View Queue',
-      content: {
-        orchestration: 'Sequential by default. Parallel writes require file partitioning.',
-        workerRuns
-      }
-    },
+	    {
+	      title: 'Worker Relay Queue',
+	      copy: 'Sequential worker runs, first-class relay items, parsed outputs, response files, and relay context for the next agent.',
+	      action: 'View Queue',
+	      content: {
+	        orchestration: 'Sequential by default. Parallel writes require file partitioning.',
+	        relayPolicy: 'Worker run output stays immutable. Cross-lane questions become relay items and are injected into future worker prompts.',
+	        relayItems,
+	        workerRuns
+	      }
+	    },
     {
       title: 'Agent Foundry Reviews',
       copy: 'Specialist Full SDLC or focused-domain findings, risks, recommendations, approvals, and next actions.',
@@ -2896,13 +3172,32 @@ function MetricCard({ label, value, detail, tone }) {
   );
 }
 
+function WorkerRunOutput({ run }) {
+  const questions = Array.isArray(run.questions) ? run.questions : [];
+  const summary = run.output?.summary || run.responseFile || 'Waiting for worker output.';
+  return (
+    <div className="worker-output-cell">
+      <p>{summary}</p>
+      {questions.length ? (
+        <ul>
+          {questions.slice(0, 3).map((item, index) => (
+            <li key={`${run.id}-question-${index}`}>
+              <strong>Question for {item.targetLane || 'next lane'}:</strong> {item.question}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
 function CurrentWorkBrief({ data, onNavigate, compact = false }) {
   const brief = currentWorkBrief(data);
   if (!brief.hasRealWork) return null;
   const workflow = workflowStateFromData(data);
   const openDecisionItems = brief.openClarifications.length
     ? brief.openClarifications.map((item) => `${titleCase(item.severity || 'NEEDS_REVIEW')}: ${item.question}`)
-    : brief.clarifications.map((item) => `Demo decision: ${item.decision || item.defaultAssumption || item.question}`);
+    : brief.clarifications.map((item) => formatClarificationDecision(item));
   const verificationItems = [
     ...brief.files.slice(0, 2).map((item) => `Change: ${item}`),
     ...brief.tests.slice(0, 3).map((item) => `Test: ${item}`)
@@ -3344,6 +3639,11 @@ function FoundryArtifactDetail({ content }) {
   );
 }
 
+function formatClarificationDecision(item = {}) {
+  const value = item.decision || item.defaultAssumption || item.question || '';
+  return String(value).replace(/^Demo decision:\s*/i, '');
+}
+
 function EvidenceList({ title, items, empty }) {
   const normalized = normalizeList(items);
   return (
@@ -3588,12 +3888,14 @@ function standardsGateState(evidence) {
   );
   const writeApproved = Boolean(writeApproval && writeApprovalIsCurrent && !implementationBlocked);
   const blockerFindings = findings.filter((finding) => finding.status === 'BLOCKER');
-  const unresolvedBlockers = blockerOverride ? [] : blockerFindings;
+  const hardSafetyBlockers = blockerFindings.filter(isHardSafetyBlocker);
+  const unresolvedBlockers = blockerOverride ? hardSafetyBlockers : blockerFindings;
   return {
     latestCheck,
     findings,
     approvals,
     blockerFindings,
+    hardSafetyBlockers,
     unresolvedBlockers,
     reviewBlockers,
     blockerOverride,
@@ -3601,6 +3903,21 @@ function standardsGateState(evidence) {
     writeApproved,
     implementationBlocked
   };
+}
+
+function isHardSafetyBlocker(finding = {}) {
+  const category = String(finding.category || '').toLowerCase();
+  const message = `${finding.message || ''} ${finding.recommendation || ''}`.toLowerCase();
+  return (
+    category.includes('frontend-secrets')
+    || category.includes('destructive')
+    || category === 'dependency'
+    || category === 'dependency-license'
+    || message.includes('frontend secret')
+    || message.includes('destructive')
+    || message.includes('package installation requires explicit developer approval')
+    || message.includes('dependency request before implementation')
+  );
 }
 
 function latestApproval(approvals, types) {
@@ -3646,8 +3963,8 @@ function titleCase(value) {
 function toneFor(value) {
   const text = String(value || '').toLowerCase();
   if (text.includes('fail') || text.includes('error') || text.includes('block')) return 'danger';
-  if (text.includes('wait') || text.includes('review') || text.includes('pending')) return 'warning';
-  if (text.includes('ready') || text.includes('ok') || text.includes('done') || text.includes('online')) return 'success';
+  if (text.includes('wait') || text.includes('review') || text.includes('pending') || text.includes('open') || text.includes('assign')) return 'warning';
+  if (text.includes('ready') || text.includes('ok') || text.includes('done') || text.includes('online') || text.includes('answer') || text.includes('resolve') || text.includes('complete')) return 'success';
   return 'neutral';
 }
 

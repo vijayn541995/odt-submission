@@ -354,10 +354,10 @@ db.exec(`
 	    created_at TEXT NOT NULL
 	  );
 
-	  CREATE TABLE IF NOT EXISTS agent_worker_runs (
-	    id TEXT PRIMARY KEY,
-	    assignment_id TEXT NOT NULL,
-	    run_id TEXT NOT NULL,
+		  CREATE TABLE IF NOT EXISTS agent_worker_runs (
+		    id TEXT PRIMARY KEY,
+		    assignment_id TEXT NOT NULL,
+		    run_id TEXT NOT NULL,
 	    worker_role TEXT NOT NULL,
 	    worker_role_label TEXT NOT NULL,
 	    execution_agent TEXT NOT NULL,
@@ -377,10 +377,32 @@ db.exec(`
 	    output_json TEXT NOT NULL,
 	    questions_json TEXT NOT NULL,
 	    created_at TEXT NOT NULL,
-	    updated_at TEXT NOT NULL,
-	    completed_at TEXT
-	  );
-	`);
+		    updated_at TEXT NOT NULL,
+		    completed_at TEXT
+		  );
+
+		  CREATE TABLE IF NOT EXISTS agent_relay_items (
+		    id TEXT PRIMARY KEY,
+		    assignment_id TEXT NOT NULL,
+		    source_worker_run_id TEXT,
+		    source_worker_role TEXT,
+		    source_worker_role_label TEXT,
+		    target_worker_role TEXT,
+		    target_lane TEXT,
+		    item_type TEXT NOT NULL,
+		    status TEXT NOT NULL,
+		    severity TEXT NOT NULL,
+		    title TEXT NOT NULL,
+		    message TEXT NOT NULL,
+		    context_json TEXT NOT NULL,
+		    decision_json TEXT NOT NULL,
+		    unique_key TEXT NOT NULL UNIQUE,
+		    created_by TEXT,
+		    created_at TEXT NOT NULL,
+		    updated_at TEXT NOT NULL,
+		    resolved_at TEXT
+		  );
+		`);
 
 const statements = {
   insertAssignment: db.prepare(`
@@ -729,11 +751,11 @@ const statements = {
 	      updated_at = excluded.updated_at,
 	      completed_at = COALESCE(excluded.completed_at, agent_worker_runs.completed_at)
 	  `),
-	  updateAgentWorkerOutput: db.prepare(`
-	    UPDATE agent_worker_runs
-	    SET status = ?, output_json = ?, questions_json = ?, updated_at = ?, completed_at = ?
-	    WHERE id = ?
-	  `),
+		  updateAgentWorkerOutput: db.prepare(`
+		    UPDATE agent_worker_runs
+		    SET status = ?, output_json = ?, questions_json = ?, updated_at = ?, completed_at = ?
+		    WHERE id = ?
+		  `),
 	  selectAgentWorkerRunsByAssignment: db.prepare(`
 	    SELECT id, assignment_id AS assignmentId, run_id AS runId, worker_role AS workerRole,
 	      worker_role_label AS workerRoleLabel, execution_agent AS executionAgent, mode,
@@ -747,19 +769,54 @@ const statements = {
 	    WHERE assignment_id = ?
 	    ORDER BY created_at DESC
 	  `),
-	  selectAgentWorkerRunById: db.prepare(`
-	    SELECT id, assignment_id AS assignmentId, run_id AS runId, worker_role AS workerRole,
-	      worker_role_label AS workerRoleLabel, execution_agent AS executionAgent, mode,
+		  selectAgentWorkerRunById: db.prepare(`
+		    SELECT id, assignment_id AS assignmentId, run_id AS runId, worker_role AS workerRole,
+		      worker_role_label AS workerRoleLabel, execution_agent AS executionAgent, mode,
 	      sandbox_mode AS sandboxMode, status, sequence_index AS sequenceIndex,
 	      launch_mode AS launchMode, bundle_dir AS bundleDir, handoff_file AS handoffFile,
 	      prompt_file AS promptFile, script_file AS scriptFile, response_file AS responseFile,
 	      log_file AS logFile, status_file AS statusFile, manual_command AS manualCommand,
 	      output_json AS outputJson, questions_json AS questionsJson, created_at AS createdAt,
 	      updated_at AS updatedAt, completed_at AS completedAt
-	    FROM agent_worker_runs
-	    WHERE id = ?
-	  `)
-	};
+		    FROM agent_worker_runs
+		    WHERE id = ?
+		  `),
+		  insertAgentRelayItem: db.prepare(`
+		    INSERT OR IGNORE INTO agent_relay_items (
+		      id, assignment_id, source_worker_run_id, source_worker_role, source_worker_role_label,
+		      target_worker_role, target_lane, item_type, status, severity, title, message,
+		      context_json, decision_json, unique_key, created_by, created_at, updated_at, resolved_at
+		    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		  `),
+		  selectAgentRelayItemsByAssignment: db.prepare(`
+		    SELECT id, assignment_id AS assignmentId, source_worker_run_id AS sourceWorkerRunId,
+		      source_worker_role AS sourceWorkerRole, source_worker_role_label AS sourceWorkerRoleLabel,
+		      target_worker_role AS targetWorkerRole, target_lane AS targetLane, item_type AS itemType,
+		      status, severity, title, message, context_json AS contextJson, decision_json AS decisionJson,
+		      unique_key AS uniqueKey, created_by AS createdBy, created_at AS createdAt,
+		      updated_at AS updatedAt, resolved_at AS resolvedAt
+		    FROM agent_relay_items
+		    WHERE assignment_id = ?
+		    ORDER BY CASE status WHEN 'open' THEN 0 WHEN 'assigned' THEN 1 WHEN 'answered' THEN 2 WHEN 'resolved' THEN 3 ELSE 4 END,
+		      updated_at DESC
+		  `),
+		  selectAgentRelayItemById: db.prepare(`
+		    SELECT id, assignment_id AS assignmentId, source_worker_run_id AS sourceWorkerRunId,
+		      source_worker_role AS sourceWorkerRole, source_worker_role_label AS sourceWorkerRoleLabel,
+		      target_worker_role AS targetWorkerRole, target_lane AS targetLane, item_type AS itemType,
+		      status, severity, title, message, context_json AS contextJson, decision_json AS decisionJson,
+		      unique_key AS uniqueKey, created_by AS createdBy, created_at AS createdAt,
+		      updated_at AS updatedAt, resolved_at AS resolvedAt
+		    FROM agent_relay_items
+		    WHERE id = ?
+		  `),
+		  updateAgentRelayItem: db.prepare(`
+		    UPDATE agent_relay_items
+		    SET target_worker_role = ?, target_lane = ?, status = ?, severity = ?, decision_json = ?,
+		      updated_at = ?, resolved_at = ?
+		    WHERE id = ?
+		  `)
+		};
 
 seedDefaults();
 
@@ -1633,11 +1690,12 @@ function collectEvidence(assignmentId = 'assignment-local-mvp') {
 	    output: parseJsonValue(row.outputJson, {})
 	  });
 	  const parseWorkerRun = (row) => parseAgentWorkerRun(row);
-	  const agentEvents = statements.selectAgentEventsByAssignment.all(assignmentId).map((row) => ({
-    ...row,
-    detailJson: parseJsonValue(row.detail, {})
-  }));
-  const evidence = {
+		  const agentEvents = statements.selectAgentEventsByAssignment.all(assignmentId).map((row) => ({
+	    ...row,
+	    detailJson: parseJsonValue(row.detail, {})
+	  }));
+	  ensureRelayItemsForAssignment(assignmentId);
+	  const evidence = {
     assignment: getAssignment(assignmentId),
     requirements: statements.selectRequirementsByAssignment.all(assignmentId),
     repoAnalysis: statements.selectRepoAnalysisByAssignment.all(assignmentId).map((row) => attachJson(row, 'analysisJson')),
@@ -1655,10 +1713,11 @@ function collectEvidence(assignmentId = 'assignment-local-mvp') {
     testPlans: statements.selectTestPlansByAssignment.all(assignmentId).map((row) => attachJson(row, 'planJson')),
     implementationEvidence: statements.selectImplementationEvidenceByAssignment.all(assignmentId).map(parseImplementationEvidence),
 	    prReadinessReports: statements.selectPrReportsByAssignment.all(assignmentId).map((row) => attachJson(row, 'reportJson')),
-	    intakeAssets: statements.selectIntakeAssetsByAssignment.all(assignmentId),
-	    agentFoundryRuns: statements.selectAgentFoundryRunsByAssignment.all(assignmentId).map(parseAgentFoundryRun),
-	    agentWorkerRuns: statements.selectAgentWorkerRunsByAssignment.all(assignmentId).map(parseWorkerRun)
-	  };
+		    intakeAssets: statements.selectIntakeAssetsByAssignment.all(assignmentId),
+		    agentFoundryRuns: statements.selectAgentFoundryRunsByAssignment.all(assignmentId).map(parseAgentFoundryRun),
+		    agentWorkerRuns: statements.selectAgentWorkerRunsByAssignment.all(assignmentId).map(parseWorkerRun),
+		    agentRelayItems: statements.selectAgentRelayItemsByAssignment.all(assignmentId).map(parseAgentRelayItem)
+		  };
   evidence.requirementSignals = parseRequirementSignals(evidence.requirements?.[0]?.rawText || '');
   evidence.workflowState = deriveWorkflowState(evidence);
   return evidence;
@@ -1702,9 +1761,24 @@ function hasLatestBlockerOverride(evidence) {
   return hasApprovedEvent(evidence.approvals || [], ['standards_blocker_override', 'blocker_override'], latestCheck?.createdAt || '');
 }
 
+function isHardSafetyBlocker(finding = {}) {
+  const category = String(finding.category || '').toLowerCase();
+  const message = `${finding.message || ''} ${finding.recommendation || ''}`.toLowerCase();
+  return (
+    category.includes('frontend-secrets')
+    || category.includes('destructive')
+    || category === 'dependency'
+    || category === 'dependency-license'
+    || message.includes('frontend secret')
+    || message.includes('destructive')
+    || message.includes('package installation requires explicit developer approval')
+    || message.includes('dependency request before implementation')
+  );
+}
+
 function getUnresolvedStandardsBlockers(evidence) {
   const blockers = getActiveStandardsFindings(evidence).filter((finding) => finding.status === 'BLOCKER');
-  return hasLatestBlockerOverride(evidence) ? [] : blockers;
+  return hasLatestBlockerOverride(evidence) ? blockers.filter(isHardSafetyBlocker) : blockers;
 }
 
 function getOpenReviewBlockers(evidence) {
@@ -2619,6 +2693,181 @@ function readTextSnippet(filePath = '', maxChars = 3600) {
   }
 }
 
+function stableTextHash(value = '') {
+  let hash = 5381;
+  const text = String(value || '');
+  for (let index = 0; index < text.length; index += 1) {
+    hash = ((hash << 5) + hash) ^ text.charCodeAt(index);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+function inferTargetWorkerRole(targetLane = '') {
+  const lane = String(targetLane || '').toLowerCase();
+  if (lane.includes('review')) return 'reviewer';
+  if (lane.includes('build') || lane.includes('verif') || lane.includes('test')) return 'build-verifier';
+  if (lane.includes('backend') || lane.includes('api') || lane.includes('server')) return 'backend-dev';
+  if (lane.includes('frontend') || lane.includes('ui') || lane.includes('client')) return 'frontend-dev';
+  if (lane.includes('planner') || lane.includes('lead') || lane.includes('architect')) return 'lead-planner';
+  if (lane.includes('full') || lane.includes('implementation') || lane.includes('developer')) return 'fullstack-dev';
+  return '';
+}
+
+function parseAgentRelayItem(row) {
+  if (!row) return null;
+  return {
+    ...row,
+    context: parseJsonValue(row.contextJson, {}),
+    decision: parseJsonValue(row.decisionJson, {})
+  };
+}
+
+function createRelayItemsForWorkerRun(run) {
+  if (!run || !Array.isArray(run.questions) || !run.questions.length) return [];
+  const now = new Date().toISOString();
+  return run.questions.map((question, index) => {
+    const message = String(question.question || '').trim();
+    if (!message) return null;
+    const targetLane = String(question.targetLane || 'Next lane').trim();
+    const targetWorkerRole = inferTargetWorkerRole(targetLane);
+    const uniqueKey = `${run.id}:question:${index}:${stableTextHash(message)}`;
+    const relayId = createId('relay');
+    const context = {
+      questionIndex: index,
+      sourceRunId: run.runId,
+      sourceWorkerRunId: run.id,
+      sourceWorkerRole: run.workerRole,
+      sourceWorkerRoleLabel: run.workerRoleLabel,
+      sourceStatus: run.status,
+      sourceSummary: run.output?.summary || '',
+      responseFile: run.responseFile || '',
+      logFile: run.logFile || '',
+      targetLane,
+      targetWorkerRole
+    };
+    statements.insertAgentRelayItem.run(
+      relayId,
+      run.assignmentId,
+      run.id,
+      run.workerRole,
+      run.workerRoleLabel,
+      targetWorkerRole,
+      targetLane,
+      'question',
+      question.status || 'open',
+      'needs_review',
+      `Question for ${targetLane}`,
+      message,
+      JSON.stringify(context),
+      JSON.stringify({}),
+      uniqueKey,
+      'odt-worker-ingest',
+      now,
+      now,
+      null
+    );
+    return parseAgentRelayItem(statements.selectAgentRelayItemById.get(relayId))
+      || parseAgentRelayItem(statements.selectAgentRelayItemsByAssignment.all(run.assignmentId).find((item) => item.uniqueKey === uniqueKey));
+  }).filter(Boolean);
+}
+
+function ensureRelayItemsForAssignment(assignmentId = 'assignment-local-mvp') {
+  const workerRuns = statements.selectAgentWorkerRunsByAssignment.all(assignmentId).map(parseAgentWorkerRun);
+  workerRuns.forEach((run) => createRelayItemsForWorkerRun(run));
+}
+
+function collectAgentRelayContext(evidence, currentRoleId) {
+  const relayItems = evidence.agentRelayItems || [];
+  return relayItems
+    .filter((item) => ['open', 'assigned', 'answered'].includes(String(item.status || '').toLowerCase()))
+    .filter((item) => !item.targetWorkerRole || item.targetWorkerRole === currentRoleId || item.status === 'answered')
+    .slice(0, 12)
+    .map((item) => ({
+      id: item.id,
+      status: item.status,
+      severity: item.severity,
+      type: item.itemType,
+      targetWorkerRole: item.targetWorkerRole,
+      targetLane: item.targetLane,
+      sourceWorkerRole: item.sourceWorkerRole,
+      sourceWorkerRoleLabel: item.sourceWorkerRoleLabel,
+      title: item.title,
+      message: item.message,
+      decision: item.decision,
+      sourceSummary: item.context?.sourceSummary || '',
+      responseFile: item.context?.responseFile || '',
+      logFile: item.context?.logFile || '',
+      updatedAt: item.updatedAt
+    }));
+}
+
+function decideAgentRelayItem({ relayItemId = '', assignmentId = 'assignment-local-mvp', action = 'answer', decision = '', targetWorkerRole = '', targetLane = '', decidedBy = 'local-user' } = {}) {
+  const relay = parseAgentRelayItem(statements.selectAgentRelayItemById.get(relayItemId));
+  if (!relay || relay.assignmentId !== assignmentId) {
+    const error = new Error('Relay item not found for this assignment.');
+    error.statusCode = 404;
+    throw error;
+  }
+  const normalizedAction = String(action || 'answer').toLowerCase();
+  const allowedActions = new Set(['answer', 'assign', 'resolve', 'reopen']);
+  if (!allowedActions.has(normalizedAction)) {
+    const error = new Error('Relay action must be answer, assign, resolve, or reopen.');
+    error.statusCode = 400;
+    throw error;
+  }
+  const now = new Date().toISOString();
+  const resolvedAt = normalizedAction === 'resolve' || normalizedAction === 'answer' ? now : null;
+  const nextStatus = normalizedAction === 'reopen'
+    ? 'open'
+    : normalizedAction === 'assign'
+      ? 'assigned'
+      : normalizedAction === 'resolve'
+        ? 'resolved'
+        : 'answered';
+  const nextTargetRole = targetWorkerRole || relay.targetWorkerRole || inferTargetWorkerRole(targetLane || relay.targetLane);
+  const nextTargetLane = targetLane || relay.targetLane || nextTargetRole || 'Next lane';
+  const nextDecision = {
+    ...(relay.decision || {}),
+    action: normalizedAction,
+    decision: String(decision || '').trim(),
+    decidedBy: decidedBy || 'local-user',
+    decidedAt: now
+  };
+  if (['answer', 'resolve'].includes(normalizedAction) && !nextDecision.decision) {
+    const error = new Error('Decision notes are required to answer or resolve a relay item.');
+    error.statusCode = 400;
+    throw error;
+  }
+  statements.updateAgentRelayItem.run(
+    nextTargetRole,
+    nextTargetLane,
+    nextStatus,
+    relay.severity,
+    JSON.stringify(nextDecision),
+    now,
+    resolvedAt,
+    relayItemId
+  );
+  createRunEvent(relay.context?.sourceRunId || createId('run'), 'agent_relay_item_updated', 'ok', {
+    assignmentId,
+    relayItemId,
+    action: normalizedAction,
+    status: nextStatus,
+    targetWorkerRole: nextTargetRole,
+    targetLane: nextTargetLane,
+    decisionPreview: nextDecision.decision.slice(0, 240)
+  }, assignmentId);
+  createAgentEvent(assignmentId, 'odt-relay', 'relay_item_updated', nextStatus, {
+    relayItemId,
+    sourceWorkerRunId: relay.sourceWorkerRunId,
+    sourceWorkerRole: relay.sourceWorkerRole,
+    targetWorkerRole: nextTargetRole,
+    action: normalizedAction,
+    decision: nextDecision.decision
+  });
+  return parseAgentRelayItem(statements.selectAgentRelayItemById.get(relayItemId));
+}
+
 function collectWorkerRelayEvidence(evidence, currentRoleId) {
   const workerRuns = evidence.agentWorkerRuns || [];
   if (workerRuns.length) {
@@ -2667,6 +2916,85 @@ function parseAgentWorkerRun(row) {
     ...row,
     output: parseJsonValue(row.outputJson, {}),
     questions: parseJsonValue(row.questionsJson, [])
+  };
+}
+
+function fileSizeIfExists(filePath = '') {
+  try {
+    if (!filePath || !existsSync(filePath)) return 0;
+    return statSync(filePath).size;
+  } catch {
+    return 0;
+  }
+}
+
+function readWorkerStatusFile(statusFile = '') {
+  try {
+    if (!statusFile || !existsSync(statusFile)) return {};
+    return parseJsonValue(readFileSync(statusFile, 'utf8'), {});
+  } catch {
+    return {};
+  }
+}
+
+function mapLaunchStatusToWorkerStatus(status = '', responseBytes = 0) {
+  const normalized = String(status || '').toLowerCase();
+  if (normalized === 'completed') return responseBytes > 0 ? 'response_ready' : 'completed';
+  if (normalized === 'failed' || normalized === 'codex_missing' || normalized === 'failed_to_open') return normalized;
+  if (normalized === 'running' || normalized === 'starting' || normalized === 'delegated_visible') return 'running';
+  if (normalized === 'bundle_created' || normalized === 'manual_fallback') return normalized;
+  return responseBytes > 0 ? 'response_ready' : normalized || 'unknown';
+}
+
+function syncWorkerRunStatus({ assignmentId = 'assignment-local-mvp', workerRunId = '' } = {}) {
+  const run = parseAgentWorkerRun(statements.selectAgentWorkerRunById.get(workerRunId));
+  if (!run || run.assignmentId !== assignmentId) {
+    const error = new Error('Agent worker run not found for this assignment.');
+    error.statusCode = 404;
+    throw error;
+  }
+  const statusFileJson = readWorkerStatusFile(run.statusFile);
+  const responseBytes = fileSizeIfExists(run.responseFile);
+  const logBytes = fileSizeIfExists(run.logFile);
+  const logTail = readTextSnippet(run.logFile, 5000);
+  const status = mapLaunchStatusToWorkerStatus(statusFileJson.status || run.status, responseBytes);
+  const now = new Date().toISOString();
+  const completedAt = ['response_ready', 'completed', 'failed', 'codex_missing', 'failed_to_open'].includes(status)
+    ? (statusFileJson.completedAt || now)
+    : run.completedAt;
+  const output = {
+    ...(run.output || {}),
+    summary: run.output?.summary || statusFileJson.note || 'Worker status refreshed.',
+    launchStatus: statusFileJson,
+    responseBytes,
+    logBytes,
+    logTail,
+    refreshedAt: now
+  };
+  statements.updateAgentWorkerOutput.run(
+    status,
+    JSON.stringify(output),
+    JSON.stringify(run.questions || []),
+    now,
+    completedAt || null,
+    workerRunId
+  );
+  createRunEvent(run.runId, 'agent_worker_status_refreshed', status.includes('fail') || status.includes('missing') ? 'warning' : 'ok', {
+    assignmentId,
+    workerRunId,
+    workerRole: run.workerRole,
+    workerRoleLabel: run.workerRoleLabel,
+    status,
+    responseBytes,
+    logBytes,
+    statusFile: run.statusFile
+  }, assignmentId);
+  return {
+    workerRun: parseAgentWorkerRun(statements.selectAgentWorkerRunById.get(workerRunId)),
+    statusFile: statusFileJson,
+    responseBytes,
+    logBytes,
+    logTail
   };
 }
 
@@ -2789,7 +3117,17 @@ function ingestWorkerOutput({ assignmentId = 'assignment-local-mvp', workerRunId
     questions,
     summary: output.summary
   });
-  return parseAgentWorkerRun(statements.selectAgentWorkerRunById.get(workerRunId));
+  const updatedRun = parseAgentWorkerRun(statements.selectAgentWorkerRunById.get(workerRunId));
+  const relayItems = createRelayItemsForWorkerRun(updatedRun);
+  if (relayItems.length) {
+    createRunEvent(run.runId, 'agent_relay_items_created', 'ok', {
+      assignmentId,
+      workerRunId,
+      relayItems: relayItems.length,
+      targetLanes: relayItems.map((item) => item.targetLane)
+    }, assignmentId);
+  }
+  return updatedRun;
 }
 
 function buildWorkerPrompt({ handoff, contract, evidence, bundlePaths, workerRole }) {
@@ -2800,6 +3138,7 @@ function buildWorkerPrompt({ handoff, contract, evidence, bundlePaths, workerRol
   const latestTestPlan = evidence.testPlans?.[0]?.planJson || {};
   const latestStandards = evidence.standardsChecks?.[0] || {};
   const workerRelay = collectWorkerRelayEvidence(evidence, workerRole.id);
+  const agentRelayContext = collectAgentRelayContext(evidence, workerRole.id);
   const intakeAssets = (evidence.intakeAssets || []).map((asset) => ({
     name: asset.originalName,
     type: asset.fileType,
@@ -2894,6 +3233,12 @@ function buildWorkerPrompt({ handoff, contract, evidence, bundlePaths, workerRol
     '## Open Human Review Items',
     openReviews.length ? openReviews.map((item) => `- ${item.severity}: ${item.message} (${item.recommendation || 'review required'})`).join('\n') : '- No open review comments were attached to this worker launch.',
     '',
+    '## Agent Relay Context',
+    agentRelayContext.length ? 'ODT selected these cross-lane relay items for this worker. Address applicable open or assigned items in your response.' : 'No targeted relay items are currently assigned to this worker lane.',
+    agentRelayContext.length ? '```json' : '',
+    agentRelayContext.length ? JSON.stringify(agentRelayContext, null, 2) : '',
+    agentRelayContext.length ? '```' : '',
+    '',
     '## Prior Worker Relay Evidence',
     workerRelay.length ? 'Review these prior worker outputs before proceeding:' : 'No prior worker output has been captured yet.',
     workerRelay.length ? '```json' : '',
@@ -2922,7 +3267,7 @@ function buildWorkerPrompt({ handoff, contract, evidence, bundlePaths, workerRol
   ].join('\n');
 }
 
-function buildCodexLaunchScript({ repoPath, promptFile, responseFile, logFile, skipGitRepoCheck, sandboxMode, workerRole }) {
+function buildCodexLaunchScript({ repoPath, promptFile, responseFile, logFile, statusFile, skipGitRepoCheck, sandboxMode, workerRole }) {
   const command = skipGitRepoCheck
     ? 'codex exec -C "$PWD" -s "$SANDBOX_MODE" -o "$RESPONSE_FILE" --skip-git-repo-check - < "$PROMPT_FILE" 2>&1 | tee -a "$LOG_FILE"'
     : 'codex exec -C "$PWD" -s "$SANDBOX_MODE" -o "$RESPONSE_FILE" - < "$PROMPT_FILE" 2>&1 | tee -a "$LOG_FILE"';
@@ -2933,10 +3278,38 @@ function buildCodexLaunchScript({ repoPath, promptFile, responseFile, logFile, s
     `PROMPT_FILE=${shellQuote(promptFile)}`,
     `RESPONSE_FILE=${shellQuote(responseFile)}`,
     `LOG_FILE=${shellQuote(logFile)}`,
+    `STATUS_FILE=${shellQuote(statusFile)}`,
     `SANDBOX_MODE=${shellQuote(sandboxMode || 'read-only')}`,
     'mkdir -p "$(dirname "$RESPONSE_FILE")"',
     'mkdir -p "$(dirname "$LOG_FILE")"',
+    'mkdir -p "$(dirname "$STATUS_FILE")"',
     ': > "$LOG_FILE"',
+    'write_status() {',
+    '  local status="$1"',
+    '  local exit_code="${2:-}"',
+    '  local note="${3:-}"',
+    '  STATUS_VALUE="$status" EXIT_CODE_VALUE="$exit_code" NOTE_VALUE="$note" node - <<\'NODE\'',
+    'const fs = require("fs");',
+    'const path = process.env.STATUS_FILE;',
+    'let existing = {};',
+    'try { existing = JSON.parse(fs.readFileSync(path, "utf8")); } catch {}',
+    'const status = process.env.STATUS_VALUE || "unknown";',
+    'const exitCodeRaw = process.env.EXIT_CODE_VALUE || "";',
+    'const payload = {',
+    '  ...existing,',
+    '  status,',
+    '  note: process.env.NOTE_VALUE || existing.note || "",',
+    '  updatedAt: new Date().toISOString(),',
+    '  startedAt: existing.startedAt || new Date().toISOString(),',
+    '  completedAt: ["completed", "failed", "codex_missing"].includes(status) ? new Date().toISOString() : existing.completedAt || null,',
+    '  exitCode: exitCodeRaw === "" ? existing.exitCode ?? null : Number(exitCodeRaw),',
+    '  responseFile: existing.responseFile,',
+    '  logFile: existing.logFile',
+    '};',
+    'fs.writeFileSync(path, `${JSON.stringify(payload, null, 2)}\\n`);',
+    'NODE',
+    '}',
+    'write_status "running" "" "Codex worker script started."',
     `echo "[odt] Delegating ${workerRole.label} to Codex (visible terminal session)." | tee -a "$LOG_FILE"`,
     'echo "[odt] Target repo: $PWD" | tee -a "$LOG_FILE"',
     'echo "[odt] Sandbox: $SANDBOX_MODE" | tee -a "$LOG_FILE"',
@@ -2951,12 +3324,18 @@ function buildCodexLaunchScript({ repoPath, promptFile, responseFile, logFile, s
     'echo "[odt] codex: $(command -v codex 2>/dev/null || true)" | tee -a "$LOG_FILE"',
     'if ! command -v codex >/dev/null 2>&1; then',
     '  echo "[odt] Codex CLI was not found in this terminal environment. Run the manual command from ODT after installing/configuring Codex." | tee -a "$LOG_FILE"',
+    '  write_status "codex_missing" "127" "Codex CLI was not found in this terminal environment."',
     '  exit 127',
     'fi',
     'set +e',
     command,
     'EXIT_CODE=${PIPESTATUS[0]}',
     'set -e',
+    'if [ "$EXIT_CODE" -eq 0 ]; then',
+    '  write_status "completed" "$EXIT_CODE" "Codex worker completed. Review and ingest response evidence in ODT."',
+    'else',
+    '  write_status "failed" "$EXIT_CODE" "Codex worker failed. Review log evidence in ODT."',
+    'fi',
     'echo "" | tee -a "$LOG_FILE"',
     'echo "[odt] Agent task finished with exit code $EXIT_CODE" | tee -a "$LOG_FILE"',
     'echo "[odt] Review changed files, tests, and diffs before recording implementation evidence in ODT." | tee -a "$LOG_FILE"',
@@ -3067,7 +3446,7 @@ function launchCodexWorker({ assignmentId = 'assignment-local-mvp', executionAge
 
   writeFileSync(handoffFile, `${JSON.stringify(roleHandoff, null, 2)}\n`, 'utf8');
   writeFileSync(promptFile, `${buildWorkerPrompt({ handoff: roleHandoff, contract: roleContract, evidence, bundlePaths, workerRole: role })}\n`, 'utf8');
-  writeFileSync(scriptFile, buildCodexLaunchScript({ repoPath, promptFile, responseFile, logFile, skipGitRepoCheck, sandboxMode: role.sandboxMode, workerRole: role }), 'utf8');
+  writeFileSync(scriptFile, buildCodexLaunchScript({ repoPath, promptFile, responseFile, logFile, statusFile, skipGitRepoCheck, sandboxMode: role.sandboxMode, workerRole: role }), 'utf8');
   chmodSync(scriptFile, 0o755);
   writeFileSync(responseFile, '', 'utf8');
   writeFileSync(logFile, '', 'utf8');
@@ -4538,9 +4917,9 @@ function buildOpenApiSchema() {
           responses: { 200: { description: 'Worker runs for the assignment.', content: jsonContent({ type: 'object' }) } }
         }
       },
-      '/api/agents/worker-runs/{workerRunId}/ingest': {
-        post: {
-          operationId: 'ingestAgentWorkerOutput',
+	      '/api/agents/worker-runs/{workerRunId}/ingest': {
+	        post: {
+	          operationId: 'ingestAgentWorkerOutput',
           summary: 'Ingest worker output',
           description: 'Reads the worker response file, stores parsed output as evidence, extracts cross-lane questions, and marks the worker completed or needing input.',
           parameters: [{ name: 'workerRunId', in: 'path', required: true, schema: { type: 'string' }, description: 'Worker run id.' }],
@@ -4557,11 +4936,68 @@ function buildOpenApiSchema() {
             200: { description: 'Worker output ingested.', content: jsonContent({ type: 'object' }) },
             404: { description: 'Worker run not found.', content: jsonContent({ type: 'object' }) },
             409: { description: 'Worker response is not available yet.', content: jsonContent({ type: 'object' }) }
-          }
-        }
-      },
-      '/api/agent-foundry/domains': {
-        get: {
+	          }
+	        }
+	      },
+	      '/api/agents/worker-runs/{workerRunId}/status': {
+	        post: {
+	          operationId: 'refreshAgentWorkerStatus',
+	          summary: 'Refresh worker launch status',
+	          description: 'Reads the worker launch-status.json, response file, and log file to update the durable worker run status without ingesting final output.',
+	          parameters: [{ name: 'workerRunId', in: 'path', required: true, schema: { type: 'string' }, description: 'Worker run id.' }],
+	          requestBody: {
+	            required: false,
+	            content: jsonContent({
+	              type: 'object',
+	              properties: {
+	                assignmentId: { type: 'string', description: 'Assignment id for ownership verification.' }
+	              }
+	            })
+	          },
+	          responses: {
+	            200: { description: 'Worker status refreshed.', content: jsonContent({ type: 'object' }) },
+	            404: { description: 'Worker run not found.', content: jsonContent({ type: 'object' }) }
+	          }
+	        }
+	      },
+	      '/api/agents/relay/{assignmentId}': {
+	        get: {
+	          operationId: 'listAgentRelayItems',
+	          summary: 'List agent relay items',
+	          description: 'Returns first-class cross-lane relay evidence created from worker questions, review needs, and human decisions for the assignment.',
+	          parameters: [{ name: 'assignmentId', in: 'path', required: true, schema: { type: 'string' }, description: 'Assignment id.' }],
+	          responses: { 200: { description: 'Relay items for the assignment.', content: jsonContent({ type: 'object' }) } }
+	        }
+	      },
+	      '/api/agents/relay/{relayItemId}/decision': {
+	        post: {
+	          operationId: 'decideAgentRelayItem',
+	          summary: 'Record relay decision',
+	          description: 'Assigns, answers, resolves, or reopens a cross-lane relay item while keeping source worker output immutable evidence.',
+	          parameters: [{ name: 'relayItemId', in: 'path', required: true, schema: { type: 'string' }, description: 'Relay item id.' }],
+	          requestBody: {
+	            required: true,
+	            content: jsonContent({
+	              type: 'object',
+	              properties: {
+	                assignmentId: { type: 'string', description: 'Assignment id for ownership verification.' },
+	                action: { type: 'string', enum: ['answer', 'assign', 'resolve', 'reopen'], description: 'Relay lifecycle action.' },
+	                decision: { type: 'string', description: 'Human decision or answer notes.' },
+	                targetWorkerRole: { type: 'string', enum: ['lead-planner', 'fullstack-dev', 'backend-dev', 'frontend-dev', 'reviewer', 'build-verifier'], description: 'Worker lane that should receive this context.' },
+	                targetLane: { type: 'string', description: 'Human-readable target lane label.' },
+	                decidedBy: { type: 'string', description: 'Human or system actor recording the decision.' }
+	              }
+	            })
+	          },
+	          responses: {
+	            200: { description: 'Relay decision recorded.', content: jsonContent({ type: 'object' }) },
+	            400: { description: 'Invalid relay decision.', content: jsonContent({ type: 'object' }) },
+	            404: { description: 'Relay item not found.', content: jsonContent({ type: 'object' }) }
+	          }
+	        }
+	      },
+	      '/api/agent-foundry/domains': {
+	        get: {
           operationId: 'listAgentFoundryDomains',
           summary: 'List Agent Foundry specialist domains',
           description: 'Returns the governed ODT Agent Foundry specialist domains and phase options. These are advisory review domains, not autonomous write agents.',
@@ -5250,23 +5686,88 @@ const server = createServer(async (request, response) => {
       return;
     }
 
-    const workerRunsMatch = url.pathname.match(/^\/api\/agents\/worker-runs\/([^/]+)$/);
-    if (request.method === 'GET' && workerRunsMatch) {
-      const assignmentId = workerRunsMatch[1];
-      sendJson(response, 200, {
-        assignmentId,
-        workerRuns: statements.selectAgentWorkerRunsByAssignment.all(assignmentId).map(parseAgentWorkerRun),
-        orchestrationPolicy: {
-          defaultMode: 'sequential',
-          relayPriorOutputs: true,
-          parallelWritesRequireFilePartition: true
-        }
-      });
-      return;
-    }
+	    const workerRunsMatch = url.pathname.match(/^\/api\/agents\/worker-runs\/([^/]+)$/);
+	    if (request.method === 'GET' && workerRunsMatch) {
+	      const assignmentId = workerRunsMatch[1];
+	      ensureRelayItemsForAssignment(assignmentId);
+	      statements.selectAgentWorkerRunsByAssignment.all(assignmentId)
+	        .map(parseAgentWorkerRun)
+	        .filter((run) => ['running', 'starting', 'delegated_visible', 'manual_fallback', 'bundle_created', 'unknown'].includes(String(run.status || '').toLowerCase()))
+	        .slice(0, 20)
+	        .forEach((run) => {
+	          try {
+	            syncWorkerRunStatus({ assignmentId, workerRunId: run.id });
+	          } catch {
+	            // Status sync is best-effort; listing worker runs should not fail because a log file moved.
+	          }
+	        });
+	      sendJson(response, 200, {
+	        assignmentId,
+	        workerRuns: statements.selectAgentWorkerRunsByAssignment.all(assignmentId).map(parseAgentWorkerRun),
+	        relayItems: statements.selectAgentRelayItemsByAssignment.all(assignmentId).map(parseAgentRelayItem),
+	        orchestrationPolicy: {
+	          defaultMode: 'sequential',
+	          relayPriorOutputs: true,
+	          relayItemsAreEvidence: true,
+	          parallelWritesRequireFilePartition: true
+	        }
+	      });
+	      return;
+	    }
 
-    const workerIngestMatch = url.pathname.match(/^\/api\/agents\/worker-runs\/([^/]+)\/ingest$/);
-    if (request.method === 'POST' && workerIngestMatch) {
+	    const workerStatusMatch = url.pathname.match(/^\/api\/agents\/worker-runs\/([^/]+)\/status$/);
+	    if (request.method === 'POST' && workerStatusMatch) {
+	      const body = await readBody(request);
+	      try {
+	        const result = syncWorkerRunStatus({
+	          assignmentId: body.assignmentId || 'assignment-local-mvp',
+	          workerRunId: workerStatusMatch[1]
+	        });
+	        sendJson(response, 200, result);
+	      } catch (err) {
+	        sendJson(response, err.statusCode || 400, { error: err.message });
+	      }
+	      return;
+	    }
+
+	    const relayItemsMatch = url.pathname.match(/^\/api\/agents\/relay\/([^/]+)$/);
+	    if (request.method === 'GET' && relayItemsMatch) {
+	      const assignmentId = relayItemsMatch[1];
+	      ensureRelayItemsForAssignment(assignmentId);
+	      sendJson(response, 200, {
+	        assignmentId,
+	        relayItems: statements.selectAgentRelayItemsByAssignment.all(assignmentId).map(parseAgentRelayItem),
+	        policy: {
+	          sourceWorkerRunsImmutable: true,
+	          nextWorkerPromptInjection: true,
+	          humanDecisionEvidenceRequired: true
+	        }
+	      });
+	      return;
+	    }
+
+	    const relayDecisionMatch = url.pathname.match(/^\/api\/agents\/relay\/([^/]+)\/decision$/);
+	    if (request.method === 'POST' && relayDecisionMatch) {
+	      const body = await readBody(request);
+	      try {
+	        const relayItem = decideAgentRelayItem({
+	          relayItemId: relayDecisionMatch[1],
+	          assignmentId: body.assignmentId || 'assignment-local-mvp',
+	          action: body.action || 'answer',
+	          decision: body.decision || '',
+	          targetWorkerRole: body.targetWorkerRole || '',
+	          targetLane: body.targetLane || '',
+	          decidedBy: body.decidedBy || process.env.USER || 'local-user'
+	        });
+	        sendJson(response, 200, { relayItem });
+	      } catch (err) {
+	        sendJson(response, err.statusCode || 400, { error: err.message });
+	      }
+	      return;
+	    }
+
+	    const workerIngestMatch = url.pathname.match(/^\/api\/agents\/worker-runs\/([^/]+)\/ingest$/);
+	    if (request.method === 'POST' && workerIngestMatch) {
       const body = await readBody(request);
       try {
         const workerRun = ingestWorkerOutput({

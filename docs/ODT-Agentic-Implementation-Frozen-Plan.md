@@ -8,6 +8,49 @@ Update, 2026-05-15: the current product direction is implemented in `/Users/vn10
 
 Follow-up, 2026-05-15: Intake must support selecting an existing repository or folder by local path, read-only repo analysis, and context attachments through the ODT Context Vault. Uploaded mockups, screenshots, PDFs, DOCX, spreadsheets, API samples, and notes are copied under `odt-workbench-next/workspaces/<assignment>/intake-assets`; they must not be copied into the target repo automatically. ODT Guide may use lightweight local retrieval over docs, standards, evidence, repo analysis, and intake asset metadata to answer with detailed steps until the future Oracle DB vector/RAG layer exists.
 
+Update, 2026-06-04: ODT 2.0 must be treated as an agentic SDLC control plane, not only a dashboard. The first wired execution adapter is Codex CLI. ODT creates governed worker bundles, launches or hands off worker lanes, ingests worker output, extracts cross-lane questions, stores outputs as evidence, and passes prior worker evidence to the next lane. The default write-capable implementation lane is **Senior Full Stack Dev**, acting as a senior IC4 multi-stack developer. Planner and Reviewer remain read-only. Dependency installs stay blocked until package-specific approval is captured. Ordinary reviewed standards blockers may be overridden with notes, but hard safety blockers remain blocked: frontend secrets, destructive actions, and unapproved dependency installs.
+
+Production relay decision, 2026-06-04: cross-lane questions must not live only inside worker-run JSON. Worker runs are immutable execution evidence. Questions, target lanes, human decisions, and route changes become first-class **Agent Relay Items** in the ODT evidence model. The Agent Relay Inbox lets a developer assign a relay item to a lane, record a human answer, reopen it, or select it as context for the next worker. Future worker prompts include a dedicated `Agent Relay Context` section filtered for that lane, plus prior worker output evidence.
+
+Future intake connector direction: ODT should add governed Jira2/Jira MCP and GitHub MCP intake sources after the current local workbench and relay flow stabilize. These connectors should be read-only by default for intake: pull ticket/issue/PR title, description, acceptance criteria, comments, labels, branch/PR metadata, check status, and attachment metadata into ODT evidence. Any write-back to Jira, GitHub, branches, comments, labels, or PRs must require a separate human approval gate and connector policy review.
+
+Future DB awareness direction: ODT should detect local database configuration from repo files such as `database.yml`, `.env.example`, `config/database.*`, Prisma, Sequelize, Knex, Rails, Spring, or similar configuration files. The first implementation must be metadata-only by default: identify connection candidates, schemas, tables, columns, indexes, constraints, migrations, and safe row-count summaries where approved. Credentials must stay server-side and must not be shown in the frontend or injected into worker prompts. Arbitrary business-data queries, exports, DDL, migrations, INSERT/UPDATE/DELETE, and production-like connections require explicit human approval and a separate DB safety policy.
+
+Current worker lane target:
+
+```text
+Lead Planner -> Senior Full Stack Dev -> Reviewer -> Senior Full Stack Dev Rework -> Build Verifier -> PR Ready
+```
+
+Backend worker APIs:
+
+- `GET /api/agents/worker-roles`
+- `POST /api/agents/launch-worker`
+- `GET /api/agents/worker-runs/:assignmentId`
+- `POST /api/agents/worker-runs/:workerRunId/ingest`
+- `GET /api/agents/relay/:assignmentId`
+- `POST /api/agents/relay/:relayItemId/decision`
+
+Durable worker evidence:
+
+- worker role and execution engine
+- read-only or write-approved mode
+- bundle, handoff, prompt, response, log, and status paths
+- parsed output summary
+- questions for another worker lane
+- first-class relay items with source worker, target lane, status, decision notes, and prompt-injection context
+- run/agent events
+
+Next implementation slice toward the 100% goal:
+
+1. Add live terminal-launch status polling from `launch-status.json` and `codex-launch.log`.
+2. Add a real terminal-launch smoke test for a read-only lane, then a write-approved lane.
+3. Add implementation evidence ingestion from worker output so changed files, commands, and tests do not need manual re-entry.
+4. Add a review-cycle loop: Reviewer findings create rework relay items for Senior Full Stack Dev.
+5. Add optional Cline/OCI/OCA adapters behind the same worker contract and relay context pack.
+6. Add future read-only Jira2/Jira MCP and GitHub MCP intake connectors behind approval-gated connector policy; do not enable external writes by default.
+7. Add future governed DB awareness: repo config detection, local metadata-only schema introspection, approval-gated data queries, and no credential exposure to UI or workers.
+
 This is the frozen implementation plan for evolving Oracle Developer Twin from a static seven-stage planning workflow into a practical, developer-usable agentic delivery workbench.
 
 The plan can be updated later, but this version is the baseline direction.

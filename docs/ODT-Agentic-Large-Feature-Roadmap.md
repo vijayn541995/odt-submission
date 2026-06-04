@@ -4,6 +4,14 @@ Update, 2026-05-15: the current implementation direction is anchored in `/Users/
 
 Follow-up, 2026-05-15: large-feature intake should include repo/folder path selection by local path, base branch, scope, and a governed Context Vault for mockups, docs, spreadsheets, API samples, and notes. Context files are copied into the ODT workspace and remain evidence for planning, standards review, Q&A, and PR readiness. The local MVP can use lightweight retrieval over that evidence while Oracle DB 23ai/26ai vector/RAG remains the enterprise path.
 
+Progress update, 2026-06-04: ODT 2.0 has moved from a dashboard plan into an agentic worker-control-plane direction. Codex CLI is the first wired execution adapter. The Agent Team supports allowlisted worker lanes, with **Senior Full Stack Dev** as the default write-capable implementation lane, plus read-only Planner/Reviewer lanes and a Build Verifier. Worker output is ingested into ODT evidence, cross-lane questions are promoted into first-class Agent Relay Items, and both relay context plus prior worker evidence are included in the next worker prompt. Standards governance remains mandatory: ordinary reviewed blockers can be overridden with notes, but hard safety blockers such as frontend secrets, destructive actions, and unapproved dependency installs remain blocked.
+
+Relay architecture update, 2026-06-04: production ODT should use an **Agent Relay / Decision Inbox** rather than editing source worker output. Source worker runs remain immutable evidence. Relay items carry source worker, target lane, message, status, decision notes, and routing metadata. They can be assigned, answered, resolved, reopened, and injected into the next Codex/Cline/OCI worker prompt. This is the backbone for sequential orchestration now and safer parallel orchestration later.
+
+Future connector update, 2026-06-04: large-feature intake should later support governed Jira2/Jira MCP and GitHub MCP sources. The first version should be read-only: import Jira ticket data, GitHub issues/PR metadata, branches, check summaries, comments, labels, and attachment metadata into ODT evidence. External writes such as Jira comments/status changes, GitHub comments, branch creation, PR updates, labels, or checks must stay behind explicit human approval and connector policy gates.
+
+Future DB awareness update, 2026-06-04: ODT should include governed local database awareness for repositories that expose database config through `database.yml`, `.env.example`, Rails/Spring config, Prisma, Sequelize, Knex, or similar files. The first capability should detect DB configuration candidates and perform metadata-only schema introspection after approval: schemas, tables, columns, indexes, constraints, migrations, and approved row-count summaries. Credentials stay server-side and masked. Business-data queries, exports, DDL, migrations, INSERT/UPDATE/DELETE, and non-local/prod-like connections require explicit approval and DB safety policy checks.
+
 ## Purpose
 
 This note captures how Oracle Developer Twin can evolve from a governed seven-stage planning worker into a more advanced agentic delivery studio for large feature implementation, defect remediation, and multi-repo tasks.
@@ -144,36 +152,52 @@ Recommended panels:
    - open questions, severity, owner, answer box, unresolved blocker count
    - delegation blocked until critical questions are resolved
 
-3. Task Graph
+3. Agent Relay / Decision Inbox
+   - cross-lane questions, reviewer needs, human answers, target worker, status
+   - source worker output stays immutable; relay items carry decisions forward
+   - one-click selection of the next worker lane with relay context injected into the prompt
+
+4. Governed Intake Connectors
+   - paste requirement, choose repo/folder, upload context, or import from Jira2/Jira MCP and GitHub MCP
+   - read-only connector import by default; external writes require separate approval
+   - imported ticket, issue, PR, branch, checks, comments, and attachment metadata become ODT evidence
+
+5. Governed DB Awareness
+   - detect local DB config candidates from repo files without exposing secrets
+   - connect only after human approval and default to metadata/schema-read-only mode
+   - store schema summaries, migration signals, table relationships, indexes, constraints, and safe row-count evidence for agents
+   - block business-data export, DDL, migrations, and data mutations unless a separate DB approval gate allows them
+
+6. Task Graph
    - feature split into tasks, dependencies, owners, status, write scope
    - useful for large work where one prompt is too broad
 
-4. Agent Timeline
+7. Agent Timeline
    - every agent run as a row
    - status, duration, retries, timeout recovery, artifact links
    - similar to the Swarm IDE timeline
 
-5. Review Cycle Scoreboard
+8. Review Cycle Scoreboard
    - role scores per cycle
    - trend line showing improvement or regression
    - arbitrator reason for continue/stop
 
-6. Scope and Risk
+9. Scope and Risk
    - allowed write paths, forbidden paths, max file count
    - changed file risk heatmap
    - dependency and protected file warnings
 
-7. Explainable Diff
+10. Explainable Diff
    - changed file list
    - why the file changed
    - which agent suggested it
    - acceptance criteria linked to the change
 
-8. Verification Console
+11. Verification Console
    - install, lint, unit tests, build, a11y checks, smoke checks
    - pass/fail logs with short summaries
 
-9. Human Review Gate
+12. Human Review Gate
    - approve for delegation
    - request rework
    - accept final diff
