@@ -20,6 +20,13 @@ const navItems = [
   { id: 'settings', label: 'Settings' }
 ];
 
+const navPageIds = new Set(navItems.map((item) => item.id));
+
+function pageFromHash() {
+  const page = String(window.location.hash || '').replace(/^#\/?/, '').trim();
+  return navPageIds.has(page) ? page : 'overview';
+}
+
 const teamRoles = [
   { id: 'lead-planner', name: 'Lead Planner', status: 'Ready', scope: 'Clarify scope, gaps, sequence, risks, and worker split', mode: 'Read-only planning', requiresWrite: false },
   { id: 'fullstack-dev', name: 'Senior Full Stack Dev', status: 'Waiting', scope: 'IC4-style end-to-end implementation across UI, API integration, state, utilities, tests, and architecture tradeoffs', mode: 'Approved writes only', requiresWrite: true },
@@ -68,12 +75,22 @@ const foundrySourceOptions = [
 ];
 
 function App() {
-  const [activePage, setActivePage] = useState('overview');
+  const [activePage, setActivePage] = useState(pageFromHash);
   const workbench = useWorkbenchData();
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0 });
+    const nextHash = activePage === 'overview' ? '' : `#${activePage}`;
+    if (window.location.hash !== nextHash) {
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${nextHash}`);
+    }
   }, [activePage]);
+
+  useEffect(() => {
+    const handleHashChange = () => setActivePage(pageFromHash());
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   return (
     <div className="app-shell">
@@ -1697,8 +1714,9 @@ function ExecutionHealthPanel({ health, selectedAgent, selectedAdapter, issues =
 
 function AgentTeamPage({ setActivePage, data }) {
   const storedAgent = getStoredSetting(data, 'executionAgent', 'codex');
+  const storedWorkerRole = getStoredSetting(data, 'selectedWorkerRole', 'fullstack-dev');
   const [selectedAgent, setSelectedAgent] = useState(storedAgent);
-  const [selectedWorkerRole, setSelectedWorkerRole] = useState('fullstack-dev');
+  const [selectedWorkerRole, setSelectedWorkerRole] = useState(storedWorkerRole);
   const [selectedWorkerRunId, setSelectedWorkerRunId] = useState('');
   const [selectedRelayId, setSelectedRelayId] = useState('');
   const [relayDecision, setRelayDecision] = useState('');
@@ -1733,6 +1751,10 @@ function AgentTeamPage({ setActivePage, data }) {
   useEffect(() => {
     setSelectedAgent(storedAgent);
   }, [storedAgent]);
+
+  useEffect(() => {
+    setSelectedWorkerRole(storedWorkerRole);
+  }, [storedWorkerRole]);
 
   useEffect(() => {
     if (!workerRuns.length) {
@@ -1787,6 +1809,21 @@ function AgentTeamPage({ setActivePage, data }) {
       await data.refresh();
     } catch (err) {
       setAgentNotice(err.message || 'Unable to save execution agent preference.');
+    }
+  }
+
+  async function chooseWorkerRole(workerRole) {
+    setSelectedWorkerRole(workerRole);
+    setAgentNotice('');
+    try {
+      await postJson('/api/settings', {
+        settings: {
+          selectedWorkerRole: workerRole
+        }
+      });
+      await data.refresh();
+    } catch (err) {
+      setAgentNotice(err.message || 'Unable to save worker lane preference.');
     }
   }
 
@@ -1951,6 +1988,13 @@ function AgentTeamPage({ setActivePage, data }) {
     setSelectedRelayId(relayItem.id);
     setSelectedWorkerRole(nextRole);
     setRelayTargetRole(nextRole);
+    postJson('/api/settings', {
+      settings: {
+        selectedWorkerRole: nextRole
+      }
+    }).catch(() => {
+      // The local UI selection still works; persisted preference is best-effort.
+    });
     setAgentNotice(`${relayItem.title || 'Relay item'} is selected. Launch ${teamRoles.find((role) => role.id === nextRole)?.name || titleCase(nextRole)} to receive this context in the worker prompt.`);
   }
 
@@ -2053,7 +2097,7 @@ function AgentTeamPage({ setActivePage, data }) {
                 key={role.id}
                 role="radio"
                 aria-checked={selectedWorkerRole === role.id}
-                onClick={() => setSelectedWorkerRole(role.id)}
+                onClick={() => chooseWorkerRole(role.id)}
               >
                 <div className="role-avatar">{role.name.slice(0, 2).toUpperCase()}</div>
                 <div>
@@ -2381,6 +2425,8 @@ function ReviewPage({ setActivePage, data }) {
   const latestImplementationEvidence = implementationEvidence[0];
   const recordedTests = implementationEvidence.flatMap((record) => record.tests || []);
   const failedRecordedTests = recordedTests.filter((test) => test.status === 'failed');
+  const reviewCycleCloseout = evidence.reviewCycleCloseout || {};
+  const closeoutSteps = reviewCycleCloseout.steps || [];
   const openComments = comments.filter((comment) => comment.status === 'open');
   const openBlockers = openComments.filter((comment) => comment.severity === 'blocker');
   const acceptedRisk = comments.filter((comment) => comment.status === 'accepted_risk');
@@ -2419,6 +2465,46 @@ function ReviewPage({ setActivePage, data }) {
 
   function updateImplementationField(field, value) {
     setImplementationForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function closeoutStepTone(status) {
+    if (status === 'complete') return 'success';
+    if (status === 'current') return 'warning';
+    if (status === 'blocked') return 'danger';
+    return 'neutral';
+  }
+
+  async function openWorkerForRole(workerRole) {
+    const role = teamRoles.find((item) => item.id === workerRole);
+    if (!workerRole || !role) {
+      setActivePage(reviewCycleCloseout.nextAction?.page || 'team');
+      return;
+    }
+    setBusy(`select-worker-${workerRole}`);
+    setNotice('');
+    try {
+      await postJson('/api/settings', {
+        settings: {
+          selectedWorkerRole: workerRole
+        }
+      });
+      setNotice(`${role.name} selected in Agent Team for the next closeout step.`);
+      await data.refresh();
+      setActivePage('team');
+    } catch (err) {
+      setNotice(err.message || `Unable to select ${role.name}.`);
+    } finally {
+      setBusy('');
+    }
+  }
+
+  function handleCloseoutNextAction() {
+    const next = reviewCycleCloseout.nextAction || {};
+    if (next.targetWorkerRole) {
+      openWorkerForRole(next.targetWorkerRole);
+      return;
+    }
+    setActivePage(next.page || 'review');
   }
 
   async function addReviewComment() {
@@ -2567,6 +2653,33 @@ function ReviewPage({ setActivePage, data }) {
         <MetricCard label="Accepted Risk" value={acceptedRisk.length || 0} detail="Human-owned continuation evidence" tone={acceptedRisk.length ? 'warning' : 'neutral'} />
         <MetricCard label="Failed Tests" value={failedRecordedTests.length || 0} detail="Need fix or accepted risk" tone={failedRecordedTests.length ? 'danger' : 'success'} />
       </div>
+      <Panel title="Review Cycle Closeout" eyebrow="Rework To PR">
+        <div className="closeout-header">
+          <div>
+            <StatusBadge label={titleCase(reviewCycleCloseout.status || 'not_started')} tone={reviewCycleCloseout.readyForPrPack ? 'success' : reviewCycleCloseout.requiresCloseout ? 'warning' : 'neutral'} />
+            <h4>{reviewCycleCloseout.label || 'No active review cycle'}</h4>
+            <p className="muted-copy">{reviewCycleCloseout.nextAction?.detail || 'Route review findings to rework when the reviewer finds issues that need another implementation pass.'}</p>
+          </div>
+          <button
+            className={reviewCycleCloseout.nextAction?.targetWorkerRole ? 'primary-button' : 'secondary-button'}
+            type="button"
+            onClick={handleCloseoutNextAction}
+            disabled={Boolean(busy) || (!reviewCycleCloseout.requiresCloseout && reviewCycleCloseout.nextAction?.page === 'review')}
+          >
+            {busy.startsWith('select-worker-') ? 'Selecting Worker' : reviewCycleCloseout.nextAction?.label || 'Open Review'}
+          </button>
+        </div>
+        <SimpleTable
+          columns={['Step', 'Status', 'Evidence', 'Next Lane']}
+          rows={closeoutSteps.map((step) => [
+            step.label,
+            <StatusBadge label={titleCase(step.status)} tone={closeoutStepTone(step.status)} />,
+            step.evidenceId || step.workerRunId || step.reportId || step.detail,
+            step.targetWorkerRole ? (teamRoles.find((role) => role.id === step.targetWorkerRole)?.name || titleCase(step.targetWorkerRole)) : step.page ? titleCase(step.page) : 'ODT'
+          ])}
+          empty="No rework cycle is queued. Send a warning or blocker review finding to rework when another implementation pass is needed."
+        />
+      </Panel>
       <div className="two-column wide-left">
         <Panel title="Review Queue" eyebrow="Human Decisions">
           <SimpleTable
@@ -2787,6 +2900,7 @@ function PrReadinessPage({ setActivePage, data }) {
   const workflow = workflowStateFromData(data);
   const latestReport = evidence.prReadinessReports?.[0]?.reportJson || null;
   const latestImplementationEvidence = evidence.implementationEvidence?.[0] || null;
+  const reviewCycleCloseout = evidence.reviewCycleCloseout || {};
   const tests = latestImplementationEvidence?.tests || [];
   const failedTests = tests.filter((test) => test.status === 'failed');
   const blockingItems = latestReport?.blockingItems || [];
@@ -2864,6 +2978,7 @@ function PrReadinessPage({ setActivePage, data }) {
         <MetricCard label="PR Gate" value={status} detail={latestReport ? 'Latest generated pack' : 'Generate first pack'} tone={status === 'PR_READY_REVIEW' ? 'success' : status === 'BLOCKED' ? 'danger' : 'warning'} />
         <MetricCard label="Blocking Items" value={blockingItems.length || 0} detail="Must resolve or accept risk" tone={blockingItems.length ? 'danger' : 'success'} />
         <MetricCard label="Checklist" value={`${checkedCount}/${checklist.length || 0}`} detail="Evidence-backed items" tone={checklist.length && checkedCount === checklist.length ? 'success' : 'warning'} />
+        <MetricCard label="Review Cycle" value={reviewCycleCloseout.readyForPrPack ? 'Ready' : reviewCycleCloseout.requiresCloseout ? 'Open' : 'None'} detail={reviewCycleCloseout.label || 'No rework queued'} tone={reviewCycleCloseout.readyForPrPack ? 'success' : reviewCycleCloseout.requiresCloseout ? 'warning' : 'neutral'} />
         <MetricCard label="Changed Files" value={latestImplementationEvidence?.changedFiles?.length || 0} detail="From implementation evidence" tone={latestImplementationEvidence ? 'success' : 'warning'} />
         <MetricCard label="Failed Tests" value={failedTests.length || 0} detail="Need fix or accepted risk" tone={failedTests.length ? 'danger' : 'success'} />
       </div>
@@ -2892,6 +3007,7 @@ function PrReadinessPage({ setActivePage, data }) {
           <ActionList
             items={[
               ['Evidence Source', latestImplementationEvidence ? `Latest implementation evidence ${shortId(latestImplementationEvidence.id)} is attached.` : 'Implementation evidence is missing. Record it in Review first.'],
+              ['Review Cycle', reviewCycleCloseout.requiresCloseout ? `${reviewCycleCloseout.label}: ${reviewCycleCloseout.nextAction?.detail || 'Complete closeout.'}` : 'No rework cycle is currently queued.'],
               ['Standards Gate', latestReport ? `Latest PR pack status is ${latestReport.status}.` : 'No PR pack has been generated yet.'],
               ['Human Review', 'Blocked items remain reviewable and can be resolved, accepted as risk, or sent back for rework.']
             ]}

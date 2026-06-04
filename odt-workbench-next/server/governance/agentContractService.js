@@ -24,6 +24,9 @@ export function buildAgentContract({ assignment, mode = 'read-only', executionAg
       blockerOverrideCaptured: Boolean(standards.blockerOverrideCaptured),
       unresolvedBlockers: standards.unresolvedBlockers || [],
       openReviewBlockers: standards.openReviewBlockers || [],
+      blockingOpenReviewBlockers: standards.blockingOpenReviewBlockers || standards.openReviewBlockers || [],
+      assignedReworkRelayItems: standards.assignedReworkRelayItems || [],
+      reworkLaunchAllowed: Boolean(standards.reworkLaunchAllowed),
       approvedDependencies,
       pendingDependencies,
       dependencyInstallPolicy: dependencyInstallsApproved

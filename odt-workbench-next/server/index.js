@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { execFile, spawnSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, openSync, closeSync, readSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
@@ -1894,6 +1894,7 @@ function collectEvidence(assignmentId = 'assignment-local-mvp') {
 		    agentRelayItems: statements.selectAgentRelayItemsByAssignment.all(assignmentId).map(parseAgentRelayItem)
 		  };
   evidence.requirementSignals = parseRequirementSignals(evidence.requirements?.[0]?.rawText || '');
+  evidence.reviewCycleCloseout = deriveReviewCycleCloseout(evidence);
   evidence.workflowState = deriveWorkflowState(evidence);
   return evidence;
 }
@@ -1958,6 +1959,16 @@ function getUnresolvedStandardsBlockers(evidence) {
 
 function getOpenReviewBlockers(evidence) {
   return (evidence.reviewComments || []).filter((comment) => comment.status === 'open' && comment.severity === 'blocker');
+}
+
+function getActiveReworkRelayItemsForWorker(evidence, workerRoleId = '') {
+  const roleId = String(workerRoleId || '').trim();
+  if (!roleId) return [];
+  return (evidence.agentRelayItems || []).filter((item) => (
+    item.itemType === 'rework'
+    && item.targetWorkerRole === roleId
+    && ['open', 'assigned', 'answered'].includes(String(item.status || '').toLowerCase())
+  ));
 }
 
 function latestPostImplementationCheck(evidence) {
@@ -2126,6 +2137,7 @@ function deriveWorkflowState(evidence = {}) {
   const latestHandoff = (evidence.agentEvents || []).find((event) => event.eventType === 'handoff_prepared');
   const latestImplementationEvidence = evidence.implementationEvidence?.[0] || null;
   const latestPrReport = evidence.prReadinessReports?.[0]?.reportJson || null;
+  const reviewCycleCloseout = evidence.reviewCycleCloseout || deriveReviewCycleCloseout(evidence);
   const failedTests = getFailedImplementationTests(evidence);
   const acceptedImplementationRisk = hasAcceptedImplementationRisk(evidence);
   const activeBlockDecision = latestDecisionEvent(evidence.approvals || [], ['block_implementation']);
@@ -2227,6 +2239,12 @@ function deriveWorkflowState(evidence = {}) {
     label = 'Post-Implementation Review';
     nextAction = { label: 'Prepare PR Pack', detail: 'Generate the PR-ready package from evidence.', page: 'pr' };
   }
+  if (reviewCycleCloseout.requiresCloseout && !reviewCycleCloseout.readyForPrPack && !blockedReasons.length) {
+    state = 'REVIEW_CYCLE_CLOSEOUT';
+    stage = 'test';
+    label = 'Review Cycle Closeout';
+    nextAction = reviewCycleCloseout.nextAction || { label: 'Continue Review Cycle', detail: 'Complete rework, review, verification, and PR-ready evidence.', page: 'review' };
+  }
   if (latestPrReport?.status === 'PR_READY_REVIEW' && !blockedReasons.length) {
     state = 'PR_READY';
     stage = 'pr';
@@ -2272,7 +2290,7 @@ function deriveWorkflowState(evidence = {}) {
       canApproveWrite: Boolean(latestCheck && !openReviewBlockers.length && !writeApproved),
       canDelegateWrite: Boolean(writeApproved && !blockedByDecision && !unresolvedStandardsBlockers.length && !openReviewBlockers.length),
       canRecordImplementationEvidence: Boolean((writeApproved || latestHandoff) && !blockedByDecision && !unresolvedStandardsBlockers.length && !openReviewBlockers.length),
-      canPreparePr: Boolean(latestImplementationEvidence && !blockedByDecision && !pendingDependencies.length && (!failedTests.length || acceptedImplementationRisk)),
+      canPreparePr: Boolean(latestImplementationEvidence && !blockedByDecision && !pendingDependencies.length && (!failedTests.length || acceptedImplementationRisk) && (!reviewCycleCloseout.requiresCloseout || reviewCycleCloseout.readyForPrPack)),
       dependencyInstallsRequireSeparateApproval: true
     },
     counts: {
@@ -2287,6 +2305,180 @@ function deriveWorkflowState(evidence = {}) {
       postImplementationCheckId: postImplementationCheck?.id || '',
       implementationEvidenceId: latestImplementationEvidence?.id || '',
       prReportStatus: latestPrReport?.status || ''
+    }
+  };
+}
+
+function timeMillis(value = '') {
+  const parsed = new Date(value || 0).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function workerRunTime(run = {}) {
+  return timeMillis(run.completedAt || run.updatedAt || run.createdAt);
+}
+
+function latestByTime(items = [], predicate = () => true, getTime = (item) => timeMillis(item?.createdAt)) {
+  return (items || [])
+    .filter(Boolean)
+    .filter(predicate)
+    .sort((a, b) => getTime(b) - getTime(a))[0] || null;
+}
+
+function workerHasReviewableOutput(run = {}) {
+  const status = String(run.status || '').toLowerCase();
+  const output = run.output || {};
+  return Boolean(
+    String(output.rawText || '').trim()
+    || output.responseBytes > 0
+    || ['completed', 'response_ready', 'needs_input'].includes(status)
+  );
+}
+
+function closeoutStep(id, label, status, detail, evidence = {}) {
+  return { id, label, status, detail, ...evidence };
+}
+
+function deriveReviewCycleCloseout(evidence = {}) {
+  const reworkItems = (evidence.agentRelayItems || []).filter((item) => item.itemType === 'rework');
+  const latestReworkItem = latestByTime(reworkItems);
+  const activeReworkItems = reworkItems.filter((item) => ['open', 'assigned', 'answered'].includes(String(item.status || '').toLowerCase()));
+  const reworkStartedAt = timeMillis(latestReworkItem?.createdAt);
+  const implementationEvidence = evidence.implementationEvidence || [];
+  const workerRuns = evidence.agentWorkerRuns || [];
+  const latestReworkEvidence = latestByTime(
+    implementationEvidence,
+    (item) => !latestReworkItem || timeMillis(item.createdAt) >= reworkStartedAt
+  );
+  const latestReworkEvidenceAt = timeMillis(latestReworkEvidence?.createdAt);
+  const latestReviewerRun = latestByTime(
+    workerRuns,
+    (run) => run.workerRole === 'reviewer'
+      && workerHasReviewableOutput(run)
+      && latestReworkEvidence
+      && workerRunTime(run) >= latestReworkEvidenceAt,
+    workerRunTime
+  );
+  const latestReviewerRunAt = workerRunTime(latestReviewerRun || {});
+  const latestBuildVerifierRun = latestByTime(
+    workerRuns,
+    (run) => run.workerRole === 'build-verifier'
+      && workerHasReviewableOutput(run)
+      && latestReviewerRun
+      && workerRunTime(run) >= latestReviewerRunAt,
+    workerRunTime
+  );
+  const latestBuildVerifierRunAt = workerRunTime(latestBuildVerifierRun || {});
+  const latestPrReportAfterBuild = latestByTime(
+    evidence.prReadinessReports || [],
+    (report) => latestBuildVerifierRun && timeMillis(report.createdAt) >= latestBuildVerifierRunAt
+  );
+  const latestPrReport = latestPrReportAfterBuild?.reportJson || null;
+  const openReviewBlockers = getOpenReviewBlockers(evidence);
+  const failedTests = getFailedImplementationTests(evidence);
+  const acceptedImplementationRisk = hasAcceptedImplementationRisk(evidence);
+  const requiresCloseout = Boolean(reworkItems.length);
+
+  const steps = [
+    closeoutStep(
+      'rework-relay',
+      'Review finding routed',
+      latestReworkItem ? 'complete' : 'not_started',
+      latestReworkItem
+        ? `Latest rework relay targets ${latestReworkItem.targetLane || latestReworkItem.targetWorkerRole || 'the next worker'}.`
+        : 'No review finding has been sent to the rework relay yet.',
+      { evidenceId: latestReworkItem?.id || '', targetWorkerRole: latestReworkItem?.targetWorkerRole || 'fullstack-dev' }
+    ),
+    closeoutStep(
+      'rework-evidence',
+      'Senior Full Stack Dev rework evidence',
+      latestReworkEvidence ? 'complete' : latestReworkItem ? 'current' : 'waiting',
+      latestReworkEvidence
+        ? `Implementation evidence ${latestReworkEvidence.id} was recorded after the latest rework relay.`
+        : 'Launch Senior Full Stack Dev for the rework item, then ingest/record implementation evidence.',
+      { evidenceId: latestReworkEvidence?.id || '', targetWorkerRole: 'fullstack-dev' }
+    ),
+    closeoutStep(
+      'reviewer-rerun',
+      'Reviewer rerun after rework',
+      latestReviewerRun ? 'complete' : latestReworkEvidence ? 'current' : 'waiting',
+      latestReviewerRun
+        ? `Reviewer run ${latestReviewerRun.id} has output after the rework evidence.`
+        : 'Launch Reviewer after rework evidence is recorded so findings are checked again.',
+      { workerRunId: latestReviewerRun?.id || '', targetWorkerRole: 'reviewer' }
+    ),
+    closeoutStep(
+      'build-verifier-rerun',
+      'Build Verifier rerun after review',
+      latestBuildVerifierRun ? 'complete' : latestReviewerRun ? 'current' : 'waiting',
+      latestBuildVerifierRun
+        ? `Build Verifier run ${latestBuildVerifierRun.id} has output after the reviewer pass.`
+        : 'Launch Build Verifier after reviewer rerun to capture final build/test evidence.',
+      { workerRunId: latestBuildVerifierRun?.id || '', targetWorkerRole: 'build-verifier' }
+    ),
+    closeoutStep(
+      'pr-ready-pack',
+      'PR-ready package after verification',
+      latestPrReportAfterBuild ? (latestPrReport?.status === 'PR_READY_REVIEW' ? 'complete' : 'blocked') : latestBuildVerifierRun ? 'current' : 'waiting',
+      latestPrReportAfterBuild
+        ? `PR readiness pack is ${latestPrReport?.status || 'recorded'}.`
+        : 'Generate the PR-ready package after Build Verifier output is captured.',
+      { reportId: latestPrReportAfterBuild?.id || '', page: 'pr' }
+    )
+  ];
+
+  let status = requiresCloseout ? 'REWORK_EVIDENCE_REQUIRED' : 'NO_REWORK_REQUESTED';
+  let label = requiresCloseout ? 'Rework Evidence Required' : 'No Rework Cycle Queued';
+  let nextAction = requiresCloseout
+    ? { label: 'Launch Rework Worker', detail: 'Open Agent Team and launch Senior Full Stack Dev with the rework relay context.', page: 'team', targetWorkerRole: 'fullstack-dev' }
+    : { label: 'No Rework Cycle', detail: 'No review finding is currently routed for rework.', page: 'review' };
+  let readyForPrPack = !requiresCloseout;
+
+  if (requiresCloseout && latestReworkEvidence && !latestReviewerRun) {
+    status = 'REVIEWER_RERUN_REQUIRED';
+    label = 'Reviewer Rerun Required';
+    nextAction = { label: 'Launch Reviewer', detail: 'Open Agent Team and launch the Reviewer after rework evidence.', page: 'team', targetWorkerRole: 'reviewer' };
+  } else if (requiresCloseout && latestReviewerRun && openReviewBlockers.length) {
+    status = 'REVIEW_FINDINGS_OPEN';
+    label = 'Review Findings Open';
+    nextAction = { label: 'Send Findings To Rework', detail: 'Resolve, accept risk, or send reviewer blockers back to Senior Full Stack Dev Rework.', page: 'review', targetWorkerRole: 'fullstack-dev' };
+  } else if (requiresCloseout && latestReviewerRun && !latestBuildVerifierRun) {
+    status = 'BUILD_VERIFICATION_REQUIRED';
+    label = 'Build Verification Required';
+    nextAction = { label: 'Launch Build Verifier', detail: 'Open Agent Team and launch Build Verifier after reviewer rerun.', page: 'team', targetWorkerRole: 'build-verifier' };
+  } else if (requiresCloseout && latestBuildVerifierRun && failedTests.length && !acceptedImplementationRisk) {
+    status = 'VERIFICATION_FINDINGS_OPEN';
+    label = 'Verification Findings Open';
+    nextAction = { label: 'Review Failed Tests', detail: 'Fix failed tests or accept implementation risk with explicit review notes.', page: 'review' };
+  } else if (requiresCloseout && latestBuildVerifierRun && !latestPrReportAfterBuild) {
+    status = 'PR_PACK_REQUIRED';
+    label = 'PR Pack Required';
+    readyForPrPack = true;
+    nextAction = { label: 'Prepare PR Pack', detail: 'Generate PR-ready evidence after reviewer and build-verifier reruns.', page: 'pr' };
+  } else if (requiresCloseout && latestPrReportAfterBuild) {
+    status = latestPrReport?.status === 'PR_READY_REVIEW' ? 'PR_READY_REVIEW' : 'PR_BLOCKED';
+    label = latestPrReport?.status === 'PR_READY_REVIEW' ? 'PR Ready For Review' : 'PR Pack Blocked';
+    readyForPrPack = true;
+    nextAction = latestPrReport?.status === 'PR_READY_REVIEW'
+      ? { label: 'Copy PR Markdown', detail: 'PR-ready package is available for human review.', page: 'pr' }
+      : { label: 'Review PR Blockers', detail: 'Resolve PR readiness blockers or accept risk with evidence.', page: 'pr' };
+  }
+
+  return {
+    assignmentId: evidence.assignment?.id || 'assignment-local-mvp',
+    requiresCloseout,
+    status,
+    label,
+    readyForPrPack,
+    activeReworkCount: activeReworkItems.length,
+    nextAction,
+    steps,
+    latest: {
+      reworkRelayItemId: latestReworkItem?.id || '',
+      reworkEvidenceId: latestReworkEvidence?.id || '',
+      reviewerRunId: latestReviewerRun?.id || '',
+      buildVerifierRunId: latestBuildVerifierRun?.id || '',
+      prReportId: latestPrReportAfterBuild?.id || ''
     }
   };
 }
@@ -2521,19 +2713,21 @@ function requestPlanRework({ assignmentId = 'assignment-local-mvp', notes = '', 
   return { assignmentId, comment, design, plan, standardsCheck, status: 'REWORK_DRAFTED' };
 }
 
-function normalizeStringItems(value) {
+function normalizeStringItems(value, limit = 80) {
   if (Array.isArray(value)) {
     return value
       .map((item) => String(typeof item === 'object' ? item.path || item.command || item.name || item.label || JSON.stringify(item) : item).trim())
-      .filter(Boolean);
+      .filter(Boolean)
+      .slice(0, limit);
   }
   return String(value || '')
     .split(/\n|,/)
     .map((item) => item.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .slice(0, limit);
 }
 
-function normalizeTestEvidence(value) {
+function normalizeTestEvidence(value, limit = 80) {
   const normalizeStatus = (status) => {
     const normalized = String(status || '').toLowerCase().replace(/\s+/g, '_');
     if (['pass', 'passed', 'success', 'ok'].includes(normalized)) return 'passed';
@@ -2558,7 +2752,8 @@ function normalizeTestEvidence(value) {
         const text = String(item || '').trim();
         return text ? { name: text, command: text, status: inferTestStatus(text), notes: '' } : null;
       })
-      .filter(Boolean);
+      .filter(Boolean)
+      .slice(0, limit);
   }
 
   return String(value || '')
@@ -2573,7 +2768,8 @@ function normalizeTestEvidence(value) {
         status: normalizeStatus(status || inferTestStatus(line)),
         notes: notes.join(' | ')
       };
-    });
+    })
+    .slice(0, limit);
 }
 
 function inferTestStatus(text) {
@@ -2652,13 +2848,22 @@ function extractCommandsFromWorkerOutput(text = '') {
   const commandLines = [
     ...extractMarkdownSectionLines(text, ['commands run', 'commands/tests run and outcomes', 'tests run', 'verification commands', 'commands'])
   ];
-  const commandPattern = /\b(?:npm|pnpm|yarn|npx|node|jest|vitest|pytest|mvn|gradle|make|go test|cargo|python|bundle exec)\b[^\n`]*/gi;
-  const matches = [];
-  const source = `${commandLines.join('\n')}\n${text}`;
-  let match = commandPattern.exec(source);
-  while (match) {
-    matches.push(stripEvidenceLine(match[0]).replace(/\s+\|\s+(passed|failed|skipped|not_run|not run|success|ok|error).*$/i, ''));
-  }
+  const commandStart = /^(?:`)?(?:(?:npm|pnpm|yarn|npx|node|jest|vitest|pytest|mvn|gradle|make|cargo|python)\b|(?:go\s+test\b)|(?:bundle\s+exec\b))/i;
+  const lines = `${commandLines.join('\n')}\n${text}`
+    .replace(/\r/g, '')
+    .split('\n')
+    .slice(0, 600);
+  const matches = lines
+    .map(stripEvidenceLine)
+    .map((line) => {
+      const match = line.match(commandStart);
+      if (!match || typeof match.index !== 'number') return '';
+      return line.slice(match.index)
+        .replace(/^`|`$/g, '')
+        .replace(/\s+\|\s+(passed|failed|skipped|not_run|not run|success|ok|error).*$/i, '')
+        .trim();
+    })
+    .filter(Boolean);
   return uniqueLimited(matches, 30);
 }
 
@@ -2689,36 +2894,78 @@ function extractWorkerImplementationSummary(text = '') {
   return summarizeWorkerOutput(text).slice(0, 1200);
 }
 
-function extractImplementationEvidenceFromWorkerRun(run) {
-  const rawText = run?.output?.rawText || readTextSnippet(run?.responseFile, 24000);
-  const changedFiles = extractChangedFilesFromWorkerOutput(rawText);
-  const commands = extractCommandsFromWorkerOutput(rawText);
-  const tests = extractTestsFromWorkerOutput(rawText);
-  const summary = [
-    extractWorkerImplementationSummary(rawText),
-    '',
-    `Source worker: ${run?.workerRoleLabel || run?.workerRole || 'Worker'} (${run?.executionAgent || 'agent'}).`,
-    `Source response: ${run?.responseFile || 'not captured'}.`
-  ].join('\n').trim();
+function normalizeExtractedWorkerEvidence(extracted = {}) {
+  const changedFiles = normalizeStringItems(extracted.changedFiles || [], 80);
+  const commands = normalizeStringItems(extracted.commands || [], 50);
+  const tests = normalizeTestEvidence(extracted.tests || [], 80);
+  const warnings = normalizeStringItems(extracted.warnings || [], 20);
+  const summary = String(extracted.summary || '').trim().slice(0, 6000);
   return {
+    ...extracted,
     changedFiles,
     commands,
     tests,
     summary,
-    source: {
-      workerRunId: run?.id || '',
-      runId: run?.runId || '',
-      workerRole: run?.workerRole || '',
-      workerRoleLabel: run?.workerRoleLabel || '',
-      executionAgent: run?.executionAgent || '',
-      responseFile: run?.responseFile || '',
-      logFile: run?.logFile || ''
-    },
-    confidence: changedFiles.length || commands.length || tests.length ? 'reviewable' : 'low',
-    warnings: changedFiles.length || commands.length || tests.length
-      ? []
-      : ['ODT could not infer changed files, commands, or tests from the worker output. Review the response and edit evidence manually.']
+    warnings
   };
+}
+
+function extractImplementationEvidenceFromWorkerRun(run) {
+  const rawText = readTextSnippet(run?.responseFile, 24000) || truncateForApi(run?.output?.rawText || '', 24000);
+  try {
+    const changedFiles = extractChangedFilesFromWorkerOutput(rawText);
+    const commands = extractCommandsFromWorkerOutput(rawText);
+    const tests = extractTestsFromWorkerOutput(rawText);
+    const summary = [
+      extractWorkerImplementationSummary(rawText),
+      '',
+      `Source worker: ${run?.workerRoleLabel || run?.workerRole || 'Worker'} (${run?.executionAgent || 'agent'}).`,
+      `Source response: ${run?.responseFile || 'not captured'}.`
+    ].join('\n').trim();
+    const extracted = normalizeExtractedWorkerEvidence({
+      changedFiles,
+      commands,
+      tests,
+      summary,
+      source: {
+        workerRunId: run?.id || '',
+        runId: run?.runId || '',
+        workerRole: run?.workerRole || '',
+        workerRoleLabel: run?.workerRoleLabel || '',
+        executionAgent: run?.executionAgent || '',
+        responseFile: run?.responseFile || '',
+        logFile: run?.logFile || ''
+      },
+      confidence: changedFiles.length || commands.length || tests.length ? 'reviewable' : 'low',
+      warnings: changedFiles.length || commands.length || tests.length
+        ? []
+        : ['ODT could not infer changed files, commands, or tests from the worker output. Review the response and edit evidence manually.']
+    });
+    return extracted;
+  } catch (err) {
+    return normalizeExtractedWorkerEvidence({
+      changedFiles: [],
+      commands: [],
+      tests: [],
+      summary: [
+        extractWorkerImplementationSummary(rawText),
+        '',
+        `Source worker: ${run?.workerRoleLabel || run?.workerRole || 'Worker'} (${run?.executionAgent || 'agent'}).`,
+        `Source response: ${run?.responseFile || 'not captured'}.`
+      ].join('\n').trim(),
+      source: {
+        workerRunId: run?.id || '',
+        runId: run?.runId || '',
+        workerRole: run?.workerRole || '',
+        workerRoleLabel: run?.workerRoleLabel || '',
+        executionAgent: run?.executionAgent || '',
+        responseFile: run?.responseFile || '',
+        logFile: run?.logFile || ''
+      },
+      confidence: 'low',
+      warnings: [`ODT could not safely infer structured evidence from this worker output: ${err.message}. Review the response and edit evidence manually.`]
+    });
+  }
 }
 
 function parseImplementationEvidenceRow(row) {
@@ -2896,18 +3143,21 @@ function buildPrMarkdown(report) {
   ].join('\n');
 }
 
-function buildCurrentAgentContract(assignmentId, executionAgent = getStoredSetting('executionAgent', 'codex')) {
+function buildCurrentAgentContract(assignmentId, executionAgent = getStoredSetting('executionAgent', 'codex'), options = {}) {
   const evidence = collectEvidence(assignmentId);
   const writeApproved = hasWriteApproval(evidence);
   const unresolvedBlockers = getUnresolvedStandardsBlockers(evidence);
   const openReviewBlockers = getOpenReviewBlockers(evidence);
+  const reworkRelayItems = getActiveReworkRelayItemsForWorker(evidence, options.workerRoleId);
+  const allowAssignedRework = Boolean(writeApproved && reworkRelayItems.length && options.workerRoleId);
+  const blockingOpenReviewBlockers = allowAssignedRework ? [] : openReviewBlockers;
   const approvedDependencies = dependencyContractRows(evidence, 'approved');
   const pendingDependencies = dependencyContractRows(evidence, 'pending');
   return {
     evidence,
     contract: buildAgentContract({
       assignment: evidence.assignment || { id: assignmentId, title: assignmentId, requirement: '' },
-      mode: writeApproved && !unresolvedBlockers.length && !openReviewBlockers.length ? 'write-approved' : 'read-only',
+      mode: writeApproved && !unresolvedBlockers.length && !blockingOpenReviewBlockers.length ? 'write-approved' : 'read-only',
       executionAgent,
       repoAnalysis: evidence.repoAnalysis[0]?.analysisJson || {},
       technicalDesign: evidence.technicalDesigns[0]?.designJson || {},
@@ -2919,25 +3169,31 @@ function buildCurrentAgentContract(assignmentId, executionAgent = getStoredSetti
         latestStandardsCheckId: evidence.standardsChecks[0]?.id || '',
         unresolvedBlockers,
         openReviewBlockers,
+        blockingOpenReviewBlockers,
+        assignedReworkRelayItems: reworkRelayItems,
+        reworkLaunchAllowed: allowAssignedRework,
         blockerOverrideCaptured: hasLatestBlockerOverride(evidence)
       }
     })
   };
 }
 
-function prepareAgentDelegation({ assignmentId = 'assignment-local-mvp', executionAgent, requireWriteApproved = true, notes = '' } = {}) {
+function prepareAgentDelegation({ assignmentId = 'assignment-local-mvp', executionAgent, requireWriteApproved = true, workerRoleId = '', notes = '' } = {}) {
   const selectedAgent = executionAgent || getStoredSetting('executionAgent', 'codex');
   const runId = createId('run');
-  const { evidence, contract } = buildCurrentAgentContract(assignmentId, selectedAgent);
+  const { evidence, contract } = buildCurrentAgentContract(assignmentId, selectedAgent, { workerRoleId });
   const latestCheckId = evidence.standardsChecks[0]?.id || '';
   const blockedReasons = [];
   const warnings = [];
   if (requireWriteApproved && contract.mode !== 'write-approved') {
     blockedReasons.push(contract.standards.unresolvedBlockers?.length
       ? 'Unresolved standards blockers remain.'
-      : contract.standards.openReviewBlockers?.length
+      : contract.standards.blockingOpenReviewBlockers?.length
         ? 'Open review blockers must be resolved or accepted as risk.'
         : 'Write approval for the latest standards review is required.');
+  }
+  if (contract.standards.reworkLaunchAllowed) {
+    warnings.push('Open review blockers are being handled by this assigned rework worker. Build verification and PR readiness remain blocked until reviewer rerun passes.');
   }
   if (contract.standards.pendingDependencies?.length) {
     warnings.push('Pending dependency requests do not block handoff, but dependency installs remain disabled until package-specific approval is captured.');
@@ -3086,12 +3342,30 @@ function getAgentWorkerRole(workerRole = 'lead-planner') {
   return agentWorkerRoles.find((role) => role.id === workerRole) || null;
 }
 
-function readTextSnippet(filePath = '', maxChars = 3600) {
+function readTextSnippet(filePath = '', maxChars = 3600, options = {}) {
   try {
     if (!filePath || !existsSync(filePath)) return '';
-    const text = readFileSync(filePath, 'utf8');
-    if (text.length <= maxChars) return text.trim();
-    return `${text.slice(0, maxChars).trim()}\n\n[ODT truncated this worker output for prompt size.]`;
+    const limit = Math.max(1, Math.min(Number(maxChars) || 3600, 250000));
+    const readTail = options.tail === true;
+    const stats = statSync(filePath);
+    if (!stats.size) return '';
+
+    if (stats.size <= limit) {
+      return readFileSync(filePath, 'utf8').trim();
+    }
+
+    const fd = openSync(filePath, 'r');
+    try {
+      const buffer = Buffer.alloc(limit);
+      const position = readTail ? Math.max(0, stats.size - limit) : 0;
+      const bytesRead = readSync(fd, buffer, 0, limit, position);
+      const text = buffer.subarray(0, bytesRead).toString('utf8');
+      return readTail
+        ? `[ODT showing the last ${limit} bytes of this worker log.]\n\n${text.trim()}`
+        : `${text.trim()}\n\n[ODT truncated this worker output for prompt size.]`;
+    } finally {
+      closeSync(fd);
+    }
   } catch {
     return '';
   }
@@ -3332,6 +3606,94 @@ function parseAgentWorkerRun(row) {
   };
 }
 
+function truncateForApi(value = '', maxChars = 8000) {
+  const text = String(value || '');
+  const limit = Math.max(1, Number(maxChars) || 8000);
+  if (text.length <= limit) return text;
+  return `${text.slice(0, limit).trim()}\n\n[ODT API compacted this field for browser performance. Full source remains in SQLite/filesystem evidence.]`;
+}
+
+function compactJsonForApi(value, options = {}, depth = 0) {
+  const maxString = options.maxString || 2200;
+  const maxArray = options.maxArray || 40;
+  const maxDepth = options.maxDepth || 7;
+  if (typeof value === 'string') return truncateForApi(value, maxString);
+  if (value === null || typeof value !== 'object') return value;
+  if (depth >= maxDepth) return '[ODT compacted nested object for browser performance.]';
+  if (Array.isArray(value)) {
+    const compacted = value.slice(0, maxArray).map((item) => compactJsonForApi(item, options, depth + 1));
+    if (value.length > maxArray) {
+      compacted.push({ compacted: true, omittedItems: value.length - maxArray });
+    }
+    return compacted;
+  }
+  return Object.fromEntries(
+    Object.entries(value).map(([key, item]) => [key, compactJsonForApi(item, options, depth + 1)])
+  );
+}
+
+function compactWorkerRunForApi(run = {}) {
+  if (!run) return run;
+  const output = run.output || {};
+  const rawText = String(output.rawText || '');
+  return {
+    ...run,
+    output: compactJsonForApi({
+      ...output,
+      rawText: rawText ? truncateForApi(rawText, 6000) : rawText,
+      rawTextPreview: rawText ? rawText.slice(0, 1800) : output.rawTextPreview || '',
+      rawTextTruncated: rawText.length > 6000,
+      logTail: truncateForApi(output.logTail || '', 7000)
+    }, { maxString: 2200, maxArray: 30, maxDepth: 6 })
+  };
+}
+
+function compactEvidenceForApi(evidence = {}) {
+  return {
+    ...evidence,
+    requirements: (evidence.requirements || []).map((item) => ({
+      ...item,
+      rawText: truncateForApi(item.rawText || '', 10000)
+    })),
+    standardsChecks: (evidence.standardsChecks || []).map((check) => ({
+      ...check,
+      summary: compactJsonForApi(check.summary || {}, { maxString: 1800, maxArray: 30, maxDepth: 5 }),
+      artifact: compactJsonForApi({
+        ...(check.artifact || {}),
+        requirementText: truncateForApi(check.artifact?.requirementText || '', 3000)
+      }, { maxString: 1800, maxArray: 30, maxDepth: 5 })
+    })),
+    agentEvents: (evidence.agentEvents || []).map((event) => ({
+      ...event,
+      detailJson: compactJsonForApi(event.detailJson || {}, { maxString: 1800, maxArray: 30, maxDepth: 5 }),
+      detail: truncateForApi(event.detail || '', 2400)
+    })),
+    agentFoundryRuns: (evidence.agentFoundryRuns || []).map((run) => ({
+      ...run,
+      inputSources: run.inputSources || [],
+      output: compactJsonForApi(run.output || {}, { maxString: 1800, maxArray: 30, maxDepth: 6 }),
+      outputJson: truncateForApi(run.outputJson || '', 2400)
+    })),
+    prReadinessReports: (evidence.prReadinessReports || []).map((report) => ({
+      ...report,
+      reportJson: compactJsonForApi(report.reportJson || {}, { maxString: 4000, maxArray: 60, maxDepth: 7 })
+    })),
+    repoAnalysis: (evidence.repoAnalysis || []).map((row) => ({
+      ...row,
+      analysisJson: compactJsonForApi(row.analysisJson || {}, { maxString: 2400, maxArray: 80, maxDepth: 6 })
+    })),
+    technicalDesigns: (evidence.technicalDesigns || []).map((row) => ({
+      ...row,
+      designJson: compactJsonForApi(row.designJson || {}, { maxString: 2400, maxArray: 80, maxDepth: 6 })
+    })),
+    implementationPlans: (evidence.implementationPlans || []).map((row) => ({
+      ...row,
+      planJson: compactJsonForApi(row.planJson || {}, { maxString: 2400, maxArray: 80, maxDepth: 6 })
+    })),
+    agentWorkerRuns: (evidence.agentWorkerRuns || []).map(compactWorkerRunForApi)
+  };
+}
+
 function fileSizeIfExists(filePath = '') {
   try {
     if (!filePath || !existsSync(filePath)) return 0;
@@ -3370,7 +3732,7 @@ function syncWorkerRunStatus({ assignmentId = 'assignment-local-mvp', workerRunI
   const statusFileJson = readWorkerStatusFile(run.statusFile);
   const responseBytes = fileSizeIfExists(run.responseFile);
   const logBytes = fileSizeIfExists(run.logFile);
-  const logTail = readTextSnippet(run.logFile, 5000);
+  const logTail = readTextSnippet(run.logFile, 5000, { tail: true });
   const status = mapLaunchStatusToWorkerStatus(statusFileJson.status || run.status, responseBytes);
   const now = new Date().toISOString();
   const completedAt = ['response_ready', 'completed', 'failed', 'codex_missing', 'failed_to_open', 'stopped'].includes(status)
@@ -3443,6 +3805,58 @@ function extractWorkerQuestions(text = '') {
   return questions.slice(0, 20);
 }
 
+function normalizeReviewerSeverity(value = '') {
+  const normalized = String(value || '').toLowerCase().replace(/[_\s-]+/g, ' ').trim();
+  if (['critical', 'high', 'blocker', 'p0', 'p1'].includes(normalized)) return 'blocker';
+  if (['medium', 'warning', 'needs review', 'needs_review', 'p2'].includes(normalized)) return 'warning';
+  return 'comment';
+}
+
+function extractReviewerFindings(text = '') {
+  const findings = [];
+  const lines = String(text || '').replace(/\r/g, '').split('\n');
+  let current = null;
+  const headingPattern = /^\s*(?:\d+[.)]|[-*])\s+(?:\*\*)?(critical|high|blocker|medium|warning|needs[_\s-]?review|low|info|comment|p[0-3])(?:\*\*)?\s*:?\s*(.*)$/i;
+  const stopSectionPattern = /^\s*(?:#{1,6}\s+|\*\*(?:answers?|summary|files reviewed|commands?|accessibility|security|known risks?|follow-up))/i;
+
+  const flush = () => {
+    if (!current) return;
+    const body = current.lines.join('\n').trim();
+    const message = [current.firstLine, body].filter(Boolean).join('\n').trim();
+    if (message) {
+      findings.push({
+        severity: normalizeReviewerSeverity(current.severity),
+        reviewerSeverity: current.severity,
+        message: message.slice(0, 3200)
+      });
+    }
+    current = null;
+  };
+
+  lines.forEach((line) => {
+    const match = line.match(headingPattern);
+    if (match) {
+      flush();
+      current = {
+        severity: match[1],
+        firstLine: match[2] || '',
+        lines: []
+      };
+      return;
+    }
+    if (current && stopSectionPattern.test(line)) {
+      flush();
+      return;
+    }
+    if (current) current.lines.push(line);
+  });
+  flush();
+
+  return findings
+    .filter((finding) => ['blocker', 'warning', 'comment'].includes(finding.severity))
+    .slice(0, 20);
+}
+
 function summarizeWorkerOutput(text = '') {
   const lines = String(text || '')
     .replace(/\r/g, '')
@@ -3453,6 +3867,37 @@ function summarizeWorkerOutput(text = '') {
     .filter((line) => !line.startsWith('#') && !/^[-*]\s*$/.test(line))
     .slice(0, 5);
   return summaryLines.join(' ').slice(0, 700) || 'Worker output captured.';
+}
+
+function createReviewCommentsForReviewerRun(run, responseText = '') {
+  if (!run || run.workerRole !== 'reviewer') return [];
+  const findings = extractReviewerFindings(responseText)
+    .filter((finding) => ['blocker', 'warning'].includes(finding.severity));
+  if (!findings.length) return [];
+
+  const existingComments = statements.selectReviewCommentsByAssignment.all(run.assignmentId);
+  return findings.map((finding, index) => {
+    const marker = `sourceWorkerRunId=${run.id};findingIndex=${index + 1}`;
+    const existing = existingComments.find((comment) => String(comment.resolutionNotes || '').includes(marker));
+    if (existing) return { comment: existing, reworkRelayItem: null, existing: true };
+
+    return createReviewComment({
+      assignmentId: run.assignmentId,
+      targetType: 'implementation',
+      targetId: run.id,
+      severity: finding.severity,
+      status: 'open',
+      createdBy: 'odt-reviewer-ingest',
+      resolutionNotes: marker,
+      comment: [
+        `Reviewer ${finding.reviewerSeverity} finding from ${run.workerRoleLabel || 'Reviewer'} (${run.id}).`,
+        '',
+        finding.message,
+        '',
+        'Required action: address this finding in a focused rework pass, then rerun reviewer and build verification evidence before PR readiness.'
+      ].join('\n')
+    });
+  }).filter(Boolean);
 }
 
 function upsertAgentWorkerRunRecord({ id, assignmentId, runId, role, executionAgent, mode, sandboxMode, status, launchMode, bundlePaths, manualCommand, output = {}, questions = [], completedAt = null, sequenceIndex = null }) {
@@ -3500,39 +3945,45 @@ function ingestWorkerOutput({ assignmentId = 'assignment-local-mvp', workerRunId
     throw error;
   }
   const questions = extractWorkerQuestions(responseText);
+  const reviewerFindings = run.workerRole === 'reviewer' ? extractReviewerFindings(responseText) : [];
   const output = {
     summary: summarizeWorkerOutput(responseText),
     rawText: responseText,
+    reviewerFindings,
     responseFile: run.responseFile,
-    logTail: readTextSnippet(run.logFile, 5000),
+    logTail: readTextSnippet(run.logFile, 5000, { tail: true }),
     ingestedAt: new Date().toISOString()
   };
   const completedAt = new Date().toISOString();
+  const nextStatus = questions.length ? 'needs_input' : reviewerFindings.some((finding) => ['blocker', 'warning'].includes(finding.severity)) ? 'needs_review' : 'completed';
   statements.updateAgentWorkerOutput.run(
-    questions.length ? 'needs_input' : 'completed',
+    nextStatus,
     JSON.stringify(output),
     JSON.stringify(questions),
     completedAt,
     completedAt,
     workerRunId
   );
-  createRunEvent(run.runId, 'agent_worker_output_ingested', questions.length ? 'warning' : 'ok', {
+  createRunEvent(run.runId, 'agent_worker_output_ingested', questions.length || reviewerFindings.some((finding) => ['blocker', 'warning'].includes(finding.severity)) ? 'warning' : 'ok', {
     assignmentId,
     workerRunId,
     workerRole: run.workerRole,
     workerRoleLabel: run.workerRoleLabel,
     questions: questions.length,
+    reviewerFindings: reviewerFindings.length,
     summary: output.summary
   }, assignmentId);
-  createAgentEvent(assignmentId, run.executionAgent, 'worker_output_ingested', questions.length ? 'needs_input' : 'completed', {
+  createAgentEvent(assignmentId, run.executionAgent, 'worker_output_ingested', nextStatus, {
     workerRunId,
     workerRole: run.workerRole,
     workerRoleLabel: run.workerRoleLabel,
     questions,
+    reviewerFindings,
     summary: output.summary
   });
   const updatedRun = parseAgentWorkerRun(statements.selectAgentWorkerRunById.get(workerRunId));
   const relayItems = createRelayItemsForWorkerRun(updatedRun);
+  const reviewerComments = createReviewCommentsForReviewerRun(updatedRun, responseText);
   if (relayItems.length) {
     createRunEvent(run.runId, 'agent_relay_items_created', 'ok', {
       assignmentId,
@@ -3541,10 +3992,22 @@ function ingestWorkerOutput({ assignmentId = 'assignment-local-mvp', workerRunId
       targetLanes: relayItems.map((item) => item.targetLane)
     }, assignmentId);
   }
+  if (reviewerComments.length) {
+    createRunEvent(run.runId, 'reviewer_findings_ingested', 'warning', {
+      assignmentId,
+      workerRunId,
+      reviewComments: reviewerComments.length,
+      createdComments: reviewerComments.filter((item) => !item.existing).length
+    }, assignmentId);
+    createAgentEvent(assignmentId, 'odt-review', 'reviewer_findings_ingested', 'needs_review', {
+      workerRunId,
+      reviewComments: reviewerComments.map((item) => item.comment?.id || item.id || '').filter(Boolean)
+    });
+  }
   return updatedRun;
 }
 
-function recordImplementationEvidenceFromWorkerRun({ assignmentId = 'assignment-local-mvp', workerRunId = '', runPostCheck = true } = {}) {
+function recordImplementationEvidenceFromWorkerRun({ assignmentId = 'assignment-local-mvp', workerRunId = '', runPostCheck = true, dryRun = false } = {}) {
   let run = parseAgentWorkerRun(statements.selectAgentWorkerRunById.get(workerRunId));
   if (!run || run.assignmentId !== assignmentId) {
     const error = new Error('Agent worker run not found for this assignment.');
@@ -3554,13 +4017,29 @@ function recordImplementationEvidenceFromWorkerRun({ assignmentId = 'assignment-
   if (!run.output?.rawText && fileSizeIfExists(run.responseFile) > 0) {
     run = ingestWorkerOutput({ assignmentId, workerRunId });
   }
-  const rawText = run?.output?.rawText || readTextSnippet(run?.responseFile, 24000);
+  const rawText = readTextSnippet(run?.responseFile, 24000) || truncateForApi(run?.output?.rawText || '', 24000);
   if (!String(rawText || '').trim()) {
     const error = new Error('No worker response text found yet. Ingest output after the worker writes a response, or record implementation evidence manually.');
     error.statusCode = 409;
     throw error;
   }
   const extracted = extractImplementationEvidenceFromWorkerRun(run);
+  if (dryRun) {
+    createRunEvent(run.runId || createId('run'), 'implementation_evidence_extraction_previewed', extracted.warnings.length ? 'warning' : 'ok', {
+      assignmentId,
+      workerRunId,
+      changedFiles: extracted.changedFiles.length,
+      commands: extracted.commands.length,
+      tests: extracted.tests.length,
+      warnings: extracted.warnings
+    }, assignmentId);
+    return {
+      assignmentId,
+      dryRun: true,
+      extracted,
+      workerRun: parseAgentWorkerRun(statements.selectAgentWorkerRunById.get(workerRunId))
+    };
+  }
   const result = recordImplementationEvidence({
     assignmentId,
     runId: run.runId,
@@ -3695,8 +4174,8 @@ function buildWorkerPrompt({ handoff, contract, evidence, bundlePaths, workerRol
     .map((comment) => ({
       severity: comment.severity,
       target: comment.targetType,
-      message: comment.message,
-      recommendation: comment.recommendation
+      message: comment.comment,
+      recommendation: 'review required'
     }));
 
   return [
@@ -3967,6 +4446,7 @@ function launchCodexWorker({ assignmentId = 'assignment-local-mvp', executionAge
     assignmentId,
     executionAgent: selectedAgent,
     requireWriteApproved: role.requiresWriteApproval,
+    workerRoleId: role.id,
     notes: notes || `Prepared for supervised Codex ${role.label} terminal launch.`
   });
   if (delegation.status !== 'prepared' || (role.requiresWriteApproval && delegation.contract.mode !== 'write-approved')) {
@@ -4436,6 +4916,7 @@ function preparePrReadinessReport({ assignmentId, linkedJira = '', notes = '' })
   const openReviewBlockers = getOpenReviewBlockers(evidence);
   const pendingDependencies = evidence.dependencyRequests.filter((request) => request.status === 'pending');
   const latestImplementationEvidence = evidence.implementationEvidence?.[0] || null;
+  const reviewCycleCloseout = evidence.reviewCycleCloseout || deriveReviewCycleCloseout(evidence);
   const allTests = (evidence.implementationEvidence || []).flatMap((record) => record.tests || []);
   const failedTests = allTests.filter((test) => test.status === 'failed');
   const acceptedImplementationRisk = (evidence.reviewComments || []).some((comment) => (
@@ -4467,6 +4948,11 @@ function preparePrReadinessReport({ assignmentId, linkedJira = '', notes = '' })
       category: 'testing',
       message: `${failedTests.length} failed test result(s) are recorded without accepted risk.`,
       requiredAction: 'Fix failed tests or accept risk with explicit review notes.'
+    }] : []),
+    ...(reviewCycleCloseout.requiresCloseout && !reviewCycleCloseout.readyForPrPack ? [{
+      category: 'review-cycle',
+      message: reviewCycleCloseout.label,
+      requiredAction: reviewCycleCloseout.nextAction?.detail || 'Complete rework evidence, reviewer rerun, and build-verifier rerun before PR readiness.'
     }] : [])
   ];
   const readinessChecklist = [
@@ -4481,6 +4967,10 @@ function preparePrReadinessReport({ assignmentId, linkedJira = '', notes = '' })
     { label: 'No open review blockers', checked: !openReviewBlockers.length },
     { label: 'Dependency decisions resolved', checked: !pendingDependencies.length },
     { label: 'Failed tests fixed or accepted as risk', checked: !failedTests.length || acceptedImplementationRisk },
+    ...(reviewCycleCloseout.requiresCloseout ? reviewCycleCloseout.steps.map((step) => ({
+      label: step.label,
+      checked: step.status === 'complete' || (step.id === 'pr-ready-pack' && reviewCycleCloseout.readyForPrPack)
+    })) : []),
     { label: 'Accessibility/security/testing notes included', checked: Boolean(latestCheck && latestImplementationEvidence) }
   ];
   const evidenceSummary = {
@@ -4491,6 +4981,7 @@ function preparePrReadinessReport({ assignmentId, linkedJira = '', notes = '' })
     standardsChecks: evidence.standardsChecks?.length || 0,
     implementationEvidence: evidence.implementationEvidence?.length || 0,
     reviewComments: evidence.reviewComments?.length || 0,
+    reviewCycleStatus: reviewCycleCloseout.status,
     approvals: evidence.approvals?.length || 0,
     dependencyRequests: evidence.dependencyRequests?.length || 0,
     testResults: allTests.length
@@ -4520,6 +5011,7 @@ function preparePrReadinessReport({ assignmentId, linkedJira = '', notes = '' })
       commands: latestImplementationEvidence.commands || [],
       tests: latestImplementationEvidence.tests || []
     } : null,
+    reviewCycleCloseout,
     testing: {
       planned: evidence.testPlans[0]?.planJson || {},
       recorded: allTests,
@@ -5296,6 +5788,17 @@ function buildOpenApiSchema() {
           responses: {
             200: { description: 'Reworked design, plan, standards check, and review comment evidence.', content: jsonContent({ type: 'object' }) },
             400: { description: 'Invalid rework request.', content: jsonContent({ type: 'object' }) }
+          }
+        }
+      },
+      '/api/review/cycle/{assignmentId}/closeout': {
+        get: {
+          operationId: 'getReviewCycleCloseout',
+          summary: 'Get review-cycle closeout status',
+          description: 'Derives whether a rework cycle has completed Senior Full Stack Dev rework evidence, Reviewer rerun, Build Verifier rerun, and PR-ready package generation.',
+          parameters: [{ name: 'assignmentId', in: 'path', required: true, schema: { type: 'string' }, description: 'Assignment id.' }],
+          responses: {
+            200: { description: 'Review-cycle closeout state and next action.', content: jsonContent({ type: 'object' }) }
           }
         }
       },
@@ -6259,6 +6762,16 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    const reviewCycleCloseoutMatch = url.pathname.match(/^\/api\/review\/cycle\/([^/]+)\/closeout$/);
+    if (request.method === 'GET' && reviewCycleCloseoutMatch) {
+      const assignmentId = reviewCycleCloseoutMatch[1];
+      sendJson(response, 200, {
+        assignmentId,
+        closeout: collectEvidence(assignmentId).reviewCycleCloseout
+      });
+      return;
+    }
+
     if (request.method === 'POST' && url.pathname === '/api/implementation/evidence') {
       const body = await readBody(request);
       try {
@@ -6301,11 +6814,16 @@ const server = createServer(async (request, response) => {
 	    if (request.method === 'POST' && implementationFromWorkerMatch) {
 	      const body = await readBody(request);
 	      try {
-	        sendJson(response, 200, recordImplementationEvidenceFromWorkerRun({
+	        const result = recordImplementationEvidenceFromWorkerRun({
 	          assignmentId: body.assignmentId || 'assignment-local-mvp',
 	          workerRunId: implementationFromWorkerMatch[1],
-	          runPostCheck: body.runPostCheck !== false
-	        }));
+	          runPostCheck: body.runPostCheck !== false,
+	          dryRun: body.dryRun === true
+	        });
+	        sendJson(response, 200, {
+	          ...result,
+	          workerRun: compactWorkerRunForApi(result.workerRun)
+	        });
 	      } catch (err) {
 	        sendJson(response, err.statusCode || 400, { error: err.message, extracted: err.extracted || null });
 	      }
@@ -6403,7 +6921,7 @@ const server = createServer(async (request, response) => {
 	        });
 	      sendJson(response, 200, {
 	        assignmentId,
-	        workerRuns: statements.selectAgentWorkerRunsByAssignment.all(assignmentId).map(parseAgentWorkerRun),
+	        workerRuns: statements.selectAgentWorkerRunsByAssignment.all(assignmentId).map(parseAgentWorkerRun).map(compactWorkerRunForApi),
 	        relayItems: statements.selectAgentRelayItemsByAssignment.all(assignmentId).map(parseAgentRelayItem),
 	        orchestrationPolicy: {
 	          defaultMode: 'sequential',
@@ -6423,7 +6941,10 @@ const server = createServer(async (request, response) => {
 	          assignmentId: body.assignmentId || 'assignment-local-mvp',
 	          workerRunId: workerStatusMatch[1]
 	        });
-	        sendJson(response, 200, result);
+	        sendJson(response, 200, {
+	          ...result,
+	          workerRun: compactWorkerRunForApi(result.workerRun)
+	        });
 	      } catch (err) {
 	        sendJson(response, err.statusCode || 400, { error: err.message });
 	      }
@@ -6434,12 +6955,16 @@ const server = createServer(async (request, response) => {
 		    if (request.method === 'POST' && workerStopMatch) {
 		      const body = await readBody(request);
 		      try {
-		        sendJson(response, 200, requestStopWorkerRun({
+		        const result = requestStopWorkerRun({
 		          assignmentId: body.assignmentId || 'assignment-local-mvp',
 		          workerRunId: workerStopMatch[1],
 		          requestedBy: body.requestedBy || process.env.USER || 'local-user',
 		          reason: body.reason || ''
-		        }));
+		        });
+		        sendJson(response, 200, {
+		          ...result,
+		          workerRun: compactWorkerRunForApi(result.workerRun)
+		        });
 		      } catch (err) {
 		        sendJson(response, err.statusCode || 400, { error: err.message });
 		      }
@@ -6490,7 +7015,7 @@ const server = createServer(async (request, response) => {
           assignmentId: body.assignmentId || 'assignment-local-mvp',
           workerRunId: workerIngestMatch[1]
         });
-        sendJson(response, 200, { workerRun });
+        sendJson(response, 200, { workerRun: compactWorkerRunForApi(workerRun) });
       } catch (err) {
         sendJson(response, err.statusCode || 400, { error: err.message });
       }
@@ -6553,7 +7078,7 @@ const server = createServer(async (request, response) => {
 
     const evidenceMatch = url.pathname.match(/^\/api\/assignments\/([^/]+)\/evidence$/);
     if (request.method === 'GET' && evidenceMatch) {
-      sendJson(response, 200, collectEvidence(evidenceMatch[1]));
+      sendJson(response, 200, compactEvidenceForApi(collectEvidence(evidenceMatch[1])));
       return;
     }
 

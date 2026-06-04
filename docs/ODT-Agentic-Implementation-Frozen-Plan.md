@@ -22,6 +22,8 @@ Current active slice, 2026-06-05: implement the review-cycle loop in the main wo
 
 Main workplan implementation update, 2026-06-05: warning/blocker review comments now have a governed route into the agent loop. ODT creates or reuses a rework relay item for the source review comment, exposes `POST /api/review/comments/:commentId/rework-relay`, shows the rework queue on the Review page, and injects review metadata plus required action into `Agent Relay Context` for the next Senior Full Stack Dev launch.
 
+Review-cycle closeout update, 2026-06-05: ODT now derives a **Review Cycle Closeout** state from evidence. When a rework relay exists, PR readiness requires rework implementation evidence, a newer Reviewer rerun, a newer Build Verifier rerun, and then a PR-ready package. The Review page shows the closeout sequence and can open Agent Team with the correct next worker lane selected. `GET /api/review/cycle/:assignmentId/closeout` exposes the derived closeout state for tools and future provider adapters.
+
 Future intake connector direction: ODT should add governed Jira2/Jira MCP and GitHub MCP intake sources after the current local workbench and relay flow stabilize. These connectors should be read-only by default for intake: pull ticket/issue/PR title, description, acceptance criteria, comments, labels, branch/PR metadata, check status, and attachment metadata into ODT evidence. Any write-back to Jira, GitHub, branches, comments, labels, or PRs must require a separate human approval gate and connector policy review.
 
 Future DB awareness direction: ODT should detect local database configuration from repo files such as `database.yml`, `.env.example`, `config/database.*`, Prisma, Sequelize, Knex, Rails, Spring, or similar configuration files. The first implementation must be metadata-only by default: identify connection candidates, schemas, tables, columns, indexes, constraints, migrations, and safe row-count summaries where approved. Credentials must stay server-side and must not be shown in the frontend or injected into worker prompts. Arbitrary business-data queries, exports, DDL, migrations, INSERT/UPDATE/DELETE, and production-like connections require explicit human approval and a separate DB safety policy.
@@ -43,6 +45,7 @@ Backend worker APIs:
 - `POST /api/agents/worker-runs/:workerRunId/ingest`
 - `POST /api/implementation/evidence/from-worker/:workerRunId`
 - `POST /api/review/comments/:commentId/rework-relay`
+- `GET /api/review/cycle/:assignmentId/closeout`
 - `GET /api/agents/relay/:assignmentId`
 - `POST /api/agents/relay/:relayItemId/decision`
 
@@ -56,6 +59,7 @@ Durable worker evidence:
 - parsed output summary
 - derived implementation evidence: changed files, commands, tests, source worker, and post-check result
 - review-to-rework relay items: source review comment, target artifact, severity, target lane, and required rework instruction
+- review-cycle closeout state: rework evidence, Reviewer rerun, Build Verifier rerun, and PR-pack readiness
 - questions for another worker lane
 - first-class relay items with source worker, target lane, status, decision notes, and prompt-injection context
 - run/agent events
@@ -63,11 +67,11 @@ Durable worker evidence:
 Next implementation slice toward the 100% goal:
 
 1. Add a real terminal-launch smoke test for a read-only lane, then a write-approved lane.
-2. Harden review-cycle closeout: rework evidence ingestion, Reviewer rerun, Build Verifier rerun, and PR-ready transition.
-3. Add optional Cline/OCI/OCA adapters behind the same worker contract and relay context pack.
-4. Add future read-only Jira2/Jira MCP and GitHub MCP intake connectors behind approval-gated connector policy; do not enable external writes by default.
-5. Add future governed DB awareness: repo config detection, local metadata-only schema introspection, approval-gated data queries, and no credential exposure to UI or workers.
-6. Add score/readiness thresholds for stopping the agent loop and asking the developer for final review.
+2. Harden closeout evidence ingestion: automatically associate Senior Full Stack Dev rework evidence with the rework relay and resolve the relay after human review.
+3. Add score/readiness thresholds for stopping the agent loop and asking the developer for final review.
+4. Add optional Cline/OCI/OCA adapters behind the same worker contract and relay context pack.
+5. Add future read-only Jira2/Jira MCP and GitHub MCP intake connectors behind approval-gated connector policy; do not enable external writes by default.
+6. Add future governed DB awareness: repo config detection, local metadata-only schema introspection, approval-gated data queries, and no credential exposure to UI or workers.
 
 This is the frozen implementation plan for evolving Oracle Developer Twin from a static seven-stage planning workflow into a practical, developer-usable agentic delivery workbench.
 

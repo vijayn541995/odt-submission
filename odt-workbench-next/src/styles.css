@@ -753,6 +753,26 @@ button:disabled {
   border-color: color-mix(in srgb, var(--danger) 28%, var(--line));
 }
 
+.closeout-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 14px;
+}
+
+.closeout-header h4 {
+  margin: 8px 0 4px;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.closeout-header .primary-button,
+.closeout-header .secondary-button {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
 .two-column {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(320px, 0.58fr);
@@ -2013,6 +2033,16 @@ td {
   .workflow-decision-bar {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .closeout-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .closeout-header .primary-button,
+  .closeout-header .secondary-button {
+    width: 100%;
   }
 
   .workflow-decision-actions {
