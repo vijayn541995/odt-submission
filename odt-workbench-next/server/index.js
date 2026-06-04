@@ -1,5 +1,5 @@
 import { createServer } from 'node:http';
-import { execFile } from 'node:child_process';
+import { execFile, spawnSync } from 'node:child_process';
 import { chmodSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -1147,6 +1147,181 @@ function isGitRepo(repoPath = '') {
   return Boolean(repoPath && existsSync(join(repoPath, '.git')));
 }
 
+function uniqueTruthy(values = []) {
+  return Array.from(new Set(values.map((value) => String(value || '').trim()).filter(Boolean)));
+}
+
+function codexCandidatePaths() {
+  const pathCandidates = String(process.env.PATH || '')
+    .split(':')
+    .map((entry) => entry ? join(entry, 'codex') : '')
+    .filter(Boolean);
+  return uniqueTruthy([
+    process.env.ODT_CODEX_BIN,
+    '/Applications/Codex.app/Contents/Resources/codex',
+    ...pathCandidates,
+    join(process.env.HOME || '', '.nvm/versions/node/v24.15.0/bin/codex'),
+    join(process.env.HOME || '', '.nvm/versions/node/v16.13.1/bin/codex'),
+    '/opt/homebrew/bin/codex',
+    '/usr/local/bin/codex'
+  ]);
+}
+
+function checkCodexCandidate(candidatePath) {
+  const exists = Boolean(candidatePath && existsSync(candidatePath));
+  if (!exists) {
+    return {
+      path: candidatePath,
+      exists,
+      status: 'missing',
+      version: '',
+      detail: 'Executable not found.'
+    };
+  }
+  const result = spawnSync(candidatePath, ['--version'], {
+    encoding: 'utf8',
+    timeout: 10000,
+    env: process.env
+  });
+  const stdout = String(result.stdout || '').trim();
+  const stderr = String(result.stderr || '').trim();
+  const detail = stderr || result.error?.message || stdout || '';
+  return {
+    path: candidatePath,
+    exists,
+    status: result.status === 0 && stdout ? 'healthy' : 'unhealthy',
+    version: stdout,
+    exitCode: result.status,
+    detail: detail.slice(0, 500)
+  };
+}
+
+function getCodexExecutionHealth() {
+  const candidates = codexCandidatePaths().map(checkCodexCandidate);
+  const healthy = candidates.find((candidate) => candidate.status === 'healthy');
+  return {
+    agent: 'codex',
+    status: healthy ? 'healthy' : 'unhealthy',
+    executable: healthy?.path || '',
+    version: healthy?.version || '',
+    checkedAt: new Date().toISOString(),
+    candidates,
+    message: healthy
+      ? `Codex CLI is available: ${healthy.version}`
+      : 'No healthy Codex CLI was found. Configure ODT_CODEX_BIN or repair the local Codex install before launching workers.'
+  };
+}
+
+function getExecutionAdapterHealth(assignmentId = 'assignment-local-mvp') {
+  const checkedAt = new Date().toISOString();
+  const codex = getCodexExecutionHealth();
+  const hasOciConfig = Boolean(process.env.ODT_OCI_GENAI_ENDPOINT || process.env.OCI_GENAI_ENDPOINT || process.env.OCI_CONFIG_FILE);
+  const hasOpenAiConfig = Boolean(process.env.OPENAI_API_KEY);
+  return {
+    assignmentId,
+    checkedAt,
+    adapters: {
+      codex: {
+        ...codex,
+        label: 'Codex CLI',
+        capability: 'Governed terminal worker launch',
+        launchSupported: true,
+        handoffSupported: true,
+        authModel: 'Uses the local Codex app or CLI login, including enterprise SSO when configured. ODT stores no Codex token.'
+      },
+      cline: {
+        agent: 'cline',
+        label: 'Cline',
+        status: 'handoff_ready',
+        checkedAt,
+        capability: 'Governed handoff package',
+        launchSupported: false,
+        handoffSupported: true,
+        authModel: 'Cline or the IDE extension owns authentication. ODT prepares the governed prompt and evidence contract.',
+        message: 'Cline is available as a handoff target. Direct launch adapter is planned.'
+      },
+      'oci-genai': {
+        agent: 'oci-genai',
+        label: 'OCI GenAI / OCA',
+        status: hasOciConfig ? 'configured' : 'not_configured',
+        checkedAt,
+        capability: 'Provider-backed planning and specialist agents',
+        launchSupported: false,
+        handoffSupported: hasOciConfig,
+        authModel: 'Uses OCI/OCA configuration outside ODT. ODT should store provider health and usage evidence, not secrets.',
+        message: hasOciConfig
+          ? 'OCI/OCA configuration signal is present. Full provider adapter wiring is still future work.'
+          : 'OCI/OCA adapter is on the roadmap. Configure provider settings when this adapter is enabled.'
+      },
+      ollama: {
+        agent: 'ollama',
+        label: 'Ollama',
+        status: 'planned',
+        checkedAt,
+        capability: 'Local model fallback',
+        launchSupported: false,
+        handoffSupported: false,
+        authModel: 'Local runtime; no cloud token expected.',
+        message: 'Ollama is planned as a local-model adapter for future offline/fallback workflows.'
+      },
+      openai: {
+        agent: 'openai',
+        label: 'OpenAI API',
+        status: hasOpenAiConfig ? 'configured' : 'not_configured',
+        checkedAt,
+        capability: 'Direct API provider for planning and review',
+        launchSupported: false,
+        handoffSupported: hasOpenAiConfig,
+        authModel: 'Uses environment or approved secret manager configuration. ODT must not expose API keys.',
+        message: hasOpenAiConfig
+          ? 'OpenAI API configuration signal is present. Direct provider adapter can use existing governance.'
+          : 'OpenAI API adapter is not configured. Use Codex CLI or local/mock provider for now.'
+      }
+    },
+    issues: listExecutionIssues(assignmentId)
+  };
+}
+
+function listExecutionIssues(assignmentId = 'assignment-local-mvp') {
+  const issueStatuses = new Set(['error', 'warning', 'blocked', 'failed', 'manual_fallback', 'codex_missing', 'failed_to_open', 'unhealthy']);
+  const agentIssues = statements.selectAgentEventsByAssignment.all(assignmentId)
+    .map((event) => ({ ...event, detailJson: parseJsonValue(event.detail, {}) }))
+    .filter((event) => (
+      issueStatuses.has(String(event.status || '').toLowerCase())
+      || /failed|error|health|fallback|missing/i.test(event.eventType || '')
+    ))
+    .slice(0, 8)
+    .map((event) => ({
+      id: event.id,
+      source: 'agent_event',
+      eventType: event.eventType,
+      status: event.status,
+      message: event.detailJson?.message || event.detailJson?.error || event.detailJson?.note || event.detailJson?.summary || event.eventType,
+      detail: event.detailJson,
+      createdAt: event.createdAt
+    }));
+  const runIssues = statements.selectRunEvents.all()
+    .filter((event) => event.assignmentId === assignmentId)
+    .map((event) => ({ ...event, detailJson: parseJsonValue(event.detail, {}) }))
+    .filter((event) => (
+      issueStatuses.has(String(event.status || '').toLowerCase())
+      || /failed|error|health|fallback|missing/i.test(event.eventType || '')
+    ))
+    .slice(0, 8)
+    .map((event) => ({
+      id: event.id,
+      source: 'run_event',
+      eventType: event.eventType,
+      status: event.status,
+      message: event.detailJson?.message || event.detailJson?.error || event.detailJson?.note || event.detailJson?.summary || event.eventType,
+      detail: event.detailJson,
+      createdAt: event.createdAt
+    }));
+  return [...agentIssues, ...runIssues]
+    .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
+    .slice(0, 10);
+}
+
 function deriveAssignmentTitle(input = '') {
   const text = String(input || '').replace(/\r/g, '');
   const featureMatch = text.match(/Feature\s*\/\s*defect requirement:\s*\n\s*([^\n]+)/i);
@@ -2132,6 +2307,81 @@ function dependencyContractRows(evidence, status) {
     }));
 }
 
+function createReworkRelayFromReviewComment({ comment, createdBy = process.env.USER || 'local-user' } = {}) {
+  if (!comment?.id) {
+    const error = new Error('Review comment is required to create a rework relay item.');
+    error.statusCode = 400;
+    throw error;
+  }
+  if (comment.status && String(comment.status).toLowerCase() !== 'open') {
+    const error = new Error('Only open review comments can be sent to rework relay.');
+    error.statusCode = 409;
+    throw error;
+  }
+  const now = new Date().toISOString();
+  const targetLane = 'Senior Full Stack Dev Rework';
+  const targetWorkerRole = 'fullstack-dev';
+  const severity = String(comment.severity || '').toLowerCase() === 'blocker' ? 'blocker' : 'needs_review';
+  const uniqueKey = `review:${comment.id}:rework:${stableTextHash(comment.comment || '')}`;
+  const existingRelayItem = parseAgentRelayItem(
+    statements.selectAgentRelayItemsByAssignment.all(comment.assignmentId).find((item) => item.uniqueKey === uniqueKey)
+  );
+  if (existingRelayItem) {
+    return existingRelayItem;
+  }
+  const relayId = createId('relay');
+  const context = {
+    source: 'review_comment',
+    reviewCommentId: comment.id,
+    targetType: comment.targetType || '',
+    targetId: comment.targetId || '',
+    reviewSeverity: comment.severity || '',
+    reviewStatus: comment.status || '',
+    reviewCreatedBy: comment.createdBy || '',
+    reviewCreatedAt: comment.createdAt || '',
+    requiredAction: 'Address this review finding in a focused rework pass, then return changed files, tests, risks, and verification notes to ODT.'
+  };
+  statements.insertAgentRelayItem.run(
+    relayId,
+    comment.assignmentId,
+    '',
+    'reviewer',
+    'Reviewer',
+    targetWorkerRole,
+    targetLane,
+    'rework',
+    'open',
+    severity,
+    `Rework required: ${humanizeLabel(comment.targetType || 'review')}`,
+    comment.comment,
+    JSON.stringify(context),
+    JSON.stringify({}),
+    uniqueKey,
+    createdBy || 'odt-review',
+    now,
+    now,
+    null
+  );
+  const relayItem = parseAgentRelayItem(statements.selectAgentRelayItemById.get(relayId))
+    || parseAgentRelayItem(statements.selectAgentRelayItemsByAssignment.all(comment.assignmentId).find((item) => item.uniqueKey === uniqueKey));
+  createRunEvent(createId('run'), 'review_rework_relay_created', severity === 'blocker' ? 'warning' : 'ok', {
+    assignmentId: comment.assignmentId,
+    reviewCommentId: comment.id,
+    relayItemId: relayItem?.id || '',
+    targetWorkerRole,
+    targetLane,
+    severity
+  }, comment.assignmentId);
+  createAgentEvent(comment.assignmentId, 'odt-review', 'review_rework_relay_created', severity, {
+    reviewCommentId: comment.id,
+    relayItemId: relayItem?.id || '',
+    targetWorkerRole,
+    targetLane,
+    message: comment.comment
+  });
+  return relayItem;
+}
+
 function createReviewComment({ assignmentId = 'assignment-local-mvp', targetType = 'plan', targetId = '', severity = 'comment', comment, status = 'open', createdBy = process.env.USER || 'local-user', resolutionNotes = '' } = {}) {
   const text = String(comment || '').trim();
   if (!text) throw new Error('Review comment is required.');
@@ -2159,13 +2409,18 @@ function createReviewComment({ assignmentId = 'assignment-local-mvp', targetType
     now,
     resolutionNotes
   );
+  const createdComment = statements.selectReviewCommentById.get(id);
+  const relayItem = normalizedStatus === 'open' && ['warning', 'blocker'].includes(normalizedSeverity)
+    ? createReworkRelayFromReviewComment({ comment: createdComment, createdBy })
+    : null;
   createRunEvent(createId('run'), 'review_comment_added', normalizedSeverity === 'blocker' ? 'warning' : 'ok', {
     assignmentId,
     targetType: normalizedTargetType,
     severity: normalizedSeverity,
-    status: normalizedStatus
+    status: normalizedStatus,
+    reworkRelayItemId: relayItem?.id || ''
   }, assignmentId);
-  return statements.selectReviewCommentById.get(id);
+  return { ...createdComment, reworkRelayItem: relayItem };
 }
 
 function updateReviewCommentDecision({ id, status, resolutionNotes = '' } = {}) {
@@ -2186,6 +2441,19 @@ function updateReviewCommentDecision({ id, status, resolutionNotes = '' } = {}) 
     status: nextStatus
   }, updated.assignmentId);
   return updated;
+}
+
+function sendReviewCommentToReworkRelay({ commentId = '', requestedBy = process.env.USER || 'local-user' } = {}) {
+  const comment = statements.selectReviewCommentById.get(commentId);
+  if (!comment) {
+    const error = new Error('Review comment not found.');
+    error.statusCode = 404;
+    throw error;
+  }
+  return {
+    comment,
+    relayItem: createReworkRelayFromReviewComment({ comment, createdBy: requestedBy })
+  };
 }
 
 function requestPlanRework({ assignmentId = 'assignment-local-mvp', notes = '', targetType = 'plan' } = {}) {
@@ -2315,6 +2583,142 @@ function inferTestStatus(text) {
   if (normalized.includes('not run') || normalized.includes('pending')) return 'not_run';
   if (normalized.includes('pass') || normalized.includes('success') || normalized.includes('ok')) return 'passed';
   return 'unknown';
+}
+
+function stripEvidenceLine(value = '') {
+  return String(value || '')
+    .trim()
+    .replace(/^[-*]\s+/, '')
+    .replace(/^\d+[.)]\s+/, '')
+    .replace(/^`|`$/g, '')
+    .replace(/^\*\*|\*\*$/g, '')
+    .trim();
+}
+
+function normalizeHeading(value = '') {
+  return String(value || '')
+    .trim()
+    .replace(/^#{1,6}\s*/, '')
+    .replace(/^\*\*|\*\*$/g, '')
+    .replace(/:$/, '')
+    .trim()
+    .toLowerCase();
+}
+
+function extractMarkdownSectionLines(text = '', aliases = []) {
+  const aliasSet = new Set(aliases.map((alias) => String(alias).toLowerCase()));
+  const lines = String(text || '').replace(/\r/g, '').split('\n');
+  const collected = [];
+  let active = false;
+  for (const line of lines) {
+    const heading = normalizeHeading(line);
+    const headingLike = /^#{1,6}\s+/.test(line)
+      || /^\*\*[^*]{3,90}:?\*\*$/.test(line.trim())
+      || /^[A-Z][A-Za-z0-9 /&()._-]{2,90}:$/.test(line.trim());
+    if (aliasSet.has(heading)) {
+      active = true;
+      continue;
+    }
+    if (active && headingLike) break;
+    if (active) collected.push(line);
+  }
+  return collected.map(stripEvidenceLine).filter(Boolean);
+}
+
+function uniqueLimited(items = [], limit = 40) {
+  return uniqueTruthy(items)
+    .filter((item) => !/^none(?:\s|$|\.|,)/i.test(item))
+    .slice(0, limit);
+}
+
+function extractChangedFilesFromWorkerOutput(text = '') {
+  const sectionLines = [
+    ...extractMarkdownSectionLines(text, ['files changed', 'changed files', 'modified files', 'files updated']),
+    ...extractMarkdownSectionLines(text, ['summary of changes'])
+  ];
+  const pathPattern = /(?:^|[\s`"'(])((?:[A-Za-z0-9_.@+-]+\/)+[A-Za-z0-9_.@+-]+\.[A-Za-z0-9]+|[A-Za-z0-9_.@+-]+\.(?:js|jsx|ts|tsx|css|scss|html|json|md|yml|yaml|java|py|go|rb|sql|xml|properties|sh|cjs|mjs))(?:$|[\s`"',).:])/g;
+  const matches = [];
+  const source = `${sectionLines.join('\n')}\n${text}`;
+  let match = pathPattern.exec(source);
+  while (match) {
+    const candidate = stripEvidenceLine(match[1]).replace(/^\.?\//, '');
+    if (!/^(http|https):/i.test(candidate) && !candidate.includes('node_modules/')) matches.push(candidate);
+    match = pathPattern.exec(source);
+  }
+  return uniqueLimited(matches, 50);
+}
+
+function extractCommandsFromWorkerOutput(text = '') {
+  const commandLines = [
+    ...extractMarkdownSectionLines(text, ['commands run', 'commands/tests run and outcomes', 'tests run', 'verification commands', 'commands'])
+  ];
+  const commandPattern = /\b(?:npm|pnpm|yarn|npx|node|jest|vitest|pytest|mvn|gradle|make|go test|cargo|python|bundle exec)\b[^\n`]*/gi;
+  const matches = [];
+  const source = `${commandLines.join('\n')}\n${text}`;
+  let match = commandPattern.exec(source);
+  while (match) {
+    matches.push(stripEvidenceLine(match[0]).replace(/\s+\|\s+(passed|failed|skipped|not_run|not run|success|ok|error).*$/i, ''));
+  }
+  return uniqueLimited(matches, 30);
+}
+
+function extractTestsFromWorkerOutput(text = '') {
+  const testLines = [
+    ...extractMarkdownSectionLines(text, ['tests run', 'commands/tests run and outcomes', 'test results', 'commands run', 'verification'])
+  ];
+  const candidates = testLines.length
+    ? testLines
+    : String(text || '').split('\n').filter((line) => /\b(test|build|jest|vitest|npm|yarn|pnpm|not run|passed|failed)\b/i.test(line));
+  return uniqueLimited(candidates.map(stripEvidenceLine), 30)
+    .map((line) => {
+      const [nameOrCommand, status, ...notes] = line.split('|').map((part) => part.trim());
+      const inferredStatus = status || line;
+      return {
+        name: nameOrCommand || 'Worker test evidence',
+        command: /^(npm|pnpm|yarn|npx|jest|vitest|pytest|mvn|gradle|make|go test|python)\b/i.test(nameOrCommand) ? nameOrCommand : '',
+        status: inferTestStatus(inferredStatus),
+        notes: notes.join(' | ') || (status ? '' : line)
+      };
+    });
+}
+
+function extractWorkerImplementationSummary(text = '') {
+  const summaryLines = extractMarkdownSectionLines(text, ['summary of changes', 'summary', 'implementation summary'])
+    .filter((line) => !/^files changed|^commands|^tests/i.test(line));
+  if (summaryLines.length) return summaryLines.slice(0, 6).join(' ').slice(0, 1200);
+  return summarizeWorkerOutput(text).slice(0, 1200);
+}
+
+function extractImplementationEvidenceFromWorkerRun(run) {
+  const rawText = run?.output?.rawText || readTextSnippet(run?.responseFile, 24000);
+  const changedFiles = extractChangedFilesFromWorkerOutput(rawText);
+  const commands = extractCommandsFromWorkerOutput(rawText);
+  const tests = extractTestsFromWorkerOutput(rawText);
+  const summary = [
+    extractWorkerImplementationSummary(rawText),
+    '',
+    `Source worker: ${run?.workerRoleLabel || run?.workerRole || 'Worker'} (${run?.executionAgent || 'agent'}).`,
+    `Source response: ${run?.responseFile || 'not captured'}.`
+  ].join('\n').trim();
+  return {
+    changedFiles,
+    commands,
+    tests,
+    summary,
+    source: {
+      workerRunId: run?.id || '',
+      runId: run?.runId || '',
+      workerRole: run?.workerRole || '',
+      workerRoleLabel: run?.workerRoleLabel || '',
+      executionAgent: run?.executionAgent || '',
+      responseFile: run?.responseFile || '',
+      logFile: run?.logFile || ''
+    },
+    confidence: changedFiles.length || commands.length || tests.length ? 'reviewable' : 'low',
+    warnings: changedFiles.length || commands.length || tests.length
+      ? []
+      : ['ODT could not infer changed files, commands, or tests from the worker output. Review the response and edit evidence manually.']
+  };
 }
 
 function parseImplementationEvidenceRow(row) {
@@ -2794,6 +3198,13 @@ function collectAgentRelayContext(evidence, currentRoleId) {
       title: item.title,
       message: item.message,
       decision: item.decision,
+      source: item.context?.source || '',
+      reviewCommentId: item.context?.reviewCommentId || '',
+      targetType: item.context?.targetType || '',
+      targetId: item.context?.targetId || '',
+      reviewSeverity: item.context?.reviewSeverity || '',
+      reviewStatus: item.context?.reviewStatus || '',
+      requiredAction: item.context?.requiredAction || '',
       sourceSummary: item.context?.sourceSummary || '',
       responseFile: item.context?.responseFile || '',
       logFile: item.context?.logFile || '',
@@ -2912,9 +3323,11 @@ function collectWorkerRelayEvidence(evidence, currentRoleId) {
 
 function parseAgentWorkerRun(row) {
   if (!row) return null;
+  const output = parseJsonValue(row.outputJson, {});
   return {
     ...row,
-    output: parseJsonValue(row.outputJson, {}),
+    output,
+    stopFile: output.stopFile || output.launchStatus?.stopFile || '',
     questions: parseJsonValue(row.questionsJson, [])
   };
 }
@@ -2941,6 +3354,7 @@ function mapLaunchStatusToWorkerStatus(status = '', responseBytes = 0) {
   const normalized = String(status || '').toLowerCase();
   if (normalized === 'completed') return responseBytes > 0 ? 'response_ready' : 'completed';
   if (normalized === 'failed' || normalized === 'codex_missing' || normalized === 'failed_to_open') return normalized;
+  if (normalized === 'stop_requested' || normalized === 'stopped') return normalized;
   if (normalized === 'running' || normalized === 'starting' || normalized === 'delegated_visible') return 'running';
   if (normalized === 'bundle_created' || normalized === 'manual_fallback') return normalized;
   return responseBytes > 0 ? 'response_ready' : normalized || 'unknown';
@@ -2959,7 +3373,7 @@ function syncWorkerRunStatus({ assignmentId = 'assignment-local-mvp', workerRunI
   const logTail = readTextSnippet(run.logFile, 5000);
   const status = mapLaunchStatusToWorkerStatus(statusFileJson.status || run.status, responseBytes);
   const now = new Date().toISOString();
-  const completedAt = ['response_ready', 'completed', 'failed', 'codex_missing', 'failed_to_open'].includes(status)
+  const completedAt = ['response_ready', 'completed', 'failed', 'codex_missing', 'failed_to_open', 'stopped'].includes(status)
     ? (statusFileJson.completedAt || now)
     : run.completedAt;
   const output = {
@@ -3130,6 +3544,138 @@ function ingestWorkerOutput({ assignmentId = 'assignment-local-mvp', workerRunId
   return updatedRun;
 }
 
+function recordImplementationEvidenceFromWorkerRun({ assignmentId = 'assignment-local-mvp', workerRunId = '', runPostCheck = true } = {}) {
+  let run = parseAgentWorkerRun(statements.selectAgentWorkerRunById.get(workerRunId));
+  if (!run || run.assignmentId !== assignmentId) {
+    const error = new Error('Agent worker run not found for this assignment.');
+    error.statusCode = 404;
+    throw error;
+  }
+  if (!run.output?.rawText && fileSizeIfExists(run.responseFile) > 0) {
+    run = ingestWorkerOutput({ assignmentId, workerRunId });
+  }
+  const rawText = run?.output?.rawText || readTextSnippet(run?.responseFile, 24000);
+  if (!String(rawText || '').trim()) {
+    const error = new Error('No worker response text found yet. Ingest output after the worker writes a response, or record implementation evidence manually.');
+    error.statusCode = 409;
+    throw error;
+  }
+  const extracted = extractImplementationEvidenceFromWorkerRun(run);
+  const result = recordImplementationEvidence({
+    assignmentId,
+    runId: run.runId,
+    phase: `worker-${run.workerRole || 'implementation'}`,
+    changedFiles: extracted.changedFiles,
+    commands: extracted.commands,
+    tests: extracted.tests,
+    summary: extracted.summary,
+    status: extracted.tests.some((test) => test.status === 'failed') || extracted.warnings.length ? 'needs_review' : 'recorded',
+    createdBy: `${run.executionAgent || 'agent'}:${run.workerRoleLabel || run.workerRole || 'worker'}`,
+    runPostCheck
+  });
+  createRunEvent(run.runId || createId('run'), 'implementation_evidence_derived_from_worker', extracted.warnings.length ? 'warning' : 'ok', {
+    assignmentId,
+    workerRunId,
+    evidenceId: result.evidence.id,
+    changedFiles: extracted.changedFiles.length,
+    commands: extracted.commands.length,
+    tests: extracted.tests.length,
+    warnings: extracted.warnings
+  }, assignmentId);
+  createAgentEvent(assignmentId, run.executionAgent || 'agent', 'worker_evidence_derived', extracted.warnings.length ? 'needs_review' : 'completed', {
+    workerRunId,
+    workerRole: run.workerRole,
+    workerRoleLabel: run.workerRoleLabel,
+    evidenceId: result.evidence.id,
+    extracted
+  });
+  return { ...result, extracted, workerRun: parseAgentWorkerRun(statements.selectAgentWorkerRunById.get(workerRunId)) };
+}
+
+function requestStopWorkerRun({ assignmentId = 'assignment-local-mvp', workerRunId = '', requestedBy = process.env.USER || 'local-user', reason = '' } = {}) {
+  const run = parseAgentWorkerRun(statements.selectAgentWorkerRunById.get(workerRunId));
+  if (!run || run.assignmentId !== assignmentId) {
+    const error = new Error('Agent worker run not found for this assignment.');
+    error.statusCode = 404;
+    throw error;
+  }
+  const statusFileJson = readWorkerStatusFile(run.statusFile);
+  const stopFile = run.stopFile || statusFileJson.stopFile || (run.bundleDir ? join(run.bundleDir, 'stop-worker.request') : '');
+  const now = new Date().toISOString();
+  const active = ['starting', 'running', 'delegated_visible', 'unknown'].includes(String(run.status || '').toLowerCase())
+    || ['starting', 'running', 'delegated_visible'].includes(String(statusFileJson.status || '').toLowerCase());
+  const stopPayload = {
+    assignmentId,
+    workerRunId,
+    runId: run.runId,
+    requestedBy,
+    requestedAt: now,
+    reason: String(reason || '').trim() || 'Developer requested worker termination from ODT.'
+  };
+  if (stopFile) {
+    mkdirSync(dirname(stopFile), { recursive: true });
+    writeFileSync(stopFile, `${JSON.stringify(stopPayload, null, 2)}\n`, 'utf8');
+  }
+  const codexPid = Number(statusFileJson.codexPid || run.output?.launchStatus?.codexPid || 0);
+  let signalResult = null;
+  if (active && Number.isInteger(codexPid) && codexPid > 0) {
+    try {
+      process.kill(codexPid, 'SIGINT');
+      signalResult = { status: 'sent', signal: 'SIGINT', pid: codexPid };
+    } catch (err) {
+      signalResult = { status: 'failed', signal: 'SIGINT', pid: codexPid, error: err.message };
+    }
+  }
+  const output = {
+    ...(run.output || {}),
+    stopFile,
+    stopRequested: stopPayload,
+    stopSignal: signalResult,
+    summary: active
+      ? signalResult?.status === 'sent'
+        ? 'Stop requested. ODT sent SIGINT to the Codex worker and wrote a stop request for the worker script.'
+        : 'Stop requested. ODT wrote a stop request for the worker script; refresh status to confirm termination.'
+      : 'Stop request recorded. This worker was not in an active status; no running process was terminated by ODT.',
+    manualStopGuidance: active
+      ? 'If the visible Terminal worker does not stop within a few seconds, focus that Terminal tab and press Ctrl+C.'
+      : 'No active worker process was detected. Review the worker status before relaunching.'
+  };
+  statements.updateAgentWorkerOutput.run(
+    active ? 'stop_requested' : run.status,
+    JSON.stringify(output),
+    JSON.stringify(run.questions || []),
+    now,
+    active ? null : run.completedAt,
+    workerRunId
+  );
+  createRunEvent(run.runId || createId('run'), 'agent_worker_stop_requested', active ? 'warning' : 'ok', {
+    ...stopPayload,
+    stopFile,
+    codexPid,
+    signalResult,
+    active,
+    status: run.status
+  }, assignmentId);
+  createAgentEvent(assignmentId, run.executionAgent || 'agent', 'worker_stop_requested', active ? 'stop_requested' : 'recorded', {
+    workerRunId,
+    workerRole: run.workerRole,
+    workerRoleLabel: run.workerRoleLabel,
+    stopFile,
+    codexPid,
+    signalResult,
+    active,
+    reason: stopPayload.reason
+  });
+  return {
+    workerRun: parseAgentWorkerRun(statements.selectAgentWorkerRunById.get(workerRunId)),
+    stopFile,
+    signalResult,
+    active,
+    message: output.summary,
+    manualStopGuidance: output.manualStopGuidance
+  };
+}
+
 function buildWorkerPrompt({ handoff, contract, evidence, bundlePaths, workerRole }) {
   const requirementText = evidence.requirements?.[0]?.rawText || contract.requirement?.content || '';
   const latestRepo = evidence.repoAnalysis?.[0]?.analysisJson || {};
@@ -3267,19 +3813,21 @@ function buildWorkerPrompt({ handoff, contract, evidence, bundlePaths, workerRol
   ].join('\n');
 }
 
-function buildCodexLaunchScript({ repoPath, promptFile, responseFile, logFile, statusFile, skipGitRepoCheck, sandboxMode, workerRole }) {
-  const command = skipGitRepoCheck
-    ? 'codex exec -C "$PWD" -s "$SANDBOX_MODE" -o "$RESPONSE_FILE" --skip-git-repo-check - < "$PROMPT_FILE" 2>&1 | tee -a "$LOG_FILE"'
-    : 'codex exec -C "$PWD" -s "$SANDBOX_MODE" -o "$RESPONSE_FILE" - < "$PROMPT_FILE" 2>&1 | tee -a "$LOG_FILE"';
+function buildCodexLaunchScript({ repoPath, promptFile, responseFile, logFile, statusFile, stopFile, codexExecutable, skipGitRepoCheck, sandboxMode, workerRole }) {
+  const codexArgs = skipGitRepoCheck
+    ? 'exec -C "$PWD" -s "$SANDBOX_MODE" -o "$RESPONSE_FILE" --skip-git-repo-check -'
+    : 'exec -C "$PWD" -s "$SANDBOX_MODE" -o "$RESPONSE_FILE" -';
   return [
     '#!/bin/bash',
     'set -u',
     `cd ${shellQuote(repoPath)}`,
     `PROMPT_FILE=${shellQuote(promptFile)}`,
-    `RESPONSE_FILE=${shellQuote(responseFile)}`,
-    `LOG_FILE=${shellQuote(logFile)}`,
-    `STATUS_FILE=${shellQuote(statusFile)}`,
-    `SANDBOX_MODE=${shellQuote(sandboxMode || 'read-only')}`,
+	    `RESPONSE_FILE=${shellQuote(responseFile)}`,
+	    `LOG_FILE=${shellQuote(logFile)}`,
+	    `STATUS_FILE=${shellQuote(statusFile)}`,
+	    `STOP_FILE=${shellQuote(stopFile)}`,
+	    `CODEX_BIN=${shellQuote(codexExecutable || 'codex')}`,
+	    `SANDBOX_MODE=${shellQuote(sandboxMode || 'read-only')}`,
     'mkdir -p "$(dirname "$RESPONSE_FILE")"',
     'mkdir -p "$(dirname "$LOG_FILE")"',
     'mkdir -p "$(dirname "$STATUS_FILE")"',
@@ -3288,28 +3836,33 @@ function buildCodexLaunchScript({ repoPath, promptFile, responseFile, logFile, s
     '  local status="$1"',
     '  local exit_code="${2:-}"',
     '  local note="${3:-}"',
-    '  STATUS_VALUE="$status" EXIT_CODE_VALUE="$exit_code" NOTE_VALUE="$note" node - <<\'NODE\'',
+	    '  local codex_pid="${4:-}"',
+	    '  STATUS_FILE="$STATUS_FILE" STOP_FILE="$STOP_FILE" STATUS_VALUE="$status" EXIT_CODE_VALUE="$exit_code" NOTE_VALUE="$note" CODEX_PID_VALUE="$codex_pid" node - <<\'NODE\'',
     'const fs = require("fs");',
     'const path = process.env.STATUS_FILE;',
     'let existing = {};',
     'try { existing = JSON.parse(fs.readFileSync(path, "utf8")); } catch {}',
-    'const status = process.env.STATUS_VALUE || "unknown";',
-    'const exitCodeRaw = process.env.EXIT_CODE_VALUE || "";',
-    'const payload = {',
+	    'const status = process.env.STATUS_VALUE || "unknown";',
+	    'const exitCodeRaw = process.env.EXIT_CODE_VALUE || "";',
+	    'const codexPidRaw = process.env.CODEX_PID_VALUE || "";',
+	    'const payload = {',
     '  ...existing,',
     '  status,',
     '  note: process.env.NOTE_VALUE || existing.note || "",',
     '  updatedAt: new Date().toISOString(),',
     '  startedAt: existing.startedAt || new Date().toISOString(),',
-    '  completedAt: ["completed", "failed", "codex_missing"].includes(status) ? new Date().toISOString() : existing.completedAt || null,',
-    '  exitCode: exitCodeRaw === "" ? existing.exitCode ?? null : Number(exitCodeRaw),',
+	    '  completedAt: ["completed", "failed", "codex_missing", "stopped"].includes(status) ? new Date().toISOString() : existing.completedAt || null,',
+	    '  exitCode: exitCodeRaw === "" ? existing.exitCode ?? null : Number(exitCodeRaw),',
+	    '  codexPid: codexPidRaw === "" ? existing.codexPid ?? null : Number(codexPidRaw),',
     '  responseFile: existing.responseFile,',
-    '  logFile: existing.logFile',
+	    '  logFile: existing.logFile,',
+	    '  stopFile: existing.stopFile || process.env.STOP_FILE || ""',
     '};',
     'fs.writeFileSync(path, `${JSON.stringify(payload, null, 2)}\\n`);',
     'NODE',
-    '}',
-    'write_status "running" "" "Codex worker script started."',
+	    '}',
+	    'write_status "running" "" "Codex worker script started."',
+	    'rm -f "$STOP_FILE"',
     `echo "[odt] Delegating ${workerRole.label} to Codex (visible terminal session)." | tee -a "$LOG_FILE"`,
     'echo "[odt] Target repo: $PWD" | tee -a "$LOG_FILE"',
     'echo "[odt] Sandbox: $SANDBOX_MODE" | tee -a "$LOG_FILE"',
@@ -3321,19 +3874,40 @@ function buildCodexLaunchScript({ repoPath, promptFile, responseFile, logFile, s
     '  . "$NVM_DIR/nvm.sh"',
     'fi',
     'echo "[odt] Node: $(command -v node 2>/dev/null || true) $(node -v 2>/dev/null || true)" | tee -a "$LOG_FILE"',
-    'echo "[odt] codex: $(command -v codex 2>/dev/null || true)" | tee -a "$LOG_FILE"',
-    'if ! command -v codex >/dev/null 2>&1; then',
-    '  echo "[odt] Codex CLI was not found in this terminal environment. Run the manual command from ODT after installing/configuring Codex." | tee -a "$LOG_FILE"',
+    'echo "[odt] codex: $CODEX_BIN $("$CODEX_BIN" --version 2>/dev/null || true)" | tee -a "$LOG_FILE"',
+	    'if [ ! -x "$CODEX_BIN" ]; then',
+    '  echo "[odt] Verified Codex CLI path is not executable. Refresh execution health in ODT before launching again." | tee -a "$LOG_FILE"',
     '  write_status "codex_missing" "127" "Codex CLI was not found in this terminal environment."',
     '  exit 127',
-    'fi',
-    'set +e',
-    command,
-    'EXIT_CODE=${PIPESTATUS[0]}',
-    'set -e',
-    'if [ "$EXIT_CODE" -eq 0 ]; then',
-    '  write_status "completed" "$EXIT_CODE" "Codex worker completed. Review and ingest response evidence in ODT."',
-    'else',
+	    'fi',
+	    'set +e',
+	    `"$CODEX_BIN" ${codexArgs} < "$PROMPT_FILE" > >(tee -a "$LOG_FILE") 2>&1 &`,
+	    'CODEX_PID=$!',
+	    'write_status "running" "" "Codex worker process started." "$CODEX_PID"',
+	    'while kill -0 "$CODEX_PID" 2>/dev/null; do',
+	    '  if [ -f "$STOP_FILE" ]; then',
+	    '    echo "[odt] Stop requested by ODT. Terminating Codex worker process $CODEX_PID." | tee -a "$LOG_FILE"',
+	    '    write_status "stop_requested" "" "Stop requested by ODT. Waiting for Codex worker to terminate."',
+	    '    kill "$CODEX_PID" 2>/dev/null || true',
+	    '    sleep 1',
+	    '    kill -9 "$CODEX_PID" 2>/dev/null || true',
+	    '    wait "$CODEX_PID" 2>/dev/null',
+	    '    EXIT_CODE=130',
+	    '    write_status "stopped" "$EXIT_CODE" "Codex worker stopped by ODT request."',
+	    '    break',
+	    '  fi',
+	    '  sleep 2',
+	    'done',
+	    'if [ -z "${EXIT_CODE+x}" ]; then',
+	    '  wait "$CODEX_PID"',
+	    '  EXIT_CODE=$?',
+	    'fi',
+	    'set -e',
+	    'if [ "$EXIT_CODE" -eq 0 ]; then',
+	    '  write_status "completed" "$EXIT_CODE" "Codex worker completed. Review and ingest response evidence in ODT."',
+	    'elif [ "$EXIT_CODE" -eq 130 ]; then',
+	    '  write_status "stopped" "$EXIT_CODE" "Codex worker stopped by ODT request."',
+	    'else',
     '  write_status "failed" "$EXIT_CODE" "Codex worker failed. Review log evidence in ODT."',
     'fi',
     'echo "" | tee -a "$LOG_FILE"',
@@ -3378,6 +3952,14 @@ function launchCodexWorker({ assignmentId = 'assignment-local-mvp', executionAge
   if (!role) {
     const error = new Error('Unsupported worker role. Use one of the allowlisted ODT Agent Team lanes.');
     error.statusCode = 400;
+    throw error;
+  }
+  const executionHealth = getCodexExecutionHealth();
+  if (executionHealth.status !== 'healthy') {
+    createAgentEvent(assignmentId, selectedAgent, 'execution_health_failed', 'error', executionHealth);
+    const error = new Error(executionHealth.message);
+    error.statusCode = 409;
+    error.executionHealth = executionHealth;
     throw error;
   }
 
@@ -3439,14 +4021,15 @@ function launchCodexWorker({ assignmentId = 'assignment-local-mvp', executionAge
   const responseFile = join(runDir, 'codex-response.md');
   const logFile = join(runDir, 'codex-launch.log');
   const statusFile = join(runDir, 'launch-status.json');
+  const stopFile = join(runDir, 'stop-worker.request');
   const manualCommand = `bash ${shellQuote(scriptFile)}`;
   const skipGitRepoCheck = !isGitRepo(repoPath);
-  const bundlePaths = { handoffFile, promptFile, scriptFile, responseFile, logFile, statusFile };
+  const bundlePaths = { handoffFile, promptFile, scriptFile, responseFile, logFile, statusFile, stopFile };
   const workerRunId = createId('workerrun');
 
   writeFileSync(handoffFile, `${JSON.stringify(roleHandoff, null, 2)}\n`, 'utf8');
   writeFileSync(promptFile, `${buildWorkerPrompt({ handoff: roleHandoff, contract: roleContract, evidence, bundlePaths, workerRole: role })}\n`, 'utf8');
-  writeFileSync(scriptFile, buildCodexLaunchScript({ repoPath, promptFile, responseFile, logFile, statusFile, skipGitRepoCheck, sandboxMode: role.sandboxMode, workerRole: role }), 'utf8');
+  writeFileSync(scriptFile, buildCodexLaunchScript({ repoPath, promptFile, responseFile, logFile, statusFile, stopFile, codexExecutable: executionHealth.executable, skipGitRepoCheck, sandboxMode: role.sandboxMode, workerRole: role }), 'utf8');
   chmodSync(scriptFile, 0o755);
   writeFileSync(responseFile, '', 'utf8');
   writeFileSync(logFile, '', 'utf8');
@@ -3466,6 +4049,8 @@ function launchCodexWorker({ assignmentId = 'assignment-local-mvp', executionAge
     launchMode,
     targetRepoPath: repoPath,
     skipGitRepoCheck,
+    executionHealth,
+    codexExecutable: executionHealth.executable,
     bundleDir: runDir,
     handoffFile,
     promptFile,
@@ -3473,6 +4058,7 @@ function launchCodexWorker({ assignmentId = 'assignment-local-mvp', executionAge
     responseFile,
     logFile,
     statusFile,
+    stopFile,
     manualCommand,
     note: launchMode === 'bundle-only'
       ? 'Worker bundle created without launching Terminal.'
@@ -3508,7 +4094,7 @@ function launchCodexWorker({ assignmentId = 'assignment-local-mvp', executionAge
 	      launchMode,
 	      bundlePaths: { ...bundlePaths, bundleDir: runDir },
 	      manualCommand,
-	      output: { summary: 'Worker bundle prepared without launching Terminal.' },
+		      output: { summary: 'Worker bundle prepared without launching Terminal.', stopFile },
 	      questions: []
 	    });
 	    createAgentEvent(assignmentId, selectedAgent, 'worker_launch_prepared', 'prepared', baseStatus);
@@ -3550,7 +4136,7 @@ function launchCodexWorker({ assignmentId = 'assignment-local-mvp', executionAge
       launchMode,
       bundlePaths: { ...bundlePaths, bundleDir: runDir },
       manualCommand,
-      output: { summary: launchedStatus.note },
+      output: { summary: launchedStatus.note, stopFile },
       questions: []
     });
     createRunEvent(delegation.runId, 'agent_worker_terminal_launched', 'running', launchedStatus, assignmentId);
@@ -3578,7 +4164,7 @@ function launchCodexWorker({ assignmentId = 'assignment-local-mvp', executionAge
       launchMode,
       bundlePaths: { ...bundlePaths, bundleDir: runDir },
       manualCommand,
-      output: { summary: fallbackStatus.note, error: error.message },
+      output: { summary: fallbackStatus.note, error: error.message, stopFile },
       questions: []
     });
     createRunEvent(delegation.runId, 'agent_worker_manual_fallback', 'warning', fallbackStatus, assignmentId);
@@ -4669,6 +5255,28 @@ function buildOpenApiSchema() {
           }
         }
       },
+      '/api/review/comments/{commentId}/rework-relay': {
+        post: {
+          operationId: 'sendReviewCommentToReworkRelay',
+          summary: 'Send review comment to rework relay',
+          description: 'Creates or returns a durable Agent Relay Item that routes an open warning or blocker review comment to the Senior Full Stack Dev Rework lane. Review comments remain the human source of truth; relay items are injected into the next worker prompt.',
+          parameters: [{ name: 'commentId', in: 'path', required: true, schema: { type: 'string' }, description: 'Open review comment id to route for rework.' }],
+          requestBody: {
+            required: false,
+            content: jsonContent({
+              type: 'object',
+              properties: {
+                requestedBy: { type: 'string', description: 'Human or system actor requesting rework relay routing.' }
+              }
+            })
+          },
+          responses: {
+            200: { description: 'Rework relay item created or returned.', content: jsonContent({ type: 'object' }) },
+            404: { description: 'Review comment not found.', content: jsonContent({ type: 'object' }) },
+            409: { description: 'Only open review comments can be sent to rework relay.', content: jsonContent({ type: 'object' }) }
+          }
+        }
+      },
       '/api/review/rework': {
         post: {
           operationId: 'requestPlanRework',
@@ -4750,6 +5358,28 @@ function buildOpenApiSchema() {
           responses: {
             200: { description: 'Post-implementation standards check result.', content: jsonContent({ type: 'object' }) },
             400: { description: 'Implementation evidence missing or invalid.', content: jsonContent({ type: 'object' }) }
+          }
+        }
+      },
+      '/api/implementation/evidence/from-worker/{workerRunId}': {
+        post: {
+          operationId: 'recordImplementationEvidenceFromWorker',
+          summary: 'Record implementation evidence from worker output',
+          description: 'Extracts changed files, commands, test outcomes, and summary from an ingested Codex/Cline worker response and stores them as implementation evidence for post-implementation standards review.',
+          parameters: [{ name: 'workerRunId', in: 'path', required: true, schema: { type: 'string' }, description: 'Worker run id to extract evidence from.' }],
+          requestBody: {
+            required: false,
+            content: jsonContent({
+              type: 'object',
+              properties: {
+                assignmentId: { type: 'string', description: 'Assignment id.' },
+                runPostCheck: { type: 'boolean', description: 'When false, stores evidence without running post-implementation standards check.' }
+              }
+            })
+          },
+          responses: {
+            200: { description: 'Implementation evidence derived from worker output.', content: jsonContent({ type: 'object' }) },
+            409: { description: 'Worker output was missing or insufficient.', content: jsonContent({ type: 'object' }) }
           }
         }
       },
@@ -4883,6 +5513,17 @@ function buildOpenApiSchema() {
           responses: { 200: { description: 'Worker lane registry.', content: jsonContent({ type: 'object' }) } }
         }
       },
+      '/api/agents/execution-health': {
+        get: {
+          operationId: 'getExecutionAdapterHealth',
+          summary: 'Get execution adapter health',
+          description: 'Checks governed worker execution adapters such as Codex CLI and reports provider readiness, authentication ownership, launch support, and latest adapter issues without exposing secrets.',
+          parameters: [{ name: 'assignmentId', in: 'query', required: false, schema: { type: 'string' }, description: 'Assignment id used to collect recent adapter issues.' }],
+          responses: {
+            200: { description: 'Execution adapter health and recent issues.', content: jsonContent({ type: 'object' }) }
+          }
+        }
+      },
       '/api/agents/launch-worker': {
         post: {
           operationId: 'launchCodexWorker',
@@ -4917,8 +5558,8 @@ function buildOpenApiSchema() {
           responses: { 200: { description: 'Worker runs for the assignment.', content: jsonContent({ type: 'object' }) } }
         }
       },
-	      '/api/agents/worker-runs/{workerRunId}/ingest': {
-	        post: {
+      '/api/agents/worker-runs/{workerRunId}/ingest': {
+        post: {
 	          operationId: 'ingestAgentWorkerOutput',
           summary: 'Ingest worker output',
           description: 'Reads the worker response file, stores parsed output as evidence, extracts cross-lane questions, and marks the worker completed or needing input.',
@@ -4957,10 +5598,33 @@ function buildOpenApiSchema() {
 	          responses: {
 	            200: { description: 'Worker status refreshed.', content: jsonContent({ type: 'object' }) },
 	            404: { description: 'Worker run not found.', content: jsonContent({ type: 'object' }) }
-	          }
-	        }
-	      },
-	      '/api/agents/relay/{assignmentId}': {
+          }
+        }
+      },
+      '/api/agents/worker-runs/{workerRunId}/stop': {
+        post: {
+          operationId: 'requestAgentWorkerStop',
+          summary: 'Request worker stop',
+          description: 'Creates a governed stop request for a running worker. For workers launched with the ODT stop-aware script, the script observes the stop file and terminates. For older/manual workers, ODT records the stop request and returns manual guidance.',
+          parameters: [{ name: 'workerRunId', in: 'path', required: true, schema: { type: 'string' }, description: 'Worker run id.' }],
+          requestBody: {
+            required: false,
+            content: jsonContent({
+              type: 'object',
+              properties: {
+                assignmentId: { type: 'string', description: 'Assignment id.' },
+                requestedBy: { type: 'string', description: 'User requesting the stop.' },
+                reason: { type: 'string', description: 'Reason for stopping the worker.' }
+              }
+            })
+          },
+          responses: {
+            200: { description: 'Worker stop request recorded.', content: jsonContent({ type: 'object' }) },
+            404: { description: 'Worker run not found.', content: jsonContent({ type: 'object' }) }
+          }
+        }
+      },
+      '/api/agents/relay/{assignmentId}': {
 	        get: {
 	          operationId: 'listAgentRelayItems',
 	          summary: 'List agent relay items',
@@ -5567,6 +6231,20 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    const reviewCommentReworkRelayMatch = url.pathname.match(/^\/api\/review\/comments\/([^/]+)\/rework-relay$/);
+    if (request.method === 'POST' && reviewCommentReworkRelayMatch) {
+      const body = await readBody(request);
+      try {
+        sendJson(response, 200, sendReviewCommentToReworkRelay({
+          commentId: reviewCommentReworkRelayMatch[1],
+          requestedBy: body.requestedBy || body.userId || process.env.USER || 'local-user'
+        }));
+      } catch (err) {
+        sendJson(response, err.statusCode || 400, { error: err.message });
+      }
+      return;
+    }
+
     if (request.method === 'POST' && url.pathname === '/api/review/rework') {
       const body = await readBody(request);
       try {
@@ -5602,9 +6280,9 @@ const server = createServer(async (request, response) => {
       return;
     }
 
-    if (request.method === 'POST' && url.pathname === '/api/implementation/post-check') {
-      const body = await readBody(request);
-      try {
+	    if (request.method === 'POST' && url.pathname === '/api/implementation/post-check') {
+	      const body = await readBody(request);
+	      try {
         const assignmentId = body.assignmentId || 'assignment-local-mvp';
         const evidenceRecord = body.evidenceId
           ? parseImplementationEvidenceRow(statements.selectImplementationEvidenceById.get(body.evidenceId))
@@ -5616,12 +6294,27 @@ const server = createServer(async (request, response) => {
       } catch (err) {
         sendJson(response, err.statusCode || 400, { error: err.message });
       }
-      return;
-    }
+	      return;
+	    }
 
-    const implementationEvidenceMatch = url.pathname.match(/^\/api\/implementation\/evidence\/([^/]+)$/);
-    if (request.method === 'GET' && implementationEvidenceMatch) {
-      const assignmentId = implementationEvidenceMatch[1];
+	    const implementationFromWorkerMatch = url.pathname.match(/^\/api\/implementation\/evidence\/from-worker\/([^/]+)$/);
+	    if (request.method === 'POST' && implementationFromWorkerMatch) {
+	      const body = await readBody(request);
+	      try {
+	        sendJson(response, 200, recordImplementationEvidenceFromWorkerRun({
+	          assignmentId: body.assignmentId || 'assignment-local-mvp',
+	          workerRunId: implementationFromWorkerMatch[1],
+	          runPostCheck: body.runPostCheck !== false
+	        }));
+	      } catch (err) {
+	        sendJson(response, err.statusCode || 400, { error: err.message, extracted: err.extracted || null });
+	      }
+	      return;
+	    }
+
+	    const implementationEvidenceMatch = url.pathname.match(/^\/api\/implementation\/evidence\/([^/]+)$/);
+	    if (request.method === 'GET' && implementationEvidenceMatch) {
+	      const assignmentId = implementationEvidenceMatch[1];
       sendJson(response, 200, {
         assignmentId,
         implementationEvidence: collectEvidence(assignmentId).implementationEvidence || []
@@ -5661,6 +6354,12 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    if (request.method === 'GET' && url.pathname === '/api/agents/execution-health') {
+      const assignmentId = url.searchParams.get('assignmentId') || 'assignment-local-mvp';
+      sendJson(response, 200, getExecutionAdapterHealth(assignmentId));
+      return;
+    }
+
     if (request.method === 'POST' && url.pathname === '/api/agents/launch-worker') {
       const body = await readBody(request);
       try {
@@ -5677,12 +6376,13 @@ const server = createServer(async (request, response) => {
           notes: body.notes || ''
         });
         sendJson(response, 200, result);
-      } catch (err) {
-        sendJson(response, err.statusCode || 500, {
-          error: err.message,
-          delegation: err.delegation || null
-        });
-      }
+	      } catch (err) {
+	        sendJson(response, err.statusCode || 500, {
+	          error: err.message,
+	          delegation: err.delegation || null,
+	          executionHealth: err.executionHealth || null
+	        });
+	      }
       return;
     }
 
@@ -5715,8 +6415,8 @@ const server = createServer(async (request, response) => {
 	      return;
 	    }
 
-	    const workerStatusMatch = url.pathname.match(/^\/api\/agents\/worker-runs\/([^/]+)\/status$/);
-	    if (request.method === 'POST' && workerStatusMatch) {
+		    const workerStatusMatch = url.pathname.match(/^\/api\/agents\/worker-runs\/([^/]+)\/status$/);
+		    if (request.method === 'POST' && workerStatusMatch) {
 	      const body = await readBody(request);
 	      try {
 	        const result = syncWorkerRunStatus({
@@ -5727,10 +6427,26 @@ const server = createServer(async (request, response) => {
 	      } catch (err) {
 	        sendJson(response, err.statusCode || 400, { error: err.message });
 	      }
-	      return;
-	    }
+		      return;
+		    }
 
-	    const relayItemsMatch = url.pathname.match(/^\/api\/agents\/relay\/([^/]+)$/);
+		    const workerStopMatch = url.pathname.match(/^\/api\/agents\/worker-runs\/([^/]+)\/stop$/);
+		    if (request.method === 'POST' && workerStopMatch) {
+		      const body = await readBody(request);
+		      try {
+		        sendJson(response, 200, requestStopWorkerRun({
+		          assignmentId: body.assignmentId || 'assignment-local-mvp',
+		          workerRunId: workerStopMatch[1],
+		          requestedBy: body.requestedBy || process.env.USER || 'local-user',
+		          reason: body.reason || ''
+		        }));
+		      } catch (err) {
+		        sendJson(response, err.statusCode || 400, { error: err.message });
+		      }
+		      return;
+		    }
+
+		    const relayItemsMatch = url.pathname.match(/^\/api\/agents\/relay\/([^/]+)$/);
 	    if (request.method === 'GET' && relayItemsMatch) {
 	      const assignmentId = relayItemsMatch[1];
 	      ensureRelayItemsForAssignment(assignmentId);

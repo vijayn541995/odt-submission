@@ -97,6 +97,7 @@ function useWorkbenchData() {
   const [uploadPolicy, setUploadPolicy] = useState(null);
   const [agentFoundry, setAgentFoundry] = useState(null);
   const [agentWorkers, setAgentWorkers] = useState(null);
+  const [executionHealth, setExecutionHealth] = useState(null);
   const [selectedRunId, setSelectedRunId] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -104,7 +105,7 @@ function useWorkbenchData() {
   async function refresh() {
     setLoading(true);
     try {
-      const [snapshotResult, settingsResult, usageResult, runsResult, standardsResult, evidenceResult, uploadPolicyResult, agentFoundryResult, agentWorkersResult] = await Promise.all([
+      const [snapshotResult, settingsResult, usageResult, runsResult, standardsResult, evidenceResult, uploadPolicyResult, agentFoundryResult, agentWorkersResult, executionHealthResult] = await Promise.all([
         getJson('/api/snapshot'),
         getJson('/api/settings'),
         getJson('/api/monitoring/ai-usage'),
@@ -113,7 +114,8 @@ function useWorkbenchData() {
         getJson('/api/assignments/assignment-local-mvp/evidence'),
         getJson('/api/intake/upload-policy'),
         getJson('/api/agent-foundry/domains'),
-        getJson('/api/agents/worker-roles')
+        getJson('/api/agents/worker-roles'),
+        getJson('/api/agents/execution-health?assignmentId=assignment-local-mvp')
       ]);
       setSnapshot(snapshotResult);
       setSettings(settingsResult);
@@ -124,6 +126,7 @@ function useWorkbenchData() {
       setUploadPolicy(uploadPolicyResult);
       setAgentFoundry(agentFoundryResult);
       setAgentWorkers(agentWorkersResult);
+      setExecutionHealth(executionHealthResult);
       setSelectedRunId((current) => current || runsResult.runs?.[0]?.id || '');
       setError('');
     } catch (err) {
@@ -163,6 +166,7 @@ function useWorkbenchData() {
     uploadPolicy,
     agentFoundry,
     agentWorkers,
+    executionHealth,
     selectedRunId,
     setSelectedRunId,
     loading,
@@ -1621,6 +1625,76 @@ function AgentFoundryPanel({ setActivePage, data }) {
   );
 }
 
+function ExecutionHealthPanel({ health, selectedAgent, selectedAdapter, issues = [], onRefresh }) {
+  const adapterOrder = ['codex', 'cline', 'oci-genai', 'ollama', 'openai'];
+  const adapters = health?.adapters || {};
+  const checkedAt = health?.checkedAt ? formatTime(health.checkedAt) : 'Not checked';
+  const selectedLabel = selectedAdapter?.label || titleCase(selectedAgent);
+  return (
+    <Panel title="Execution Health" eyebrow="Adapter Readiness">
+      <div className="execution-health-head">
+        <div>
+          <span className="eyebrow">Selected Adapter</span>
+          <strong>{selectedLabel}</strong>
+          <p>
+            ODT launches only healthy, allowlisted adapters. Provider authentication remains with the local CLI, IDE, SSO, or approved provider configuration; ODT stores evidence and health, not secrets.
+          </p>
+        </div>
+        <div className="button-row compact-buttons">
+          <StatusBadge label={selectedAdapter ? titleCase(selectedAdapter.status) : 'Not Checked'} tone={adapterTone(selectedAdapter?.status)} />
+          <button className="secondary-button" type="button" onClick={onRefresh}>
+            Refresh Health
+          </button>
+        </div>
+      </div>
+      <div className="adapter-health-grid">
+        {adapterOrder.map((adapterId) => {
+          const adapter = adapters[adapterId];
+          if (!adapter) return null;
+          return (
+            <div className={`adapter-health-card ${adapterTone(adapter.status)}`} key={adapterId}>
+              <div className="adapter-health-title">
+                <strong>{adapter.label || titleCase(adapterId)}</strong>
+                <StatusBadge label={titleCase(adapter.status)} tone={adapterTone(adapter.status)} />
+              </div>
+              <p>{adapter.message || adapter.capability}</p>
+              <InfoList
+                items={[
+                  ['Capability', adapter.capability || 'Provider adapter'],
+                  ['Launch', adapter.launchSupported ? 'Direct launch allowed' : adapter.handoffSupported ? 'Handoff only' : 'Not wired'],
+                  ['Auth owner', adapter.authModel || 'External provider configuration'],
+                  ['Version', adapter.version || 'Not applicable'],
+                  ['Executable', adapter.executable || 'Not configured']
+                ]}
+              />
+            </div>
+          );
+        })}
+      </div>
+      <div className="execution-issue-list">
+        <div className="execution-issue-head">
+          <strong>Recent Adapter Issues</strong>
+          <span>Last checked {checkedAt}</span>
+        </div>
+        {issues.length ? (
+          issues.slice(0, 4).map((issue) => (
+            <div className="execution-issue-card" key={issue.id}>
+              <StatusBadge label={titleCase(issue.status)} tone={toneFor(issue.status)} />
+              <div>
+                <strong>{titleCase(issue.eventType || issue.source)}</strong>
+                <p>{issue.message || 'Adapter issue captured.'}</p>
+                <span>{issue.createdAt ? formatTime(issue.createdAt) : 'Time not recorded'}</span>
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="muted-copy">No adapter launch or health issues have been captured for this assignment.</p>
+        )}
+      </div>
+    </Panel>
+  );
+}
+
 function AgentTeamPage({ setActivePage, data }) {
   const storedAgent = getStoredSetting(data, 'executionAgent', 'codex');
   const [selectedAgent, setSelectedAgent] = useState(storedAgent);
@@ -1631,6 +1705,7 @@ function AgentTeamPage({ setActivePage, data }) {
   const [relayTargetRole, setRelayTargetRole] = useState('');
   const [agentNotice, setAgentNotice] = useState('');
   const [handoffBusy, setHandoffBusy] = useState(false);
+  const [liveTailEnabled, setLiveTailEnabled] = useState(true);
   const selectedAgentConfig = executionAgents.find((agent) => agent.id === selectedAgent) || executionAgents[0];
   const selectedWorker = teamRoles.find((role) => role.id === selectedWorkerRole) || teamRoles[0];
   const workflow = workflowStateFromData(data);
@@ -1640,7 +1715,12 @@ function AgentTeamPage({ setActivePage, data }) {
   const writeApproved = gate.writeApproved;
   const writeMode = workflowAllows(workflow, 'canDelegateWrite', Boolean(writeApproved && !blockers.length && !reviewBlockers.length));
   const selectedWorkerNeedsWrite = Boolean(selectedWorker.requiresWrite);
-  const canLaunchCodexWorker = selectedAgent === 'codex' && (!selectedWorkerNeedsWrite || writeMode);
+  const executionAdapters = data.executionHealth?.adapters || {};
+  const selectedExecutionHealth = executionAdapters[selectedAgent] || null;
+  const codexExecutionHealth = executionAdapters.codex || null;
+  const codexLaunchHealthy = codexExecutionHealth?.status === 'healthy';
+  const executionHealthIssues = data.executionHealth?.issues || [];
+  const canLaunchCodexWorker = selectedAgent === 'codex' && codexLaunchHealthy && (!selectedWorkerNeedsWrite || writeMode);
   const approvedDependencies = (data.evidence?.dependencyRequests || []).filter((request) => request.status === 'approved');
   const pendingDependencies = (data.evidence?.dependencyRequests || []).filter((request) => request.status === 'pending');
   const workerRuns = data.evidence?.agentWorkerRuns || [];
@@ -1678,6 +1758,21 @@ function AgentTeamPage({ setActivePage, data }) {
     setRelayTargetRole(selectedRelayItem.targetWorkerRole || '');
     setRelayDecision(selectedRelayItem.decision?.decision || '');
   }, [selectedRelayItem?.id]);
+
+  useEffect(() => {
+    if (!selectedWorkerRun?.id || !selectedWorkerRun.statusFile || !liveTailEnabled) return undefined;
+    if (!isWorkerRunActive(selectedWorkerRun.status)) return undefined;
+    const timer = window.setInterval(() => {
+      postJson(`/api/agents/worker-runs/${encodeURIComponent(selectedWorkerRun.id)}/status`, {
+        assignmentId: 'assignment-local-mvp'
+      })
+        .then(() => data.refresh())
+        .catch(() => {
+          // Keep live tail best-effort; explicit refresh still reports errors to the user.
+        });
+    }, 4000);
+    return () => window.clearInterval(timer);
+  }, [selectedWorkerRun?.id, selectedWorkerRun?.status, selectedWorkerRun?.statusFile, liveTailEnabled]);
 
   async function chooseAgent(agentId) {
     setSelectedAgent(agentId);
@@ -1743,7 +1838,9 @@ function AgentTeamPage({ setActivePage, data }) {
   async function launchCodexWorker() {
     if (!canLaunchCodexWorker) {
       setAgentNotice(selectedAgent === 'codex'
-        ? `${selectedWorker.name} is waiting on Standards, review blockers, or write approval. Read-only lanes can still run for planning/review.`
+        ? !codexLaunchHealthy
+          ? 'Codex CLI adapter is not healthy. Review Execution Health before launching a terminal worker.'
+          : `${selectedWorker.name} is waiting on Standards, review blockers, or write approval. Read-only lanes can still run for planning/review.`
         : 'Terminal launch is wired for Codex in this slice. Use governed handoff for Cline or Manual.');
       return;
     }
@@ -1804,6 +1901,44 @@ function AgentTeamPage({ setActivePage, data }) {
       await data.refresh();
     } catch (err) {
       setAgentNotice(err.message || 'Unable to refresh worker status.');
+      await data.refresh();
+    } finally {
+      setHandoffBusy(false);
+    }
+  }
+
+  async function stopWorkerRun(workerRunId) {
+    setHandoffBusy(true);
+    setAgentNotice('');
+    try {
+      const result = await postJson(`/api/agents/worker-runs/${encodeURIComponent(workerRunId)}/stop`, {
+        assignmentId: 'assignment-local-mvp',
+        reason: 'Developer requested stop from ODT Agent Team.'
+      });
+      const signal = result.signalResult?.status === 'sent' ? ' SIGINT sent to the Codex worker.' : '';
+      setAgentNotice(`${result.message || 'Worker stop requested.'}${signal} ${result.manualStopGuidance || ''}`.trim());
+      await data.refresh();
+    } catch (err) {
+      setAgentNotice(err.message || 'Unable to request worker stop.');
+      await data.refresh();
+    } finally {
+      setHandoffBusy(false);
+    }
+  }
+
+  async function deriveImplementationEvidence(workerRunId) {
+    setHandoffBusy(true);
+    setAgentNotice('');
+    try {
+      const result = await postJson(`/api/implementation/evidence/from-worker/${encodeURIComponent(workerRunId)}`, {
+        assignmentId: 'assignment-local-mvp',
+        runPostCheck: true
+      });
+      const extracted = result.extracted || {};
+      setAgentNotice(`Implementation evidence ${shortId(result.evidence?.id)} recorded from worker output. Extracted ${extracted.changedFiles?.length || 0} file(s), ${extracted.commands?.length || 0} command(s), and ${extracted.tests?.length || 0} test item(s).`);
+      await data.refresh();
+    } catch (err) {
+      setAgentNotice(err.message || 'Unable to derive implementation evidence from this worker output.');
       await data.refresh();
     } finally {
       setHandoffBusy(false);
@@ -1878,6 +2013,13 @@ function AgentTeamPage({ setActivePage, data }) {
         />
       </Panel>
       <AgentFoundryPanel setActivePage={setActivePage} data={data} />
+      <ExecutionHealthPanel
+        health={data.executionHealth}
+        selectedAgent={selectedAgent}
+        selectedAdapter={selectedExecutionHealth}
+        issues={executionHealthIssues}
+        onRefresh={data.refresh}
+      />
       <Panel title="Execution Agent" eyebrow="Handoff Target">
         <div className="agent-selector" role="radiogroup" aria-label="Select execution agent">
           {executionAgents.map((agent) => (
@@ -1933,7 +2075,8 @@ function AgentTeamPage({ setActivePage, data }) {
               ['Dependency installs', approvedDependencies.length ? `${approvedDependencies.length} approved package(s)` : pendingDependencies.length ? `${pendingDependencies.length} pending approval` : 'Blocked'],
               ['Selected lane', selectedWorker.name],
               ['Lane access', selectedWorker.requiresWrite ? (writeMode ? 'write-approved' : 'locked until approval') : 'read-only'],
-              ['Terminal worker', selectedAgent === 'codex' ? (canLaunchCodexWorker ? `Ready to launch ${selectedWorker.name}` : 'Locked until write-approved') : 'Handoff only for this engine']
+              ['Adapter health', selectedExecutionHealth ? titleCase(selectedExecutionHealth.status) : 'Not checked'],
+              ['Terminal worker', selectedAgent === 'codex' ? (!codexLaunchHealthy ? 'Codex adapter unhealthy' : canLaunchCodexWorker ? `Ready to launch ${selectedWorker.name}` : 'Locked until write-approved') : 'Handoff only for this engine']
             ]}
           />
           <div className="button-row">
@@ -1944,9 +2087,11 @@ function AgentTeamPage({ setActivePage, data }) {
                 onClick={launchCodexWorker}
                 disabled={handoffBusy || !canLaunchCodexWorker}
                 title={canLaunchCodexWorker
-                  ? 'Create the ODT worker bundle and open a visible Terminal running Codex CLI.'
-                  : 'Review findings, override accepted blockers if needed, and approve write scope before launching Codex.'}
-              >
+	                  ? 'Create the ODT worker bundle and open a visible Terminal running Codex CLI.'
+	                  : !codexLaunchHealthy
+	                    ? 'Review Execution Health and fix the Codex CLI adapter before launching.'
+	                    : 'Review findings, override accepted blockers if needed, and approve write scope before launching Codex.'}
+	              >
                 {handoffBusy ? 'Preparing' : `Launch ${selectedWorker.name}`}
               </button>
             ) : (
@@ -1986,31 +2131,36 @@ function AgentTeamPage({ setActivePage, data }) {
 	        {agentNotice ? <p className="muted-copy">{agentNotice}</p> : null}
 	      </Panel>
 	      <Panel title="Agent Relay Inbox" eyebrow="Cross-Lane Context">
-	        <p className="muted-copy">Relay items are durable evidence extracted from worker output. Use them to route questions, capture human decisions, and make sure the next worker receives the right context in its prompt.</p>
+	        <p className="muted-copy">Relay items are durable evidence extracted from worker output and review findings. Use them to route questions, capture human decisions, and make sure the next worker receives the right context in its prompt.</p>
 	        <SimpleTable
 	          columns={['Status', 'Target Lane', 'Source', 'Relay Item', 'Action']}
-	          rows={relayItems.slice(0, 8).map((item) => [
-	            <StatusBadge label={titleCase(item.status)} tone={toneFor(item.status)} />,
-	            teamRoles.find((role) => role.id === item.targetWorkerRole)?.name || item.targetLane || 'Next lane',
-	            item.sourceWorkerRoleLabel || titleCase(item.sourceWorkerRole),
-	            <div className="relay-table-cell">
-	              <strong>{item.title}</strong>
-	              <span>{item.message}</span>
-	              {item.decision?.decision ? <em>Decision: {item.decision.decision}</em> : null}
-	            </div>,
-	            <div className="button-row compact-buttons">
-	              <button className="table-button" type="button" onClick={() => {
-	                setSelectedRelayId(item.id);
-	                setRelayTargetRole(item.targetWorkerRole || '');
-	                setRelayDecision(item.decision?.decision || '');
-	              }}>
-	                Review
-	              </button>
-	              <button className="table-button" type="button" onClick={() => useRelayForNextWorker(item)}>
-	                Use Next
-	              </button>
-	            </div>
-	          ])}
+	          rows={relayItems.slice(0, 8).map((item) => {
+	            const roleName = teamRoles.find((role) => role.id === item.targetWorkerRole)?.name;
+	            const laneLabel = item.itemType === 'rework' ? item.targetLane || roleName : roleName || item.targetLane;
+	            return [
+	              <StatusBadge label={titleCase(item.status)} tone={toneFor(item.status)} />,
+	              laneLabel || 'Next lane',
+	              item.sourceWorkerRoleLabel || titleCase(item.sourceWorkerRole),
+	              <div className="relay-table-cell">
+	                <strong>{item.title}</strong>
+	                <span>{item.message}</span>
+	                {item.context?.requiredAction ? <em>{item.context.requiredAction}</em> : null}
+	                {item.decision?.decision ? <em>Decision: {item.decision.decision}</em> : null}
+	              </div>,
+	              <div className="button-row compact-buttons">
+	                <button className="table-button" type="button" onClick={() => {
+	                  setSelectedRelayId(item.id);
+	                  setRelayTargetRole(item.targetWorkerRole || '');
+	                  setRelayDecision(item.decision?.decision || '');
+	                }}>
+	                  Review
+	                </button>
+	                <button className="table-button" type="button" onClick={() => useRelayForNextWorker(item)}>
+	                  {item.itemType === 'rework' ? 'Use Rework' : 'Use Next'}
+	                </button>
+	              </div>
+	            ];
+	          })}
 	          empty="No relay items yet. Ingest worker output with questions to create cross-lane relay evidence."
 	        />
 	        {selectedRelayItem ? (
@@ -2062,33 +2212,56 @@ function AgentTeamPage({ setActivePage, data }) {
 	          </div>
 	        ) : null}
 	      </Panel>
-	      <div className="two-column">
-	        <Panel title="Shared Task List" eyebrow="Execution">
-	          <Checklist items={sharedTaskItems.length ? sharedTaskItems : ['Review generated plan', 'Implement approved scope', 'Add tests', 'Capture evidence']} />
-        </Panel>
-        <Panel title="Worker Queue" eyebrow="Sequential Relay">
-          <SimpleTable
-            columns={['Lane', 'Status', 'Output', 'Action']}
-            rows={workerRuns.slice(0, 8).map((run) => [
-              run.workerRoleLabel,
-              <StatusBadge label={titleCase(run.status)} tone={toneFor(run.status)} />,
-              <WorkerRunOutput run={run} />,
-              <div className="button-row compact-buttons">
-	                <button className="table-button" type="button" onClick={() => setSelectedWorkerRunId(run.id)}>
-	                  Review
-	                </button>
-	                <button className="table-button" type="button" onClick={() => refreshWorkerRunStatus(run.id)} disabled={handoffBusy || !run.statusFile}>
-	                  Refresh
-	                </button>
-	                <button className="table-button" type="button" onClick={() => ingestWorkerRun(run.id)} disabled={handoffBusy || !run.responseFile}>
-	                  Ingest Output
-	                </button>
-              </div>
-            ])}
-            empty="No worker lanes launched yet. Start with Lead Planner or Senior Full Stack Dev."
-          />
-        </Panel>
-      </div>
+      <Panel title="Shared Task List" eyebrow="Execution">
+        <Checklist items={sharedTaskItems.length ? sharedTaskItems : ['Review generated plan', 'Implement approved scope', 'Add tests', 'Capture evidence']} />
+      </Panel>
+      <Panel title="Worker Queue" eyebrow="Sequential Relay">
+          {workerRuns.length ? (
+            <div className="worker-queue-list">
+              {workerRuns.slice(0, 8).map((run) => {
+                const activeRun = isWorkerRunActive(run.status);
+                const hasResponse = Boolean(run.output?.responseBytes > 0 || run.output?.rawText || ['response_ready', 'completed', 'needs_input'].includes(String(run.status || '').toLowerCase()));
+                return (
+                  <article className={`worker-queue-card ${selectedWorkerRun?.id === run.id ? 'selected' : ''}`} key={run.id}>
+                    <div className="worker-queue-main">
+                      <div className="worker-queue-title">
+                        <strong>{run.workerRoleLabel}</strong>
+                        <StatusBadge label={titleCase(run.status)} tone={toneFor(run.status)} />
+                      </div>
+                      <WorkerRunOutput run={run} />
+                      <div className="worker-queue-meta">
+                        <span>{titleCase(run.executionAgent)}</span>
+                        <span>{titleCase(run.mode)}</span>
+                        <span>{run.output?.refreshedAt ? `Refreshed ${formatTime(run.output.refreshedAt)}` : `Created ${formatTime(run.createdAt)}`}</span>
+                      </div>
+                    </div>
+                    <div className="worker-queue-actions">
+                      <button className="table-button" type="button" onClick={() => setSelectedWorkerRunId(run.id)}>
+                        Review
+                      </button>
+                      <button className="table-button" type="button" onClick={() => refreshWorkerRunStatus(run.id)} disabled={handoffBusy || !run.statusFile}>
+                        Refresh
+                      </button>
+                      {activeRun ? (
+                        <button className="table-button danger-action" type="button" onClick={() => stopWorkerRun(run.id)} disabled={handoffBusy}>
+                          Stop
+                        </button>
+                      ) : null}
+                      <button className="table-button" type="button" onClick={() => ingestWorkerRun(run.id)} disabled={handoffBusy || !run.responseFile}>
+                        Ingest
+                      </button>
+                      <button className="table-button" type="button" onClick={() => deriveImplementationEvidence(run.id)} disabled={handoffBusy || !hasResponse}>
+                        Record Evidence
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="empty-state">No worker lanes launched yet. Start with Lead Planner or Senior Full Stack Dev.</div>
+          )}
+      </Panel>
       {selectedWorkerRun ? (
         <Panel title="Worker Run Detail" eyebrow="Evidence Relay">
           <div className="worker-run-detail">
@@ -2125,13 +2298,21 @@ function AgentTeamPage({ setActivePage, data }) {
 	              <button className="secondary-button" type="button" onClick={() => copyWorkerRunText(selectedWorkerRun.responseFile, 'Response path')} disabled={!selectedWorkerRun.responseFile}>
 	                Copy Response Path
 	              </button>
-	              <button className="secondary-button" type="button" onClick={() => refreshWorkerRunStatus(selectedWorkerRun.id)} disabled={handoffBusy || !selectedWorkerRun.statusFile}>
-	                Refresh Status
-	              </button>
-	              <button className="primary-button" type="button" onClick={() => ingestWorkerRun(selectedWorkerRun.id)} disabled={handoffBusy || !(selectedWorkerRun.output?.responseBytes > 0 || ['response_ready', 'completed', 'needs_input'].includes(String(selectedWorkerRun.status || '').toLowerCase()))}>
-	                Ingest Output
-	              </button>
-	            </div>
+		              <button className="secondary-button" type="button" onClick={() => refreshWorkerRunStatus(selectedWorkerRun.id)} disabled={handoffBusy || !selectedWorkerRun.statusFile}>
+		                Refresh Status
+		              </button>
+		              {isWorkerRunActive(selectedWorkerRun.status) ? (
+		                <button className="secondary-button danger-action" type="button" onClick={() => stopWorkerRun(selectedWorkerRun.id)} disabled={handoffBusy}>
+		                  Stop Worker
+		                </button>
+		              ) : null}
+		              <button className="primary-button" type="button" onClick={() => ingestWorkerRun(selectedWorkerRun.id)} disabled={handoffBusy || !(selectedWorkerRun.output?.responseBytes > 0 || ['response_ready', 'completed', 'needs_input'].includes(String(selectedWorkerRun.status || '').toLowerCase()))}>
+		                Ingest Output
+		              </button>
+		              <button className="secondary-button" type="button" onClick={() => deriveImplementationEvidence(selectedWorkerRun.id)} disabled={handoffBusy || !(selectedWorkerRun.output?.responseBytes > 0 || selectedWorkerRun.output?.rawText || ['response_ready', 'completed', 'needs_input'].includes(String(selectedWorkerRun.status || '').toLowerCase()))}>
+		                Record Evidence From Worker
+		              </button>
+		            </div>
 	            {selectedWorkerRun.output?.launchStatus ? (
 	              <div className="worker-status-card">
 	                <div>
@@ -2148,10 +2329,21 @@ function AgentTeamPage({ setActivePage, data }) {
 	                />
 	              </div>
 	            ) : null}
-	            {selectedWorkerRun.output?.logTail ? (
+	            {selectedWorkerRun.logFile || selectedWorkerRun.statusFile ? (
 	              <div className="log-tail">
-	                <span className="eyebrow">Log Tail</span>
-	                <pre>{selectedWorkerRun.output.logTail}</pre>
+	                <div className="log-tail-head">
+	                  <div>
+	                    <span className="eyebrow">Live Log Tail</span>
+	                    <strong>{isWorkerRunActive(selectedWorkerRun.status) && liveTailEnabled ? 'Following worker output' : 'Latest captured output'}</strong>
+	                  </div>
+	                  <div className="button-row compact-buttons">
+	                    <StatusBadge label={isWorkerRunActive(selectedWorkerRun.status) && liveTailEnabled ? 'Live' : 'Paused'} tone={isWorkerRunActive(selectedWorkerRun.status) && liveTailEnabled ? 'success' : 'neutral'} />
+	                    <button className="table-button" type="button" onClick={() => setLiveTailEnabled((value) => !value)}>
+	                      {liveTailEnabled ? 'Pause Tail' : 'Follow Tail'}
+	                    </button>
+	                  </div>
+	                </div>
+	                <pre>{selectedWorkerRun.output?.logTail || 'Waiting for worker log output. Launch or refresh the selected worker to capture the latest tail.'}</pre>
 	              </div>
 	            ) : null}
 	            {selectedWorkerRun.questions?.length ? (
@@ -2193,6 +2385,9 @@ function ReviewPage({ setActivePage, data }) {
   const openBlockers = openComments.filter((comment) => comment.severity === 'blocker');
   const acceptedRisk = comments.filter((comment) => comment.status === 'accepted_risk');
   const resolved = comments.filter((comment) => comment.status === 'resolved');
+  const reworkRelayItems = (evidence.agentRelayItems || []).filter((item) => item.itemType === 'rework');
+  const activeReworkRelayItems = reworkRelayItems.filter((item) => ['open', 'assigned', 'answered'].includes(String(item.status || '').toLowerCase()));
+  const reworkRelayCommentIds = new Set(reworkRelayItems.map((item) => item.context?.reviewCommentId).filter(Boolean));
   const selectedAgent = getStoredSetting(data, 'executionAgent', 'codex');
   const writeReady = workflowAllows(workflow, 'canDelegateWrite', Boolean(gate.writeApproved && !gate.unresolvedBlockers.length && !openBlockers.length));
   const canRecordImplementationEvidence = workflowAllows(workflow, 'canRecordImplementationEvidence', Boolean(gate.writeApproved || evidence.agentEvents?.some((event) => event.eventType === 'handoff_prepared')));
@@ -2241,6 +2436,23 @@ function ReviewPage({ setActivePage, data }) {
       await data.refresh();
     } catch (err) {
       setNotice(err.message || 'Unable to add review comment.');
+    } finally {
+      setBusy('');
+    }
+  }
+
+  async function sendCommentToRework(comment) {
+    setBusy(`rework-relay-${comment.id}`);
+    setNotice('');
+    try {
+      const result = await postJson(`/api/review/comments/${encodeURIComponent(comment.id)}/rework-relay`, {
+        requestedBy: 'local-user'
+      });
+      const relay = result.relayItem || {};
+      setNotice(`Rework relay ${shortId(relay.id)} is ready for Senior Full Stack Dev. Open Agent Team and launch the worker to receive this finding in Agent Relay Context.`);
+      await data.refresh();
+    } catch (err) {
+      setNotice(err.message || 'Unable to send this review comment to rework relay.');
     } finally {
       setBusy('');
     }
@@ -2350,6 +2562,7 @@ function ReviewPage({ setActivePage, data }) {
       <div className="metric-grid">
         <MetricCard label="Open Comments" value={openComments.length || 0} detail="Need review decision" tone={openComments.length ? 'warning' : 'success'} />
         <MetricCard label="Review Blockers" value={openBlockers.length || 0} detail="Block delegation until resolved or accepted" tone={openBlockers.length ? 'danger' : 'success'} />
+        <MetricCard label="Rework Relay" value={activeReworkRelayItems.length || 0} detail="Queued for Senior Full Stack Dev" tone={activeReworkRelayItems.length ? 'warning' : 'success'} />
         <MetricCard label="Implementation Evidence" value={implementationEvidence.length || 0} detail={latestImplementationEvidence ? `${latestImplementationEvidence.changedFiles?.length || 0} files recorded` : 'Required before PR pack'} tone={implementationEvidence.length ? 'success' : 'warning'} />
         <MetricCard label="Accepted Risk" value={acceptedRisk.length || 0} detail="Human-owned continuation evidence" tone={acceptedRisk.length ? 'warning' : 'neutral'} />
         <MetricCard label="Failed Tests" value={failedRecordedTests.length || 0} detail="Need fix or accepted risk" tone={failedRecordedTests.length ? 'danger' : 'success'} />
@@ -2363,11 +2576,26 @@ function ReviewPage({ setActivePage, data }) {
               <StatusBadge label={titleCase(comment.severity)} tone={comment.severity === 'blocker' ? 'danger' : comment.severity === 'warning' ? 'warning' : 'neutral'} />,
               <span>{comment.comment}{comment.resolutionNotes ? <small className="cell-note">{comment.resolutionNotes}</small> : null}</span>,
               <StatusBadge label={titleCase(comment.status)} tone={comment.status === 'resolved' ? 'success' : comment.status === 'accepted_risk' ? 'warning' : 'danger'} />,
-              <div className="button-row compact-buttons">
-                <button className="table-button" type="button" onClick={() => updateCommentStatus(comment, 'resolved')} disabled={Boolean(busy) || comment.status === 'resolved'}>Resolve</button>
-                <button className="table-button" type="button" onClick={() => updateCommentStatus(comment, 'accepted_risk')} disabled={Boolean(busy) || comment.status === 'accepted_risk'}>Accept Risk</button>
-                <button className="table-button" type="button" onClick={() => updateCommentStatus(comment, 'open')} disabled={Boolean(busy) || comment.status === 'open'}>Reopen</button>
-              </div>
+              (() => {
+                const canSendRework = comment.status === 'open' && ['warning', 'blocker'].includes(comment.severity);
+                const alreadyRelayed = reworkRelayCommentIds.has(comment.id);
+                return (
+                  <div className="button-row compact-buttons">
+                    <button
+                      className="table-button"
+                      type="button"
+                      onClick={() => (alreadyRelayed ? setActivePage('team') : sendCommentToRework(comment))}
+                      disabled={Boolean(busy) || !canSendRework}
+                      title={canSendRework ? 'Route this review finding to the Senior Full Stack Dev rework lane.' : 'Only open warning or blocker comments can be sent to rework.'}
+                    >
+                      {busy === `rework-relay-${comment.id}` ? 'Sending' : alreadyRelayed ? 'Open Rework' : 'Send Rework'}
+                    </button>
+                    <button className="table-button" type="button" onClick={() => updateCommentStatus(comment, 'resolved')} disabled={Boolean(busy) || comment.status === 'resolved'}>Resolve</button>
+                    <button className="table-button" type="button" onClick={() => updateCommentStatus(comment, 'accepted_risk')} disabled={Boolean(busy) || comment.status === 'accepted_risk'}>Accept Risk</button>
+                    <button className="table-button" type="button" onClick={() => updateCommentStatus(comment, 'open')} disabled={Boolean(busy) || comment.status === 'open'}>Reopen</button>
+                  </div>
+                );
+              })()
             ])}
             empty="No review comments yet. Add one when a plan, standard, handoff, or PR package needs a human decision."
           />
@@ -3968,11 +4196,23 @@ function toneFor(value) {
   return 'neutral';
 }
 
+function isWorkerRunActive(status) {
+  return ['starting', 'running', 'delegated_visible', 'manual_fallback', 'unknown'].includes(String(status || '').toLowerCase());
+}
+
 function standardsTone(value) {
   const text = String(value || '').toLowerCase();
   if (text.includes('block')) return 'danger';
   if (text.includes('warning') || text.includes('approval') || text.includes('review') || text.includes('required')) return 'warning';
   if (text.includes('pass') || text.includes('approved') || text.includes('ready') || text.includes('decided') || text.includes('accepted') || text.includes('resolved')) return 'success';
+  return 'neutral';
+}
+
+function adapterTone(value) {
+  const text = String(value || '').toLowerCase();
+  if (text.includes('unhealthy') || text.includes('missing') || text.includes('fail')) return 'danger';
+  if (text.includes('planned') || text.includes('not_configured') || text.includes('handoff')) return 'warning';
+  if (text.includes('healthy') || text.includes('configured') || text.includes('ready')) return 'success';
   return 'neutral';
 }
 

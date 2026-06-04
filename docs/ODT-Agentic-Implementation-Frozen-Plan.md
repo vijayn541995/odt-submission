@@ -12,6 +12,16 @@ Update, 2026-06-04: ODT 2.0 must be treated as an agentic SDLC control plane, no
 
 Production relay decision, 2026-06-04: cross-lane questions must not live only inside worker-run JSON. Worker runs are immutable execution evidence. Questions, target lanes, human decisions, and route changes become first-class **Agent Relay Items** in the ODT evidence model. The Agent Relay Inbox lets a developer assign a relay item to a lane, record a human answer, reopen it, or select it as context for the next worker. Future worker prompts include a dedicated `Agent Relay Context` section filtered for that lane, plus prior worker output evidence.
 
+Worker monitoring update, 2026-06-04: Codex worker bundles now include a `launch-status.json` lifecycle file. The launch script records `running`, `completed`, `failed`, or `codex_missing` with timestamps and exit code. ODT can refresh worker status from the status file, response file, and log file before ingesting final output. Agent Team shows response/log sizes, latest refresh, launch status, log tail, and explicit Refresh Status / Ingest Output controls.
+
+Execution adapter update, 2026-06-04: ODT must treat Codex, Cline, OCI/OCA, Ollama, OpenAI API, and future engines as execution adapters behind the same governed worker contract. Codex CLI is the first direct-launch adapter. ODT preflights candidate Codex executables, selects a healthy path for the launch script, and reports broken paths as adapter health issues. Authentication remains owned by the local CLI/app, enterprise SSO, IDE extension, or approved provider configuration; ODT stores health/evidence and must not store provider secrets. Live log tail is shown only for delegated worker runs that have a status/log file, and is marked live only while the worker status is active.
+
+Worker evidence and stop-control update, 2026-06-04: ODT can derive implementation evidence from an ingested worker response and store it in the same `implementation_evidence` model used by manual evidence capture. The extractor is deterministic and reviewable: it reads summary, changed-file paths, commands, and test outcomes from worker output, then runs the post-implementation standards check. It must not invent changed files when the worker did not report them. ODT also exposes a governed Stop Worker action. New Codex worker scripts record the child Codex PID and observe a stop-request file; the Stop action writes stop evidence and sends `SIGINT` to the recorded PID when available. If PID control is unavailable, ODT records the request and instructs the developer to press Ctrl+C in the visible Terminal worker.
+
+Current active slice, 2026-06-05: implement the review-cycle loop in the main workplan. Reviewer or human review findings should become rework relay items targeted to **Senior Full Stack Dev Rework**. The next Senior Full Stack Dev launch receives these findings in `Agent Relay Context`, works only on the reviewed scope, and returns rework evidence for another Reviewer/Build Verifier pass. Review comments remain durable human evidence; relay items are the worker-routing copy used for orchestration.
+
+Main workplan implementation update, 2026-06-05: warning/blocker review comments now have a governed route into the agent loop. ODT creates or reuses a rework relay item for the source review comment, exposes `POST /api/review/comments/:commentId/rework-relay`, shows the rework queue on the Review page, and injects review metadata plus required action into `Agent Relay Context` for the next Senior Full Stack Dev launch.
+
 Future intake connector direction: ODT should add governed Jira2/Jira MCP and GitHub MCP intake sources after the current local workbench and relay flow stabilize. These connectors should be read-only by default for intake: pull ticket/issue/PR title, description, acceptance criteria, comments, labels, branch/PR metadata, check status, and attachment metadata into ODT evidence. Any write-back to Jira, GitHub, branches, comments, labels, or PRs must require a separate human approval gate and connector policy review.
 
 Future DB awareness direction: ODT should detect local database configuration from repo files such as `database.yml`, `.env.example`, `config/database.*`, Prisma, Sequelize, Knex, Rails, Spring, or similar configuration files. The first implementation must be metadata-only by default: identify connection candidates, schemas, tables, columns, indexes, constraints, migrations, and safe row-count summaries where approved. Credentials must stay server-side and must not be shown in the frontend or injected into worker prompts. Arbitrary business-data queries, exports, DDL, migrations, INSERT/UPDATE/DELETE, and production-like connections require explicit human approval and a separate DB safety policy.
@@ -25,9 +35,14 @@ Lead Planner -> Senior Full Stack Dev -> Reviewer -> Senior Full Stack Dev Rewor
 Backend worker APIs:
 
 - `GET /api/agents/worker-roles`
+- `GET /api/agents/execution-health`
 - `POST /api/agents/launch-worker`
 - `GET /api/agents/worker-runs/:assignmentId`
+- `POST /api/agents/worker-runs/:workerRunId/status`
+- `POST /api/agents/worker-runs/:workerRunId/stop`
 - `POST /api/agents/worker-runs/:workerRunId/ingest`
+- `POST /api/implementation/evidence/from-worker/:workerRunId`
+- `POST /api/review/comments/:commentId/rework-relay`
 - `GET /api/agents/relay/:assignmentId`
 - `POST /api/agents/relay/:relayItemId/decision`
 
@@ -36,20 +51,23 @@ Durable worker evidence:
 - worker role and execution engine
 - read-only or write-approved mode
 - bundle, handoff, prompt, response, log, and status paths
+- launch status lifecycle, response/log sizes, log tail, exit code, and refresh timestamp
+- stop request evidence, Codex child PID when available, SIGINT result, and manual Ctrl+C fallback guidance
 - parsed output summary
+- derived implementation evidence: changed files, commands, tests, source worker, and post-check result
+- review-to-rework relay items: source review comment, target artifact, severity, target lane, and required rework instruction
 - questions for another worker lane
 - first-class relay items with source worker, target lane, status, decision notes, and prompt-injection context
 - run/agent events
 
 Next implementation slice toward the 100% goal:
 
-1. Add live terminal-launch status polling from `launch-status.json` and `codex-launch.log`.
-2. Add a real terminal-launch smoke test for a read-only lane, then a write-approved lane.
-3. Add implementation evidence ingestion from worker output so changed files, commands, and tests do not need manual re-entry.
-4. Add a review-cycle loop: Reviewer findings create rework relay items for Senior Full Stack Dev.
-5. Add optional Cline/OCI/OCA adapters behind the same worker contract and relay context pack.
-6. Add future read-only Jira2/Jira MCP and GitHub MCP intake connectors behind approval-gated connector policy; do not enable external writes by default.
-7. Add future governed DB awareness: repo config detection, local metadata-only schema introspection, approval-gated data queries, and no credential exposure to UI or workers.
+1. Add a real terminal-launch smoke test for a read-only lane, then a write-approved lane.
+2. Harden review-cycle closeout: rework evidence ingestion, Reviewer rerun, Build Verifier rerun, and PR-ready transition.
+3. Add optional Cline/OCI/OCA adapters behind the same worker contract and relay context pack.
+4. Add future read-only Jira2/Jira MCP and GitHub MCP intake connectors behind approval-gated connector policy; do not enable external writes by default.
+5. Add future governed DB awareness: repo config detection, local metadata-only schema introspection, approval-gated data queries, and no credential exposure to UI or workers.
+6. Add score/readiness thresholds for stopping the agent loop and asking the developer for final review.
 
 This is the frozen implementation plan for evolving Oracle Developer Twin from a static seven-stage planning workflow into a practical, developer-usable agentic delivery workbench.
 
