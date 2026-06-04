@@ -1,0 +1,94 @@
+{
+  "generatedAt": "2026-05-14T14:17:05.669Z",
+  "updatedAt": "2026-05-14T14:17:05.669Z",
+  "status": "ready",
+  "cycleId": "",
+  "summary": {
+    "total": 5,
+    "pending": 4,
+    "accepted": 1,
+    "needsRework": 0,
+    "rejected": 0,
+    "ignored": 0
+  },
+  "suggestions": [
+    {
+      "id": "architecture-reviewer-1-architecture-review-passed-initial-scope-checks",
+      "reviewerId": "architecture-reviewer",
+      "reviewerName": "Architecture Reviewer",
+      "findingIndex": 0,
+      "severity": "low",
+      "title": "Architecture review passed initial scope checks",
+      "detail": "Changed files are within the planned footprint and no large-blast-radius concern was detected.",
+      "sourceRecommendation": "Proceed to test, accessibility, and compliance review.",
+      "files": [],
+      "decision": "accepted",
+      "suggestion": "Keep this architecture finding accepted; no code change needed, but preserve scoped edits in the final summary.",
+      "note": "Developer accepted the reviewer guidance.",
+      "updatedAt": "2026-05-14T14:17:05.669Z"
+    },
+    {
+      "id": "unit-test-reviewer-1-test-files-changed",
+      "reviewerId": "unit-test-reviewer",
+      "reviewerName": "Unit Test Reviewer",
+      "findingIndex": 0,
+      "severity": "low",
+      "title": "Test files changed",
+      "detail": "2 test-related file(s) changed.",
+      "sourceRecommendation": "Run the targeted test command and confirm the assertions cover acceptance criteria.",
+      "files": [
+        "tests/activity-filter.spec.md",
+        "tests/employee-form.test.mjs"
+      ],
+      "decision": "pending",
+      "suggestion": "Run the targeted test command and confirm the assertions cover acceptance criteria.",
+      "note": "",
+      "updatedAt": ""
+    },
+    {
+      "id": "accessibility-reviewer-1-accessibility-review-found-no-obvious-blocker",
+      "reviewerId": "accessibility-reviewer",
+      "reviewerName": "Accessibility Reviewer",
+      "findingIndex": 0,
+      "severity": "low",
+      "title": "Accessibility review found no obvious blocker",
+      "detail": "No immediate keyboard, semantics, or status messaging blocker was detected from the diff preview.",
+      "sourceRecommendation": "Perform a keyboard pass and inspect accessible names before final approval.",
+      "files": [],
+      "decision": "pending",
+      "suggestion": "Perform a keyboard pass and inspect accessible names before final approval.",
+      "note": "",
+      "updatedAt": ""
+    },
+    {
+      "id": "security-compliance-reviewer-1-no-dependency-or-secret-risk-detected",
+      "reviewerId": "security-compliance-reviewer",
+      "reviewerName": "Security / Compliance Reviewer",
+      "findingIndex": 0,
+      "severity": "low",
+      "title": "No dependency or secret risk detected",
+      "detail": "No dependency, obvious secret, or browser-storage risk was detected from the diff preview.",
+      "sourceRecommendation": "Continue normal compliance review.",
+      "files": [],
+      "decision": "pending",
+      "suggestion": "Continue normal compliance review.",
+      "note": "",
+      "updatedAt": ""
+    },
+    {
+      "id": "build-verifier-1-verification-commands-passed",
+      "reviewerId": "build-verifier",
+      "reviewerName": "Build Verifier",
+      "findingIndex": 0,
+      "severity": "low",
+      "title": "Verification commands passed",
+      "detail": "2 verification step(s) were recorded without failure.",
+      "sourceRecommendation": "Include verification evidence in final review.",
+      "files": [],
+      "decision": "pending",
+      "suggestion": "Include verification evidence in final review.",
+      "note": "",
+      "updatedAt": ""
+    }
+  ]
+}

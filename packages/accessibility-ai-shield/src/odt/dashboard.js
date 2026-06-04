@@ -1,6 +1,6 @@
 const DIGITAL_WORKER_ICON_SVG = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='dwg' x1='0' y1='0' x2='1' y2='1'><stop offset='0%' stop-color='#c74634'/><stop offset='100%' stop-color='#0b6bcb'/></linearGradient></defs><rect x='12' y='16' width='40' height='34' rx='11' fill='url(#dwg)'/><rect x='18' y='22' width='28' height='20' rx='8' fill='#ffffff' fill-opacity='0.18'/><circle cx='25' cy='31' r='4' fill='#ffffff'/><circle cx='39' cy='31' r='4' fill='#ffffff'/><rect x='24' y='39' width='16' height='3' rx='1.5' fill='#ffffff'/><rect x='29' y='8' width='6' height='8' rx='3' fill='#c74634'/><circle cx='32' cy='7' r='3' fill='#f5d6d2'/></svg>";
 const DIGITAL_WORKER_ICON_DATA_URI = `data:image/svg+xml,${encodeURIComponent(DIGITAL_WORKER_ICON_SVG)}`;
-const DIGITAL_WORKER_ASSET_RELATIVE_PATH = './assets/oracle-dev-twin-collab.png';
+const DIGITAL_WORKER_ASSET_RELATIVE_PATH = '../../../../assets/branding/oracle-dev-twin-collab.png';
 const ORACLE_WORDMARK_SVG = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 232 48'><rect x='1.5' y='1.5' width='229' height='45' rx='22.5' fill='#fff8f1' stroke='#c74634' stroke-width='3'/><text x='116' y='31' text-anchor='middle' font-family='Arial, Helvetica, sans-serif' font-size='21' font-weight='700' letter-spacing='5' fill='#c74634'>ORACLE</text></svg>";
 const ORACLE_WORDMARK_DATA_URI = `data:image/svg+xml,${encodeURIComponent(ORACLE_WORDMARK_SVG)}`;
 const THEME_STORAGE_KEY = 'oracle-developer-twin-theme-v1';
@@ -212,15 +212,17 @@ function renderOdtDashboard(payload) {
       z-index:1;
     }
     .head-logo{
-      width:clamp(124px, 10vw, 168px);
-      height:clamp(124px, 10vw, 168px);
+      width:clamp(132px, 10.4vw, 176px);
+      height:clamp(132px, 10.4vw, 176px);
       border-radius:32px;
-      object-fit:cover;
+      object-fit:contain;
       object-position:center;
       display:block;
-      border:1px solid rgba(255,255,255,0.24);
-      background:rgba(255,255,255,0.08);
-      box-shadow:0 18px 36px rgba(0,0,0,0.22);
+      justify-self:end;
+      padding:10px;
+      border:1px solid rgba(255,255,255,0.18);
+      background:rgba(22,24,31,0.16);
+      box-shadow:none;
     }
     .head-copy{
       min-width:0;

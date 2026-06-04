@@ -1,0 +1,84 @@
+{
+  "generatedAt": "2026-05-14T14:30:01.025Z",
+  "status": "planned",
+  "workItem": "Smoke test context gate",
+  "candidateFiles": [
+    "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/SearchHistoryList.jsx",
+    "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/upload/components/assessment_details.jsx",
+    "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/edit/components/activity_details.jsx",
+    "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/activity_list.jsx",
+    "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/display_activity.jsx",
+    "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/upload/components/activity_details.jsx",
+    "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/associate_activity/activity_library_list.jsx",
+    "src/journey-builder-app/modules/journey-builder/activities/container-components/activity_application.jsx",
+    "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_found.jsx",
+    "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_to_import.jsx",
+    "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/modals/activity_details_modal_container.jsx",
+    "src/journey-builder-app/modules/journey-builder/activities/container-components/activity_view.jsx"
+  ],
+  "tasks": [
+    {
+      "id": "task-001",
+      "title": "JOURNEY-25271 Create Assessment The option 'Assessment' displays in the activity dropdown list.",
+      "kind": "ui",
+      "status": "planned",
+      "priority": "high",
+      "dependencies": [],
+      "acceptanceCriteria": [
+        "JOURNEY-25271 Create Assessment The option 'Assessment' displays in the activity dropdown list."
+      ],
+      "suggestedAgent": "Main Developer",
+      "allowedFiles": [
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/SearchHistoryList.jsx",
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/upload/components/assessment_details.jsx",
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/edit/components/activity_details.jsx",
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/activity_list.jsx",
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/display_activity.jsx",
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/upload/components/activity_details.jsx",
+        "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/associate_activity/activity_library_list.jsx",
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity_application.jsx"
+      ],
+      "verification": [
+        "Run affected unit tests",
+        "Review changed files and Git diff"
+      ]
+    },
+    {
+      "id": "review-architecture",
+      "title": "Review implementation fit with repo patterns",
+      "kind": "review",
+      "status": "planned",
+      "priority": "high",
+      "dependencies": [
+        "task-001"
+      ],
+      "acceptanceCriteria": [
+        "Implementation follows existing repo patterns and avoids unnecessary dependencies."
+      ],
+      "suggestedAgent": "Architecture Reviewer",
+      "allowedFiles": [],
+      "verification": [
+        "Review diff for scope, reuse, naming, and compatibility"
+      ]
+    },
+    {
+      "id": "review-tests-a11y",
+      "title": "Review tests and accessibility coverage",
+      "kind": "review",
+      "status": "planned",
+      "priority": "high",
+      "dependencies": [
+        "task-001"
+      ],
+      "acceptanceCriteria": [
+        "Unit test and accessibility expectations are covered before final human review."
+      ],
+      "suggestedAgent": "Unit Test Reviewer + Accessibility Reviewer",
+      "allowedFiles": [],
+      "verification": [
+        "Run tests",
+        "Check keyboard and assistive technology expectations"
+      ]
+    }
+  ]
+}

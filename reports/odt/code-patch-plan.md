@@ -1,17 +1,17 @@
 # ODT Code Patch Plan
 
-- Generated At: 2026-04-24T13:22:05.417Z
-- Work Item: when attempting to add a Journey Note, after entering the note and clicking Add, the sc...
+- Generated At: 2026-05-15T00:02:32.977Z
+- Work Item: JOURNEY-25271 Create Assessment
 
 ## File-by-file Intent
-- src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/journey_table.jsx: apply minimal blast-radius edit based on signals [path:journey, path:page, path:able, path:activity, export:JourneyTable, preview:able].
-- src/journey-builder-app/modules/journey-user/roster/modal/EventTable.jsx: apply minimal blast-radius edit based on signals [path:journey, path:able, path:event, export:EventTable, preview:able].
-- src/journey-builder-app/utils/error_page.jsx: apply minimal blast-radius edit based on signals [path:journey, path:page, path:error, export:ErrorPage].
-- src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_found.jsx: apply minimal blast-radius edit based on signals [path:journey, path:page, path:found, path:activity, export:NoActivitiesFound, preview:able].
-- src/journey-builder-app/modules/journey-builder/events/container-components/home/no_table_content.jsx: apply minimal blast-radius edit based on signals [path:journey, path:able, path:event, export:NoTableContent, preview:journey, preview:able].
-- src/journey-builder-app/modules/journey-reports/container-components/home/ReportGroupJourneySummaryTable.jsx: apply minimal blast-radius edit based on signals [path:journey, path:able, export:ReportGroupJourneySummaryTable, preview:able].
-- src/journey-builder-app/modules/journey-builder/journeys/container-components/resuable/no_activities_found.jsx: apply minimal blast-radius edit based on signals [path:journey, path:found, path:able, export:NoActivitiesFound, preview:found, preview:able].
-- src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/dnd_table/activity_reorder_component.jsx: apply minimal blast-radius edit based on signals [path:journey, path:able, path:activity, export:ActivityReorderComponent, preview:able, preview:activity].
+- src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/SearchHistoryList.jsx: apply minimal blast-radius edit based on signals [path:journey, path:activity, path:list, path:activities, export:ActivitySearchHistoryList, preview:icon].
+- src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/upload/components/assessment_details.jsx: apply minimal blast-radius edit based on signals [path:journey, path:assessment, path:activity, path:activities, path:details].
+- src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/edit/components/activity_details.jsx: apply minimal blast-radius edit based on signals [path:journey, path:activity, path:activities, path:details].
+- src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/activity_list.jsx: apply minimal blast-radius edit based on signals [path:journey, path:activity, path:list, path:activities].
+- src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/display_activity.jsx: apply minimal blast-radius edit based on signals [path:journey, path:activity, path:display, path:activities].
+- src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/upload/components/activity_details.jsx: apply minimal blast-radius edit based on signals [path:journey, path:activity, path:activities, path:details].
+- src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/associate_activity/activity_library_list.jsx: apply minimal blast-radius edit based on signals [path:journey, path:activity, path:list, export:ActivityLibraryTable].
+- src/journey-builder-app/modules/journey-builder/activities/container-components/activity_application.jsx: apply minimal blast-radius edit based on signals [path:journey, path:activity, path:activities, export:ActivityApplication, preview:activity, preview:activities].
 
 ## Dependency Policy Checks
 - noNewDependencies: enforced
@@ -27,10 +27,10 @@
 - No structured reviewer refinements were supplied.
 
 ## Prompt Override (Code Stage)
-Dont use If  conditions you can change the entity_id to user_id for the fix
+- No code-stage prompt override supplied.
 
 ## Active Prompt Overrides
-- Code Workpack
+- None
 
 ## Source Guidance
 - `reports/dev-twin/code-workpack.md` is available and should be followed.

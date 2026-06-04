@@ -1,0 +1,118 @@
+{
+  "generatedAt": "2026-05-14T09:14:55.062Z",
+  "status": "completed",
+  "patchAvailable": true,
+  "changedFiles": [
+    "src/App.jsx",
+    "src/components/EmployeeForm.jsx",
+    "src/components/FilterBar.jsx",
+    "tests/activity-filter.spec.md",
+    "tests/employee-form.test.mjs",
+    "src/components/employeeFilterUtils.js"
+  ],
+  "reviewers": [
+    {
+      "generatedAt": "2026-05-14T09:14:55.056Z",
+      "id": "architecture-reviewer",
+      "name": "Architecture Reviewer",
+      "mode": "read_only",
+      "status": "completed",
+      "score": 9,
+      "summary": "0 high, 0 medium, 1 low finding(s).",
+      "findings": [
+        {
+          "severity": "low",
+          "title": "Architecture review passed initial scope checks",
+          "detail": "Changed files are within the planned footprint and no large-blast-radius concern was detected.",
+          "recommendation": "Proceed to test, accessibility, and compliance review.",
+          "files": []
+        }
+      ],
+      "prompt": "reports/odt/agentic/review-prompts/architecture-reviewer.md",
+      "output": "reports/odt/agentic/reviews/architecture-review.json"
+    },
+    {
+      "generatedAt": "2026-05-14T09:14:55.058Z",
+      "id": "unit-test-reviewer",
+      "name": "Unit Test Reviewer",
+      "mode": "read_only",
+      "status": "completed",
+      "score": 9,
+      "summary": "0 high, 0 medium, 1 low finding(s).",
+      "findings": [
+        {
+          "severity": "low",
+          "title": "Test files changed",
+          "detail": "2 test-related file(s) changed.",
+          "recommendation": "Run the targeted test command and confirm the assertions cover acceptance criteria.",
+          "files": [
+            "tests/activity-filter.spec.md",
+            "tests/employee-form.test.mjs"
+          ]
+        }
+      ],
+      "prompt": "reports/odt/agentic/review-prompts/unit-test-reviewer.md",
+      "output": "reports/odt/agentic/reviews/unit-test-review.json"
+    },
+    {
+      "generatedAt": "2026-05-14T09:14:55.059Z",
+      "id": "accessibility-reviewer",
+      "name": "Accessibility Reviewer",
+      "mode": "read_only",
+      "status": "completed",
+      "score": 9,
+      "summary": "0 high, 0 medium, 1 low finding(s).",
+      "findings": [
+        {
+          "severity": "low",
+          "title": "Accessibility review found no obvious blocker",
+          "detail": "No immediate keyboard, semantics, or status messaging blocker was detected from the diff preview.",
+          "recommendation": "Perform a keyboard pass and inspect accessible names before final approval.",
+          "files": []
+        }
+      ],
+      "prompt": "reports/odt/agentic/review-prompts/accessibility-reviewer.md",
+      "output": "reports/odt/agentic/reviews/accessibility-review.json"
+    },
+    {
+      "generatedAt": "2026-05-14T09:14:55.060Z",
+      "id": "security-compliance-reviewer",
+      "name": "Security / Compliance Reviewer",
+      "mode": "read_only",
+      "status": "completed",
+      "score": 9,
+      "summary": "0 high, 0 medium, 1 low finding(s).",
+      "findings": [
+        {
+          "severity": "low",
+          "title": "No dependency or secret risk detected",
+          "detail": "No dependency, obvious secret, or browser-storage risk was detected from the diff preview.",
+          "recommendation": "Continue normal compliance review.",
+          "files": []
+        }
+      ],
+      "prompt": "reports/odt/agentic/review-prompts/security-compliance-reviewer.md",
+      "output": "reports/odt/agentic/reviews/security-compliance-review.json"
+    },
+    {
+      "generatedAt": "2026-05-14T09:14:55.061Z",
+      "id": "build-verifier",
+      "name": "Build Verifier",
+      "mode": "verify_only",
+      "status": "completed",
+      "score": 8,
+      "summary": "0 high, 1 medium, 0 low finding(s).",
+      "findings": [
+        {
+          "severity": "medium",
+          "title": "Verification blocked by local environment",
+          "detail": "1 verification step(s) failed because the local runtime or toolchain could not execute them.",
+          "recommendation": "Fix the local runtime/tooling or rerun verification in a supported environment before final review.",
+          "files": []
+        }
+      ],
+      "prompt": "reports/odt/agentic/review-prompts/build-verifier.md",
+      "output": "reports/odt/agentic/reviews/build-verify.json"
+    }
+  ]
+}

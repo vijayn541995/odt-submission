@@ -1,0 +1,45 @@
+{
+  "generatedAt": "2026-05-14T14:30:44.429Z",
+  "status": "ready",
+  "summary": {
+    "total": 2,
+    "ready": 2,
+    "missing": 0,
+    "invalid": 0,
+    "images": 2,
+    "pdfs": 0,
+    "spreadsheets": 0,
+    "documents": 0
+  },
+  "artifacts": [
+    {
+      "id": "reports/odt/uploads/1778763461275-1-Screenshot_2026-05-14_at_2.49.57_PM.png",
+      "path": "reports/odt/uploads/1778763461275-1-Screenshot_2026-05-14_at_2.49.57_PM.png",
+      "absolutePath": "/Users/vn105957/Desktop/odt-submission/reports/odt/uploads/1778763461275-1-Screenshot_2026-05-14_at_2.49.57_PM.png",
+      "name": "1778763461275-1-Screenshot_2026-05-14_at_2.49.57_PM.png",
+      "extension": ".png",
+      "kind": "image",
+      "managed": true,
+      "exists": true,
+      "size": 763344,
+      "status": "ready",
+      "processingStrategy": "Vision-ready: pass as a local image reference only after the file exists in the managed ODT vault.",
+      "recommendation": "Ready for ODT planning and delegated agent prompts."
+    },
+    {
+      "id": "reports/odt/uploads/1778763541461-1-Screenshot_2026-05-14_at_6.28.44_PM.png",
+      "path": "reports/odt/uploads/1778763541461-1-Screenshot_2026-05-14_at_6.28.44_PM.png",
+      "absolutePath": "/Users/vn105957/Desktop/odt-submission/reports/odt/uploads/1778763541461-1-Screenshot_2026-05-14_at_6.28.44_PM.png",
+      "name": "1778763541461-1-Screenshot_2026-05-14_at_6.28.44_PM.png",
+      "extension": ".png",
+      "kind": "image",
+      "managed": true,
+      "exists": true,
+      "size": 597894,
+      "status": "ready",
+      "processingStrategy": "Vision-ready: pass as a local image reference only after the file exists in the managed ODT vault.",
+      "recommendation": "Ready for ODT planning and delegated agent prompts."
+    }
+  ],
+  "nextAction": "Context files are stable and ready for planning."
+}

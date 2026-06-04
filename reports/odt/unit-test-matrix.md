@@ -1,6 +1,6 @@
 # ODT Unit Test Matrix
 
-- Generated At: 2026-04-24T13:22:05.418Z
+- Generated At: 2026-05-15T00:02:32.978Z
 
 ## Matrix
 | Scenario | Coverage Type | Expected Assertion | Flake Risk | Mitigation |
@@ -12,11 +12,8 @@
 
 ## Related Test Files
 - tests/jest/reducers/journey-builder-reducers/activities_reducer.test.js
+- tests/jest/reducers/journey-builder-reducers/activities_type_reducer.test.js
 - tests/jest/reducers/journeys_reducer.test.js
-- tests/jest/reducers/journey-builder-reducers/events_reducers.test.js
-- tests/jest/modules/journey-builder/events/actions/events_actions.test.js
-- tests/jest/modals/roster_competency_modal.test.js
-- tests/jest/modules/journey-builder/events/presentational-components/roster_competency_details.test.js
 
 ## Prompt Override (Unit Tests Stage)
 - No unit-test prompt override supplied.

@@ -459,19 +459,28 @@ function getAgentLaunchStatus(options = {}) {
   const repoMismatch = Boolean(savedTargetRepoPath && currentTargetRepoPath && savedTargetRepoPath !== currentTargetRepoPath);
 
   if (repoMismatch) {
+    const logText = readText(LOG_FILE, '', options);
+    const logTail = tailLines(logText, 30);
+    const responseText = readText(RESPONSE_FILE, '', options);
+    const derived = deriveLaunchState(statusPayload.status, logText);
+    const baseExitCode = Number.isFinite(Number(statusPayload.exitCode))
+      ? Number(statusPayload.exitCode)
+      : null;
+    const finalExitCode = derived.exitCode !== undefined ? derived.exitCode : baseExitCode;
+
     return {
       ...statusPayload,
-      targetRepoPath: currentTargetRepoPath,
+      selectedTargetRepoPath: currentTargetRepoPath,
       rawStatus: statusPayload.status || 'idle',
-      status: 'idle',
-      completionStatus: 'idle',
-      completionDetail: 'No delegated agent run has started yet for the current target repo.',
-      inferredFromLog: false,
-      exitCode: null,
-      logTail: '',
-      responseExists: false,
-      responsePreview: '',
-      note: 'Stored agent status belongs to a different target repo and is hidden for this workspace view.'
+      status: derived.status,
+      completionStatus: derived.completionStatus,
+      completionDetail: `Showing the most recent delegated run from ${savedTargetRepoPath} while the local server is pointed at ${currentTargetRepoPath}.`,
+      inferredFromLog: Boolean(derived.inferredFromLog),
+      exitCode: finalExitCode,
+      logTail,
+      responseExists: Boolean(responseText.trim()),
+      responsePreview: responseText ? responseText.slice(0, 1200) : '',
+      note: 'Latest agent run belongs to a different target repo than the current local server selection.'
     };
   }
 

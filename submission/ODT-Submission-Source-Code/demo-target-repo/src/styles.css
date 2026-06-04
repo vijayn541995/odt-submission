@@ -167,6 +167,10 @@ h3 {
   color: var(--ink-soft);
 }
 
+.finder-count strong {
+  color: var(--ink);
+}
+
 .search-grid,
 .form-grid {
   display: grid;

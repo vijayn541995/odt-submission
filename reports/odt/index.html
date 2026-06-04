@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Oracle Developer Twin Dashboard</title>
-  <link rel="icon" type="image/png" href="./assets/oracle-dev-twin-collab.png" />
+  <link rel="icon" type="image/png" href="../../../../assets/branding/oracle-dev-twin-collab.png" />
   <script>
     (function () {
       var key = 'oracle-developer-twin-theme-v1';
@@ -153,15 +153,17 @@
       z-index:1;
     }
     .head-logo{
-      width:clamp(124px, 10vw, 168px);
-      height:clamp(124px, 10vw, 168px);
+      width:clamp(132px, 10.4vw, 176px);
+      height:clamp(132px, 10.4vw, 176px);
       border-radius:32px;
-      object-fit:cover;
+      object-fit:contain;
       object-position:center;
       display:block;
-      border:1px solid rgba(255,255,255,0.24);
-      background:rgba(255,255,255,0.08);
-      box-shadow:0 18px 36px rgba(0,0,0,0.22);
+      justify-self:end;
+      padding:10px;
+      border:1px solid rgba(255,255,255,0.18);
+      background:rgba(22,24,31,0.16);
+      box-shadow:none;
     }
     .head-copy{
       min-width:0;
@@ -312,7 +314,7 @@
         </button>
       </div>
       <div class="head-top">
-        <img class="head-logo" src="./assets/oracle-dev-twin-collab.png" alt="Oracle Developer Twin digital worker" />
+        <img class="head-logo" src="../../../../assets/branding/oracle-dev-twin-collab.png" alt="Oracle Developer Twin digital worker" />
         <div class="head-copy">
           <img class="head-oracle" src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20232%2048'%3E%3Crect%20x%3D'1.5'%20y%3D'1.5'%20width%3D'229'%20height%3D'45'%20rx%3D'22.5'%20fill%3D'%23fff8f1'%20stroke%3D'%23c74634'%20stroke-width%3D'3'%2F%3E%3Ctext%20x%3D'116'%20y%3D'31'%20text-anchor%3D'middle'%20font-family%3D'Arial%2C%20Helvetica%2C%20sans-serif'%20font-size%3D'21'%20font-weight%3D'700'%20letter-spacing%3D'5'%20fill%3D'%23c74634'%3EORACLE%3C%2Ftext%3E%3C%2Fsvg%3E" alt="Oracle" />
           <h1>Oracle Developer Twin</h1>
@@ -328,7 +330,7 @@
       <div class="head-meta">
         <span class="head-pill">Profile: React</span>
         <span class="head-pill">Work Item: feature</span>
-        <span class="head-pill">Modules: 6</span>
+        <span class="head-pill">Modules: 2</span>
         <span class="head-pill">A11y Gate: completed</span>
       </div>
     </section>
@@ -336,16 +338,16 @@
     <section class="grid">
       <article class="card"><div class="label">Stages Completed</div><div class="metric">7/7</div></article>
       <article class="card"><div class="label">Automation Coverage</div><div class="metric">100%</div></article>
-      <article class="card"><div class="label">Inferred Modules</div><div class="metric">6</div></article>
+      <article class="card"><div class="label">Inferred Modules</div><div class="metric">2</div></article>
       <article class="card"><div class="label">Candidate Files</div><div class="metric">18</div></article>
-      <article class="card"><div class="label">Related Tests</div><div class="metric">6</div></article>
+      <article class="card"><div class="label">Related Tests</div><div class="metric">3</div></article>
       <article class="card"><div class="label">A11y Blockers</div><div class="metric">0</div></article>
     </section>
 
     <section class="grid">
       <article class="card"><div class="label">Impact Mode</div><div class="metric">repo_inferred_manifest</div></article>
       <article class="card"><div class="label">Candidate Files Surfaced</div><div class="metric">12</div></article>
-      <article class="card"><div class="label">Blocker Trend</div><div class="metric">+501</div><div class="subtle">vs previous run</div></article>
+      <article class="card"><div class="label">Blocker Trend</div><div class="metric">+0</div><div class="subtle">vs previous run</div></article>
       <article class="card"><div class="label">Avg Automation Coverage</div><div class="metric">100%</div></article>
       <article class="card"><div class="label">Review-ready Runs (5)</div><div class="metric">5</div></article>
       <article class="card"><div class="label">Run Success Rate (10)</div><div class="metric">100%</div></article>
@@ -355,23 +357,23 @@
       <article class="card section">
         <h2>Ticket Intake</h2>
         <ul class="list">
-          <li>Title: <strong>when attempting to add a Journey Note, after entering the note and clicking Add, the sc...</strong></li>
-          <li>Jira: <strong>not supplied</strong></li>
-          <li>Acceptance criteria: <strong>3</strong></li>
+          <li>Title: <strong>JOURNEY-25271 Create Assessment</strong></li>
+          <li>Jira: <strong>ODT-DEMO-STORY-101</strong></li>
+          <li>Acceptance criteria: <strong>1</strong></li>
           <li>Non-functional requirements: <strong>3</strong></li>
-          <li>Optional hints provided: <strong>0</strong></li>
+          <li>Optional hints provided: <strong>3</strong></li>
         </ul>
       </article>
       <article class="card section">
         <h2>Repository Impact</h2>
         <ul class="list">
           <li>Repo scan mode: <strong>full</strong></li>
-          <li>Modules inferred: <strong>6</strong></li>
+          <li>Modules inferred: <strong>2</strong></li>
           <li>Source files surfaced: <strong>18</strong></li>
-          <li>Test files linked: <strong>6</strong></li>
-          <li>Blast radius score: <strong>24</strong></li>
+          <li>Test files linked: <strong>3</strong></li>
+          <li>Blast radius score: <strong>21</strong></li>
         </ul>
-        <div><span class="pill">attempting</span><span class="pill">journey</span><span class="pill">note</span><span class="pill">after</span><span class="pill">entering</span><span class="pill">clicking</span><span class="pill">screen</span><span class="pill">will</span></div>
+        <div><span class="pill">journey</span><span class="pill">25271</span><span class="pill">create</span><span class="pill">assessment</span><span class="pill">option</span><span class="pill">displays</span><span class="pill">activity</span><span class="pill">dropdown</span></div>
       </article>
     </section>
 
@@ -410,44 +412,44 @@
           <tbody><tr>
       <td>intake</td>
       <td><span class="badge ok">completed</span></td>
-      <td>2026-04-24T13:22:04.808Z</td>
-      <td>2026-04-24T13:22:04.823Z</td>
+      <td>2026-05-15T00:01:21.937Z</td>
+      <td>2026-05-15T00:01:21.958Z</td>
     </tr>
 <tr>
       <td>impact</td>
       <td><span class="badge ok">completed</span></td>
-      <td>2026-04-24T13:22:04.833Z</td>
-      <td>2026-04-24T13:22:05.398Z</td>
+      <td>2026-05-15T00:01:21.968Z</td>
+      <td>2026-05-15T00:01:22.374Z</td>
     </tr>
 <tr>
       <td>compliance</td>
       <td><span class="badge ok">completed</span></td>
-      <td>2026-04-24T13:22:04.833Z</td>
-      <td>2026-04-24T13:22:04.926Z</td>
+      <td>2026-05-15T00:01:21.968Z</td>
+      <td>2026-05-15T00:02:32.930Z</td>
     </tr>
 <tr>
       <td>design</td>
       <td><span class="badge ok">completed</span></td>
-      <td>2026-04-24T13:22:05.404Z</td>
-      <td>2026-04-24T13:22:05.408Z</td>
+      <td>2026-05-15T00:02:32.947Z</td>
+      <td>2026-05-15T00:02:32.957Z</td>
     </tr>
 <tr>
       <td>code-workpack</td>
       <td><span class="badge ok">completed</span></td>
-      <td>2026-04-24T13:22:05.413Z</td>
-      <td>2026-04-24T13:22:05.418Z</td>
+      <td>2026-05-15T00:02:32.967Z</td>
+      <td>2026-05-15T00:02:32.978Z</td>
     </tr>
 <tr>
       <td>test-workpack</td>
       <td><span class="badge ok">completed</span></td>
-      <td>2026-04-24T13:22:05.413Z</td>
-      <td>2026-04-24T13:22:05.423Z</td>
+      <td>2026-05-15T00:02:32.967Z</td>
+      <td>2026-05-15T00:02:32.989Z</td>
     </tr>
 <tr>
       <td>verify-summary</td>
       <td><span class="badge ok">completed</span></td>
-      <td>2026-04-24T13:22:05.428Z</td>
-      <td>2026-04-24T13:22:05.432Z</td>
+      <td>2026-05-15T00:02:32.999Z</td>
+      <td>2026-05-15T00:02:33.008Z</td>
     </tr></tbody>
         </table>
       </article>

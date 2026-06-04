@@ -1,0 +1,12 @@
+{
+  "generatedAt": "2026-05-14T14:30:01.025Z",
+  "status": "ready_to_continue",
+  "summary": {
+    "total": 0,
+    "open": 0,
+    "unresolvedHigh": 0,
+    "status": "ready_to_continue",
+    "nextAction": "Continue ODT planning or delegated execution."
+  },
+  "questions": []
+}

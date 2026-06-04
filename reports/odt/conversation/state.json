@@ -1,0 +1,6 @@
+{
+  "phase": "needs_input",
+  "status": "context_artifact_missing",
+  "nextAction": "Remove stale references or re-upload missing files before launching an agent.",
+  "updatedAt": "2026-05-14T14:30:01.026Z"
+}

@@ -72,6 +72,18 @@ function safeReadText(relPath, fallback = '', options = {}) {
   return fs.readFileSync(abs, 'utf8');
 }
 
+function normalizeExecutionPlan(plan = null) {
+  if (!plan || typeof plan !== 'object') return plan;
+  const cycleValue = Number(plan.currentCycle || plan.currentEpoch || 1);
+  const currentCycle = Number.isFinite(cycleValue) && cycleValue > 0 ? cycleValue : 1;
+  const { currentEpoch, ...normalized } = plan;
+  return {
+    ...normalized,
+    currentCycle,
+    currentCycleLabel: normalized.currentCycleLabel || `Review Cycle ${currentCycle}`
+  };
+}
+
 function loadHistory(options = {}) {
   return safeReadJson(ODT_HISTORY_FILE, [], options);
 }
@@ -1638,6 +1650,7 @@ function buildExecutionGuide(payload) {
 
 function buildUiPayload(basePayload, options = {}) {
   const rawA11yFindings = safeReadJson('reports/a11y/findings.json', {}, options);
+  const executionPlan = normalizeExecutionPlan(safeReadJson('reports/odt/agentic/execution-plan.json', null, options));
   return {
     ...basePayload,
     generatedAt: basePayload.summary && basePayload.summary.generatedAt ? basePayload.summary.generatedAt : now(),
@@ -1648,6 +1661,22 @@ function buildUiPayload(basePayload, options = {}) {
     a11yRaw: rawA11yFindings,
     odt: {
       summary: basePayload.summary || {}
+    },
+    clarifications: safeReadJson('reports/odt/clarifications/questions.json', null, options),
+    conversation: safeReadJson('reports/odt/conversation/state.json', null, options),
+    agentic: {
+      taskGraph: safeReadJson('reports/odt/agentic/task-graph.json', null, options),
+      executionPlan,
+      schedulerDecision: safeReadJson('reports/odt/agentic/scheduler-decision.json', null, options),
+      agentRoster: safeReadJson('reports/odt/agentic/agent-roster.json', null, options),
+      reviewerPlan: safeReadJson('reports/odt/agentic/reviewer-plan.json', null, options),
+      reviewerFindings: safeReadJson('reports/odt/agentic/reviews/reviewer-findings.json', null, options),
+      arbitratorDecision: safeReadJson('reports/odt/agentic/arbitrator-decision.json', null, options),
+      currentCycle: safeReadJson('reports/odt/agentic/current-cycle.json', null, options),
+      reworkPlan: safeReadText('reports/odt/agentic/rework-plan.md', '', options),
+      reworkPrompt: safeReadText('reports/odt/agentic/rework-prompt.md', '', options),
+      verificationResults: safeReadJson('reports/odt/agentic/verify-results.json', null, options),
+      cycleHistory: safeReadJson('reports/odt/agentic/cycle-history.json', null, options)
     },
     promptProviderStatus: safeReadJson('reports/odt/prompts/provider-status.json', null, options),
     techDesignMarkdown: safeReadText('reports/odt/tech-design.md', '', options),

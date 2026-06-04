@@ -281,7 +281,7 @@ export default function EmployeeForm({ employees = [], onSubmit }) {
           <button
             className="btn btn-primary"
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !isFormReady}
             aria-describedby={SUBMIT_STATUS_ID}
           >
             {isSubmitting ? "Submitting..." : "Submit"}

@@ -1,0 +1,43 @@
+{
+  "generatedAt": "2026-05-14T14:30:01.026Z",
+  "status": "ready",
+  "currentCycle": 1,
+  "currentCycleLabel": "Review Cycle 1",
+  "nextAction": "implement_first_slice",
+  "recommendedFirstTaskId": "task-001",
+  "parallelLanes": [
+    {
+      "lane": "main-developer",
+      "agent": "Main Developer",
+      "taskId": "task-001",
+      "task": "JOURNEY-25271 Create Assessment The option 'Assessment' displays in the activity dropdown list.",
+      "allowedFiles": [
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/SearchHistoryList.jsx",
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/upload/components/assessment_details.jsx",
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/edit/components/activity_details.jsx",
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/activity_list.jsx",
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/display_activity.jsx",
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/upload/components/activity_details.jsx",
+        "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/associate_activity/activity_library_list.jsx",
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity_application.jsx"
+      ]
+    },
+    {
+      "lane": "test-planner",
+      "agent": "Unit Test Reviewer",
+      "task": "Prepare test matrix while implementation slice is in progress.",
+      "allowedFiles": []
+    }
+  ],
+  "blockedTasks": [
+    {
+      "task": "Review implementation fit with repo patterns",
+      "reason": "Wait for main implementation patch before reviewer execution."
+    },
+    {
+      "task": "Review tests and accessibility coverage",
+      "reason": "Wait for main implementation patch before reviewer execution."
+    }
+  ],
+  "humanQuestion": null
+}

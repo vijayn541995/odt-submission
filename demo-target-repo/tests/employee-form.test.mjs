@@ -12,6 +12,10 @@ import {
   hasAllRequiredFields,
   isFormSubmittable,
 } from "../src/components/employeeFormUtils.js";
+import {
+  filterEmployees,
+  getEmployeeDepartments,
+} from "../src/components/employeeFilterUtils.js";
 import OracleLogo, { ORACLE_LOGO_LABEL } from "../src/components/OracleLogo.js";
 
 function createValidForm(overrides = {}) {
@@ -26,6 +30,33 @@ function createValidForm(overrides = {}) {
     ...overrides,
   };
 }
+
+const EMPLOYEE_FIXTURE = [
+  {
+    id: 1,
+    name: "Amelia Chen",
+    email: "amelia.chen@example.com",
+    title: "Frontend Engineer",
+    department: "Platform Engineering",
+    employeeCode: "EMP-0101",
+  },
+  {
+    id: 2,
+    name: "Noah Singh",
+    email: "noah.singh@example.com",
+    title: "QA Engineer",
+    department: "Quality Engineering",
+    employeeCode: "EMP-0102",
+  },
+  {
+    id: 3,
+    name: "Liam Ortiz",
+    email: "liam.ortiz@example.com",
+    title: "Accessibility Specialist",
+    department: "Experience Design",
+    employeeCode: "EMP-0103",
+  },
+];
 
 const tests = [
   {
@@ -62,6 +93,20 @@ const tests = [
         errors.summary,
         `Summary must be at least ${MIN_SUMMARY_LENGTH} characters.`
       );
+    },
+  },
+  {
+    name: "submittable state transitions from invalid to valid",
+    run() {
+      const invalidForm = createValidForm({
+        requesterEmail: "invalid-email",
+      });
+      const validForm = createValidForm({
+        requesterEmail: "valid.user@example.com",
+      });
+
+      assert.equal(isFormSubmittable(invalidForm), false);
+      assert.equal(isFormSubmittable(validForm), true);
     },
   },
   {
@@ -127,17 +172,92 @@ const tests = [
     },
   },
   {
-    name: "employee form source uses the updated submit button label",
+    name: "employee finder filters by query across identity fields",
+    run() {
+      assert.deepEqual(
+        filterEmployees(EMPLOYEE_FIXTURE, { query: "amelia" }).map(
+          (employee) => employee.id
+        ),
+        [1]
+      );
+      assert.deepEqual(
+        filterEmployees(EMPLOYEE_FIXTURE, { query: "QA" }).map(
+          (employee) => employee.id
+        ),
+        [2]
+      );
+      assert.deepEqual(
+        filterEmployees(EMPLOYEE_FIXTURE, { query: "EMP-0103" }).map(
+          (employee) => employee.id
+        ),
+        [3]
+      );
+    },
+  },
+  {
+    name: "employee finder combines query and department filters",
+    run() {
+      assert.deepEqual(
+        filterEmployees(EMPLOYEE_FIXTURE, {
+          query: "engineer",
+          department: "Quality Engineering",
+        }).map((employee) => employee.id),
+        [2]
+      );
+
+      assert.deepEqual(
+        filterEmployees(EMPLOYEE_FIXTURE, {
+          query: "engineer",
+          department: "Experience Design",
+        }),
+        []
+      );
+    },
+  },
+  {
+    name: "employee finder returns all employees when no filters are applied",
+    run() {
+      assert.deepEqual(filterEmployees(EMPLOYEE_FIXTURE), EMPLOYEE_FIXTURE);
+      assert.deepEqual(filterEmployees([], { query: "anything" }), []);
+    },
+  },
+  {
+    name: "department options are unique and sorted",
+    run() {
+      const departments = getEmployeeDepartments([
+        ...EMPLOYEE_FIXTURE,
+        {
+          ...EMPLOYEE_FIXTURE[0],
+          id: 4,
+        },
+      ]);
+
+      assert.deepEqual(departments, [
+        "Experience Design",
+        "Platform Engineering",
+        "Quality Engineering",
+      ]);
+    },
+  },
+  {
+    name: "employee form source disables submit unless the form is ready",
     run() {
       const employeeFormSource = readFileSync(
         new URL("../src/components/EmployeeForm.jsx", import.meta.url),
         "utf8"
       );
 
-      assert.match(employeeFormSource, /\{isSubmitting \? "Submitting\.\.\." : "Submit"\}/);
+      assert.match(
+        employeeFormSource,
+        /disabled=\{isSubmitting \|\| !isFormReady\}/
+      );
+      assert.match(
+        employeeFormSource,
+        /\{isSubmitting \? "Submitting\.\.\." : "Submit"\}/
+      );
+      assert.match(employeeFormSource, /aria-describedby=\{SUBMIT_STATUS_ID\}/);
       assert.doesNotMatch(employeeFormSource, /Submit Employee Form/);
       assert.doesNotMatch(employeeFormSource, /Submit Request/);
-      assert.match(employeeFormSource, /aria-describedby=\{SUBMIT_STATUS_ID\}/);
     },
   },
   {
@@ -152,6 +272,22 @@ const tests = [
       assert.equal(ORACLE_LOGO_LABEL, "Oracle logo");
       assert.match(appSource, /import OracleLogo from "\.\/components\/OracleLogo\.js";/);
       assert.match(appSource, /<OracleLogo \/>/);
+    },
+  },
+  {
+    name: "app uses employee finder panel and result counts",
+    run() {
+      const appSource = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
+      const filterBarSource = readFileSync(
+        new URL("../src/components/FilterBar.jsx", import.meta.url),
+        "utf8"
+      );
+
+      assert.match(appSource, /import FilterBar from "\.\/components\/FilterBar";/);
+      assert.match(appSource, /<FilterBar/);
+      assert.match(appSource, /filteredCount=\{filteredEmployees\.length\}/);
+      assert.match(filterBarSource, /type="submit" className="btn btn-primary"/);
+      assert.match(filterBarSource, /id="employee-finder-results" aria-live="polite"/);
     },
   },
   {

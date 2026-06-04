@@ -1,0 +1,201 @@
+ 
+//Save Draft Payload
+
+
+{
+  "activity_detail": {
+    "organization_id": "CERN_LRN",
+    "activity_name": "Vijay Test - Assessment",
+    "display_name": "Vijay Test - Assessment",
+    "description": "<p>Assessment description</p>",
+    "activity_status": 0,
+    "activity_type": "Assessment",
+    "passing_score": 80,
+    "attempt_limit": 2,
+    "learner_alert_enabled": true,
+    "learner_alert_msg": "You must complete this assessment to continue.",
+    "duration": null,
+    "activity_question_details_attributes": [
+      {
+        "question": "<p>Which activity type supports scoring?</p>",
+        "question_type": "Single",
+        "display_order": 1,
+        "rationale": "<p>Assessment supports scored responses.</p>",
+        "activity_answer_details_attributes": [
+          {
+            "answer": "Assessment",
+            "display_order": 1,
+            "is_correct": true
+          },
+          {
+            "answer": "Survey",
+            "display_order": 2,
+            "is_correct": false
+          },
+          {
+            "answer": "Link",
+            "display_order": 3,
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "question": "<p>Select all valid Assessment answer types.</p>",
+        "question_type": "Multiple",
+        "display_order": 2,
+        "rationale": "<p>Assessment supports single-answer and multiple-answer questions.</p>",
+        "activity_answer_details_attributes": [
+          {
+            "answer": "Single answer",
+            "display_order": 1,
+            "is_correct": true
+          },
+          {
+            "answer": "Multiple answer",
+            "display_order": 2,
+            "is_correct": true
+          },
+          {
+            "answer": "Likert scale",
+            "display_order": 3,
+            "is_correct": false
+          },
+          {
+            "answer": "Short text",
+            "display_order": 4,
+            "is_correct": false
+          }
+        ]
+      },
+      {
+        "question": "<p>What happens when the learner reaches the passing score?</p>",
+        "question_type": "Single",
+        "display_order": 3,
+        "rationale": "<p>The attempt is marked as passed when the score meets or exceeds the passing score.</p>",
+        "activity_answer_details_attributes": [
+          {
+            "answer": "Assessment is passed",
+            "display_order": 1,
+            "is_correct": true
+          },
+          {
+            "answer": "Attempt is always failed",
+            "display_order": 2,
+            "is_correct": false
+          }
+        ]
+      }
+    ],
+    "user": "lastname,firstname updated"
+  }
+}
+
+
+//Save Draft Response
+
+{
+  "isSuccessful": "true",
+  "assessmentId": 40692,
+  "activity_type": "Assessment",
+  "activity_status": "Draft"
+}
+
+
+
+
+Editing already created draft activity
+
+//request payload
+{
+  "activity_name": "assessment-test-edited",
+  "description": "<p>assessment-test edited</p>",
+  "activity_status": 0,
+  "activity_type": "Assessment",
+  "duration": null,
+  "passing_score": 80,
+  "attempt_limit": 2,
+  "learner_alert_enabled": true,
+  "learner_alert_msg": "You must complete this assessment to continue.",
+  "activity_question_details_attributes": [
+    {
+      "id": "question-uuid-1",
+      "question": "<p>Question 1 edited?</p>",
+      "question_type": "Single",
+      "display_order": 1,
+      "rationale": "<p>Rationale for question 1.</p>",
+      "activity_answer_details_attributes": [
+        {
+          "id": "answer-uuid-1",
+          "answer": "Answer 1",
+          "display_order": 1,
+          "is_correct": true
+        },
+        {
+          "id": "answer-uuid-2",
+          "answer": "Answer 2",
+          "display_order": 2,
+          "is_correct": false
+        }
+      ]
+    },
+    {
+      "id": "question-uuid-2",
+      "question": "<p>Question 2 edited?</p>",
+      "question_type": "Multiple",
+      "display_order": 2,
+      "rationale": "<p>Rationale for question 2.</p>",
+      "activity_answer_details_attributes": [
+        {
+          "id": "answer-uuid-3",
+          "answer": "Answer 1",
+          "display_order": 1,
+          "is_correct": true
+        },
+        {
+          "id": "answer-uuid-4",
+          "answer": "Answer 2",
+          "display_order": 2,
+          "is_correct": true
+        },
+        {
+          "id": "answer-uuid-5",
+          "answer": "Answer 3",
+          "display_order": 3,
+          "is_correct": false
+        }
+      ]
+    }
+  ],
+  "display_name": "assessment-test-edited",
+  "user": "lastname,firstname updated"
+}
+
+//response
+
+{
+  "isSuccessful": "true",
+  "activity": {
+    "id": 40692,
+    "activity_name": "assessment-test-edited",
+    "description": "<p>assessment-test edited</p>",
+    "activity_library_type": "Model",
+    "activity_status": "Draft",
+    "activity_type": "Assessment",
+    "organization_id": "CERN_LRN",
+    "created_by": "lastname,firstname updated",
+    "updated_by": "lastname,firstname updated",
+    "created_at": "2026-05-12T10:13:59.000Z",
+    "updated_at": "2026-05-12T11:30:11.000Z",
+    "duration_seconds": null,
+    "display_name": "assessment-test-edited",
+    "passing_score": "80.0",
+    "attempt_limit": 2,
+    "learner_alert_enabled": true,
+    "learner_alert_msg": "You must complete this assessment to continue.",
+    "is_deleted": false,
+    "inherited_from": null,
+    "activity_notes_count": 0
+  }
+}
+
+

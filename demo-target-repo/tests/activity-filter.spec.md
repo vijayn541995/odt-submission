@@ -8,14 +8,16 @@
 
 - Verify typing in search filters employee cards by name/email/title/code.
 - Verify department dropdown limits results to selected team.
-- Verify clear button resets search and department filters.
+- Verify `Apply Filters` updates the employee list in place.
+- Verify `Clear Filters` resets search and department filters.
+- Verify finder header shows visible, filtered, and total counts.
 - Verify only 10 employee cards are shown per page.
-- Verify `Next` and `Previous` paginate results correctly.
+- Verify `Next` and `Previous` paginate filtered results correctly.
 
 ## Form Validations
 
-- Verify the `Submit Employee Form` button stays disabled until every required field is completed.
-- Verify the `Submit Employee Form` button remains disabled when email format is invalid or summary is shorter than 20 trimmed characters.
+- Verify the `Submit` button stays disabled until every required field is completed.
+- Verify the `Submit` button remains disabled when email format is invalid or summary is shorter than 20 trimmed characters.
 - Verify required field errors appear for empty submit.
 - Verify invalid email shows inline validation error.
 - Verify summary less than 20 chars is rejected.
@@ -36,3 +38,4 @@
 - Verify failed submit returns focus to the first invalid control.
 - Verify labels are associated with each input/select/textarea.
 - Verify validation errors are announced (alert role + aria-invalid).
+- Verify employee finder result summary is announced after applying or clearing filters.

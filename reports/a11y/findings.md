@@ -2,7 +2,7 @@
 
 - Standard: Oracle VPAT guidance (internal Confluence source of truth) (fallback: WCAG 2.1 AA)
 - Mode: ci
-- Files Scanned: 9
+- Files Scanned: 10
 - Blockers: 0
 - Warnings: 0
 - Info: 0

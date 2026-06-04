@@ -208,6 +208,7 @@ function commandForTool(tool, promptFile, responseFile, cwd, options = {}) {
 
 function buildVisibleScript(options = {}) {
   const tool = options.tool || 'codex';
+  const workspaceRoot = getWorkspaceRoot(options);
   const cwd = options.cwd || getTargetRepoPath(options);
   const promptFile = options.promptFile;
   const responseFile = options.responseFile;
@@ -217,6 +218,7 @@ function buildVisibleScript(options = {}) {
   const header = [
     '#!/bin/bash',
     'set -u',
+    `WORKSPACE_ROOT=${shellQuote(workspaceRoot)}`,
     `cd ${shellQuote(cwd)}`,
     `PROMPT_FILE=${shellQuote(promptFile)}`,
     `RESPONSE_FILE=${shellQuote(responseFile)}`,
@@ -234,7 +236,15 @@ function buildVisibleScript(options = {}) {
     'if [ -s "$HOME/.nvm/nvm.sh" ]; then',
     '  export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"',
     '  . "$NVM_DIR/nvm.sh"',
+    '  if [ -s "$WORKSPACE_ROOT/.nvmrc" ]; then',
+    '    ODT_NODE_VERSION="$(tr -d "[:space:]" < "$WORKSPACE_ROOT/.nvmrc")"',
+    '    nvm use "$ODT_NODE_VERSION" >/dev/null',
+    '    echo "[odt] Using ODT Node version: $ODT_NODE_VERSION" | tee -a "$LOG_FILE"',
+    '  fi',
     'fi',
+    'echo "[odt] Node: $(command -v node 2>/dev/null || true) $(node -v 2>/dev/null || true)" | tee -a "$LOG_FILE"',
+    'echo "[odt] npm: $(command -v npm 2>/dev/null || true) $(npm -v 2>/dev/null || true)" | tee -a "$LOG_FILE"',
+    'echo "[odt] codex: $(command -v codex 2>/dev/null || true)" | tee -a "$LOG_FILE"',
     'set +e'
   ];
 
@@ -459,19 +469,28 @@ function getAgentLaunchStatus(options = {}) {
   const repoMismatch = Boolean(savedTargetRepoPath && currentTargetRepoPath && savedTargetRepoPath !== currentTargetRepoPath);
 
   if (repoMismatch) {
+    const logText = readText(LOG_FILE, '', options);
+    const logTail = tailLines(logText, 30);
+    const responseText = readText(RESPONSE_FILE, '', options);
+    const derived = deriveLaunchState(statusPayload.status, logText);
+    const baseExitCode = Number.isFinite(Number(statusPayload.exitCode))
+      ? Number(statusPayload.exitCode)
+      : null;
+    const finalExitCode = derived.exitCode !== undefined ? derived.exitCode : baseExitCode;
+
     return {
       ...statusPayload,
-      targetRepoPath: currentTargetRepoPath,
+      selectedTargetRepoPath: currentTargetRepoPath,
       rawStatus: statusPayload.status || 'idle',
-      status: 'idle',
-      completionStatus: 'idle',
-      completionDetail: 'No delegated agent run has started yet for the current target repo.',
-      inferredFromLog: false,
-      exitCode: null,
-      logTail: '',
-      responseExists: false,
-      responsePreview: '',
-      note: 'Stored agent status belongs to a different target repo and is hidden for this workspace view.'
+      status: derived.status,
+      completionStatus: derived.completionStatus,
+      completionDetail: `Showing the most recent delegated run from ${savedTargetRepoPath} while the local server is pointed at ${currentTargetRepoPath}.`,
+      inferredFromLog: Boolean(derived.inferredFromLog),
+      exitCode: finalExitCode,
+      logTail,
+      responseExists: Boolean(responseText.trim()),
+      responsePreview: responseText ? responseText.slice(0, 1200) : '',
+      note: 'Latest agent run belongs to a different target repo than the current local server selection.'
     };
   }
 

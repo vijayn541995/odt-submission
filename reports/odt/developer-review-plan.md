@@ -1,11 +1,11 @@
 # ODT Developer Review Plan
 
-- Generated At: 2026-04-24T13:22:05.439Z
-- Work Item: when attempting to add a Journey Note, after entering the note and clicking Add, the sc...
+- Generated At: 2026-05-15T00:02:33.018Z
+- Work Item: JOURNEY-25271 Create Assessment
 - Review Status: ready_for_review
 
 ## Executive Summary
-when attempting to add a Journey Note, after entering the note and clicking Add, the sc... should be implemented as a minimal blast-radius change starting with 6 ranked file candidate(s) already inferred from the repository. Dependency policy already indicates no new packages should be introduced.
+JOURNEY-25271 Create Assessment should be implemented as a minimal blast-radius change starting with 6 ranked file candidate(s) already inferred from the repository. Dependency policy already indicates no new packages should be introduced.
 
 ## Review Workflow
 1. **Confirm intent and guardrails** - Review the intake summary, acceptance criteria, design inputs, and reviewer notes before touching code. Work item type: feature.
@@ -15,18 +15,18 @@ when attempting to add a Journey Note, after entering the note and clicking Add,
 5. **Complete human review** - Use this plan, the run summary, and generated workpacks as review evidence before delegation approval, patch application, or merge.
 
 ## Planned File Actions
-- src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/journey_table.jsx | score=77 | confidence=0.99 | intent=Review and, if confirmed in scope, apply the smallest safe edit in src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/journey_table.jsx. | signals=path:journey, path:page, path:able, path:activity, export:JourneyTable, preview:able
-- src/journey-builder-app/modules/journey-user/roster/modal/EventTable.jsx | score=66 | confidence=0.99 | intent=Review and, if confirmed in scope, apply the smallest safe edit in src/journey-builder-app/modules/journey-user/roster/modal/EventTable.jsx. | signals=path:journey, path:able, path:event, export:EventTable, preview:able
-- src/journey-builder-app/utils/error_page.jsx | score=63 | confidence=0.99 | intent=Review and, if confirmed in scope, apply the smallest safe edit in src/journey-builder-app/utils/error_page.jsx. | signals=path:journey, path:page, path:error, export:ErrorPage
-- src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_found.jsx | score=59 | confidence=0.98 | intent=Review and, if confirmed in scope, apply the smallest safe edit in src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_found.jsx. | signals=path:journey, path:page, path:found, path:activity, export:NoActivitiesFound, preview:able
-- src/journey-builder-app/modules/journey-builder/events/container-components/home/no_table_content.jsx | score=58 | confidence=0.97 | intent=Review and, if confirmed in scope, apply the smallest safe edit in src/journey-builder-app/modules/journey-builder/events/container-components/home/no_table_content.jsx. | signals=path:journey, path:able, path:event, export:NoTableContent, preview:journey, preview:able
-- src/journey-builder-app/modules/journey-reports/container-components/home/ReportGroupJourneySummaryTable.jsx | score=58 | confidence=0.97 | intent=Review and, if confirmed in scope, apply the smallest safe edit in src/journey-builder-app/modules/journey-reports/container-components/home/ReportGroupJourneySummaryTable.jsx. | signals=path:journey, path:able, export:ReportGroupJourneySummaryTable, preview:able
+- src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/SearchHistoryList.jsx | score=69 | confidence=0.99 | intent=Review and, if confirmed in scope, apply the smallest safe edit in src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/SearchHistoryList.jsx. | signals=path:journey, path:activity, path:list, path:activities, export:ActivitySearchHistoryList, preview:icon
+- src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/upload/components/assessment_details.jsx | score=63 | confidence=0.99 | intent=Review and, if confirmed in scope, apply the smallest safe edit in src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/upload/components/assessment_details.jsx. | signals=path:journey, path:assessment, path:activity, path:activities, path:details
+- src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/edit/components/activity_details.jsx | score=54 | confidence=0.9 | intent=Review and, if confirmed in scope, apply the smallest safe edit in src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/edit/components/activity_details.jsx. | signals=path:journey, path:activity, path:activities, path:details
+- src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/activity_list.jsx | score=54 | confidence=0.9 | intent=Review and, if confirmed in scope, apply the smallest safe edit in src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/activity_list.jsx. | signals=path:journey, path:activity, path:list, path:activities
+- src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/display_activity.jsx | score=54 | confidence=0.9 | intent=Review and, if confirmed in scope, apply the smallest safe edit in src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/display_activity.jsx. | signals=path:journey, path:activity, path:display, path:activities
+- src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/upload/components/activity_details.jsx | score=54 | confidence=0.9 | intent=Review and, if confirmed in scope, apply the smallest safe edit in src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/upload/components/activity_details.jsx. | signals=path:journey, path:activity, path:activities, path:details
 
 ## Reviewer Inputs
 - No reviewer edits supplied.
 
 ### Active Prompt Overrides
-- Code Workpack
+- None
 
 ## Risk Watchpoints
 - No critical planning risk detected. Keep human-in-loop for merge approvals.

@@ -1,0 +1,134 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - generic "ODT Workbench" [ref=e6]:
+        - img [ref=e7]:
+          - generic [ref=e9]: ODT
+      - generic [ref=e13]:
+        - strong [ref=e14]: ODT Workbench
+        - generic [ref=e15]: Engineering control plane
+    - navigation "ODT Workbench" [ref=e16]:
+      - button "Overview" [ref=e17] [cursor=pointer]:
+        - img [ref=e19]
+        - generic [ref=e24]: Overview
+      - button "Intake" [ref=e25] [cursor=pointer]:
+        - img [ref=e27]
+        - generic [ref=e31]: Intake
+      - button "Planner" [ref=e32] [cursor=pointer]:
+        - img [ref=e34]
+        - generic [ref=e38]: Planner
+      - button "Standards" [ref=e39] [cursor=pointer]:
+        - img [ref=e41]
+        - generic [ref=e44]: Standards
+      - button "Agent Team" [ref=e45] [cursor=pointer]:
+        - img [ref=e47]
+        - generic [ref=e52]: Agent Team
+      - button "Review" [ref=e53] [cursor=pointer]:
+        - img [ref=e55]
+        - generic [ref=e59]: Review
+      - button "PR Ready" [ref=e60] [cursor=pointer]:
+        - img [ref=e62]
+        - generic [ref=e66]: PR Ready
+      - button "Artifacts" [active] [ref=e67] [cursor=pointer]:
+        - img [ref=e69]
+        - generic [ref=e71]: Artifacts
+      - button "ODT Guide" [ref=e72] [cursor=pointer]:
+        - img [ref=e74]
+        - generic [ref=e77]: ODT Guide
+      - button "Runs" [ref=e78] [cursor=pointer]:
+        - img [ref=e80]
+        - generic [ref=e85]: Runs
+      - button "Monitoring" [ref=e86] [cursor=pointer]:
+        - img [ref=e88]
+        - generic [ref=e90]: Monitoring
+      - button "Settings" [ref=e91] [cursor=pointer]:
+        - img [ref=e93]
+        - generic [ref=e96]: Settings
+    - generic [ref=e97]:
+      - img [ref=e99]
+      - generic [ref=e103]:
+        - strong [ref=e104]: Governance Mode
+        - generic [ref=e105]: Human-gated. Writes require approval.
+  - main [ref=e106]:
+    - generic [ref=e107]:
+      - generic [ref=e108]:
+        - generic [ref=e109]: Oracle Developer Twin
+        - heading "ODT Workbench" [level=1] [ref=e110]
+      - generic [ref=e111]:
+        - generic "Backend API reachability" [ref=e112]: Backend Online
+        - generic "Current workbench environment" [ref=e113]: "Environment: Local Dev"
+        - generic "AI provider selected by the backend" [ref=e114]: "Provider: local"
+        - generic "ODT API context status" [ref=e115]: "ODT API: Offline"
+        - button "Refresh workbench status" [ref=e116] [cursor=pointer]:
+          - img [ref=e117]
+    - generic [ref=e697]:
+      - generic [ref=e699]:
+        - text: Artifacts
+        - heading "Saved outputs and evidence" [level=2] [ref=e700]
+        - paragraph [ref=e701]: Summaries, JSON contracts, generated test ideas, OpenAPI notes, and review evidence will be collected here.
+      - generic [ref=e702]:
+        - generic [ref=e703]:
+          - generic [ref=e705]:
+            - text: Artifact
+            - heading "Architecture Brief" [level=3] [ref=e706]
+          - paragraph [ref=e707]: Technical design, architecture decisions, accessibility/security notes, and rollback thinking.
+          - button "View Brief" [ref=e708] [cursor=pointer]
+        - generic [ref=e709]:
+          - generic [ref=e711]:
+            - text: Artifact
+            - heading "Implementation Blueprint" [level=3] [ref=e712]
+          - paragraph [ref=e713]: Files to change, backend/frontend tasks, validation, tests, risks, and approval gates.
+          - button "View Blueprint" [ref=e714] [cursor=pointer]
+        - generic [ref=e715]:
+          - generic [ref=e717]:
+            - text: Artifact
+            - heading "OpenAPI Contract" [level=3] [ref=e718]
+          - paragraph [ref=e719]: Backend API contract for future OCI GenAI Agent tool calling and integration review.
+          - button "Open Contract" [ref=e720] [cursor=pointer]
+        - generic [ref=e721]:
+          - generic [ref=e723]:
+            - text: Artifact
+            - heading "Run Evidence" [level=3] [ref=e724]
+          - paragraph [ref=e725]: Usage logs, event timeline, provider selection, token counts, latency, and verification notes.
+          - button "View Run Evidence" [ref=e726] [cursor=pointer]
+        - generic [ref=e727]:
+          - generic [ref=e729]:
+            - text: Artifact
+            - heading "Review Log" [level=3] [ref=e730]
+          - paragraph [ref=e731]: Human review comments, blocker decisions, accepted risk, rework requests, and resolution notes.
+          - button "View Review Log" [ref=e732] [cursor=pointer]
+        - generic [ref=e733]:
+          - generic [ref=e735]:
+            - text: Artifact
+            - heading "Implementation Evidence" [level=3] [ref=e736]
+          - paragraph [ref=e737]: Changed files, commands, test outcomes, post-implementation check status, and PR gate inputs.
+          - button "View Evidence" [ref=e738] [cursor=pointer]
+        - generic [ref=e739]:
+          - generic [ref=e741]:
+            - text: Artifact
+            - heading "Agent Handoff Run" [level=3] [ref=e742]
+          - paragraph [ref=e743]: Latest Codex/Cline/manual delegation contract, allowed actions, standards gate, and run evidence.
+          - button "View Handoff" [ref=e744] [cursor=pointer]
+        - generic [ref=e745]:
+          - generic [ref=e747]:
+            - text: Artifact
+            - heading "Agent Foundry Reviews" [level=3] [ref=e748]
+          - paragraph [ref=e749]: Specialist Full SDLC or focused-domain findings, risks, recommendations, approvals, and next actions.
+          - button "View Foundry" [ref=e750] [cursor=pointer]
+        - generic [ref=e751]:
+          - generic [ref=e753]:
+            - text: Artifact
+            - heading "Context Vault" [level=3] [ref=e754]
+          - paragraph [ref=e755]: "Copied requirement context: mockups, screenshots, PDFs, DOCX, spreadsheets, API samples, and notes."
+          - button "View Vault" [ref=e756] [cursor=pointer]
+        - generic [ref=e757]:
+          - generic [ref=e759]:
+            - text: Artifact
+            - heading "PR Readiness Pack" [level=3] [ref=e760]
+          - paragraph [ref=e761]: Acceptance mapping, testing notes, accessibility notes, security notes, risks, and rollback.
+          - button "View PR Pack" [ref=e762] [cursor=pointer]
+      - generic [ref=e763]:
+        - generic [ref=e765]:
+          - text: Artifact Detail
+          - heading "Artifact Catalog" [level=3] [ref=e766]
+        - generic [ref=e767]: "{ \"message\": \"Choose an artifact to review its saved evidence.\", \"availableEvidence\": { \"technicalDesigns\": 6, \"implementationPlans\": 6, \"intakeAssets\": 8, \"standardsChecks\": 12, \"reviewComments\": 0, \"implementationEvidence\": 1, \"agentFoundryRuns\": 11, \"agentHandoffs\": 4, \"prReadinessReports\": 7 } }"

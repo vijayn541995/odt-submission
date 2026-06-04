@@ -12,6 +12,11 @@ import {
   hasAllRequiredFields,
   isFormSubmittable,
 } from "../src/components/employeeFormUtils.js";
+import {
+  DEFAULT_FINDER_FILTERS,
+  applyEmployeeFilters,
+  getDepartmentOptions,
+} from "../src/components/employeeFinderUtils.js";
 import OracleLogo, { ORACLE_LOGO_LABEL } from "../src/components/OracleLogo.js";
 
 function createValidForm(overrides = {}) {
@@ -26,6 +31,33 @@ function createValidForm(overrides = {}) {
     ...overrides,
   };
 }
+
+const FINDER_FIXTURE_EMPLOYEES = [
+  {
+    id: 1,
+    name: "Amelia Hart",
+    email: "amelia.hart@example.com",
+    title: "Frontend Engineer",
+    department: "Platform Engineering",
+    employeeCode: "EMP-0001",
+  },
+  {
+    id: 2,
+    name: "Noah Reyes",
+    email: "noah.reyes@example.com",
+    title: "QA Engineer",
+    department: "Quality Engineering",
+    employeeCode: "EMP-0002",
+  },
+  {
+    id: 3,
+    name: "Priya Menon",
+    email: "priya.menon@example.com",
+    title: "Product Analyst",
+    department: "Data Products",
+    employeeCode: "EMP-0003",
+  },
+];
 
 const tests = [
   {
@@ -72,6 +104,18 @@ const tests = [
       assert.equal(hasAllRequiredFields(form), true);
       assert.equal(isFormSubmittable(form), true);
       assert.deepEqual(getFormErrors(form), {});
+    },
+  },
+  {
+    name: "form readiness transitions reflect true submit availability",
+    run() {
+      const incomplete = createValidForm({ requesterName: "" });
+      const invalid = createValidForm({ requesterEmail: "not-an-email" });
+      const valid = createValidForm();
+
+      assert.equal(isFormSubmittable(incomplete), false);
+      assert.equal(isFormSubmittable(invalid), false);
+      assert.equal(isFormSubmittable(valid), true);
     },
   },
   {
@@ -127,7 +171,7 @@ const tests = [
     },
   },
   {
-    name: "employee form source uses the updated submit button label",
+    name: "employee form source keeps submit button disabled until form is ready",
     run() {
       const employeeFormSource = readFileSync(
         new URL("../src/components/EmployeeForm.jsx", import.meta.url),
@@ -135,6 +179,7 @@ const tests = [
       );
 
       assert.match(employeeFormSource, /\{isSubmitting \? "Submitting\.\.\." : "Submit"\}/);
+      assert.match(employeeFormSource, /disabled=\{isSubmitting \|\| !isFormReady\}/);
       assert.doesNotMatch(employeeFormSource, /Submit Employee Form/);
       assert.doesNotMatch(employeeFormSource, /Submit Request/);
       assert.match(employeeFormSource, /aria-describedby=\{SUBMIT_STATUS_ID\}/);
@@ -163,6 +208,96 @@ const tests = [
       assert.match(appSource, /<h1>Employee Data Center<\/h1>/);
       assert.doesNotMatch(appSource, /Employee Pulse Command Center/);
       assert.match(stylesSource, /\.hero h1\s*\{[^}]*color:\s*#c74634;/s);
+    },
+  },
+  {
+    name: "employee finder search matches name, email, role, and employee code",
+    run() {
+      assert.equal(
+        applyEmployeeFilters(FINDER_FIXTURE_EMPLOYEES, {
+          query: "amelia",
+          department: "",
+        }).length,
+        1
+      );
+      assert.equal(
+        applyEmployeeFilters(FINDER_FIXTURE_EMPLOYEES, {
+          query: "noah.reyes@example.com",
+          department: "",
+        }).length,
+        1
+      );
+      assert.equal(
+        applyEmployeeFilters(FINDER_FIXTURE_EMPLOYEES, {
+          query: "qa engineer",
+          department: "",
+        }).length,
+        1
+      );
+      assert.equal(
+        applyEmployeeFilters(FINDER_FIXTURE_EMPLOYEES, {
+          query: "emp-0003",
+          department: "",
+        }).length,
+        1
+      );
+    },
+  },
+  {
+    name: "employee finder applies department filter and supports clear defaults",
+    run() {
+      const filtered = applyEmployeeFilters(FINDER_FIXTURE_EMPLOYEES, {
+        query: "",
+        department: "Quality Engineering",
+      });
+      const reset = applyEmployeeFilters(
+        FINDER_FIXTURE_EMPLOYEES,
+        DEFAULT_FINDER_FILTERS
+      );
+
+      assert.equal(filtered.length, 1);
+      assert.equal(filtered[0].department, "Quality Engineering");
+      assert.equal(reset.length, FINDER_FIXTURE_EMPLOYEES.length);
+    },
+  },
+  {
+    name: "employee finder handles empty results and department options deterministically",
+    run() {
+      const filtered = applyEmployeeFilters(FINDER_FIXTURE_EMPLOYEES, {
+        query: "missing",
+        department: "Data Products",
+      });
+      const departments = getDepartmentOptions([
+        ...FINDER_FIXTURE_EMPLOYEES,
+        { ...FINDER_FIXTURE_EMPLOYEES[0] },
+      ]);
+
+      assert.equal(filtered.length, 0);
+      assert.deepEqual(departments, [
+        "Data Products",
+        "Platform Engineering",
+        "Quality Engineering",
+      ]);
+    },
+  },
+  {
+    name: "app source wires the employee finder panel and accessible controls",
+    run() {
+      const appSource = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8");
+      const filterSource = readFileSync(
+        new URL("../src/components/FilterBar.jsx", import.meta.url),
+        "utf8"
+      );
+
+      assert.match(appSource, /import FilterBar from "\.\/components\/FilterBar";/);
+      assert.match(appSource, /<FilterBar/);
+      assert.match(filterSource, /<h2>Employee Finder<\/h2>/);
+      assert.match(filterSource, /role="status"/);
+      assert.match(filterSource, /aria-live="polite"/);
+      assert.match(filterSource, /Apply Filters/);
+      assert.match(filterSource, /Clear Filters/);
+      assert.match(filterSource, /<option value="">All departments<\/option>/);
+      assert.match(filterSource, /Search by name, email, role, or employee code/);
     },
   },
 ];

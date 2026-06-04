@@ -10,7 +10,7 @@ Constraints:
 - If a fix is ambiguous, leave a manual-action note.
 
 Scan context:
-- Files scanned: 9
+- Files scanned: 10
 - Blockers: 0
 - Warnings: 0
 - Info: 0

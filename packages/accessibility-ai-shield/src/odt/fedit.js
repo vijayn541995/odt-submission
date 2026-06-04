@@ -63,6 +63,15 @@ function buildFeditViewModel(payload) {
   const promptProviderStatus = payload.promptProviderStatus || {};
   const promptGeneration = payload.promptGeneration || {};
   const reviewPlan = payload.reviewPlanJson || {};
+  const clarificationPayload = payload.clarifications && typeof payload.clarifications === 'object'
+    ? payload.clarifications
+    : { status: 'not_generated', summary: { total: 0, open: 0, unresolvedHigh: 0 }, questions: [] };
+  const conversationPayload = payload.conversation && typeof payload.conversation === 'object'
+    ? payload.conversation
+    : { phase: 'draft', status: 'not_started', nextAction: 'Generate clarifications or run ODT.' };
+  const agenticPayload = payload.agentic && typeof payload.agentic === 'object'
+    ? payload.agentic
+    : { taskGraph: null, executionPlan: null, schedulerDecision: null, verificationResults: null, cycleHistory: null };
   const promptGenerationStages = Array.isArray(promptGeneration.stages) && promptGeneration.stages.length
     ? promptGeneration.stages
     : (Array.isArray(promptProviderStatus.stages) ? promptProviderStatus.stages : []);
@@ -207,6 +216,8 @@ function buildFeditViewModel(payload) {
       mockupImages,
       referenceDocs
     },
+    contextArtifacts: payload.contextArtifacts || { status: 'empty', summary: { total: 0, ready: 0, missing: 0, invalid: 0 }, artifacts: [] },
+    reviewPacket: payload.reviewPacket || { status: 'empty', summary: { changedFiles: 0, staged: 0, unstaged: 0, untracked: 0, outOfScope: 0 }, files: [] },
     reviewEdits: typeof intake.reviewEdits === 'string' ? intake.reviewEdits : '',
     promptOverrides,
     promptOverrideStages,
@@ -334,6 +345,15 @@ function buildFeditViewModel(payload) {
       },
       stages: promptStages
     },
+    clarifications: {
+      generatedAt: clarificationPayload.generatedAt || '',
+      updatedAt: clarificationPayload.updatedAt || '',
+      status: clarificationPayload.status || 'not_generated',
+      summary: clarificationPayload.summary || { total: 0, open: 0, unresolvedHigh: 0 },
+      questions: Array.isArray(clarificationPayload.questions) ? clarificationPayload.questions : []
+    },
+    conversation: conversationPayload,
+    agentic: agenticPayload,
     server: {
       apiBase: 'http://127.0.0.1:4310'
     },
@@ -443,7 +463,7 @@ button, textarea { font: inherit; }
     linear-gradient(135deg, #6f2119 0%, #8b2c21 18%, var(--oracle-red) 48%, #d45f48 100%);
   color: #fff;
   padding: clamp(22px, 2.1vw, 34px);
-  box-shadow: 0 34px 80px rgba(110, 33, 24, 0.22);
+  box-shadow: none;
 }
 .hero::after {
   content: "";
@@ -458,7 +478,8 @@ button, textarea { font: inherit; }
   z-index: 1;
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 18px;
+  align-self: center;
+  margin: 0;
 }
 .theme-toggle {
   display: inline-flex;
@@ -466,13 +487,13 @@ button, textarea { font: inherit; }
   gap: 12px;
   border: 1px solid rgba(255,255,255,0.2);
   border-radius: 999px;
-  padding: 10px 14px;
+  padding: 6px 10px;
   background: rgba(255,255,255,0.12);
   color: #fff;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 14px 28px rgba(26, 10, 8, 0.16);
+  box-shadow: none;
   transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 .theme-toggle:hover {
@@ -771,16 +792,16 @@ button, textarea { font: inherit; }
   align-items: stretch;
 }
 .hero.hero-slim {
-  padding: clamp(32px, 3vw, 48px) clamp(36px, 4vw, 64px);
-  min-height: clamp(268px, 24vw, 366px);
+  padding: 12px 16px;
+  min-height: 0;
 }
 .hero-slim-row {
   position: relative;
   z-index: 1;
   min-height: 100%;
   display: grid;
-  grid-template-columns: minmax(164px, 216px) minmax(0, 1fr);
-  gap: clamp(30px, 3.6vw, 62px);
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px;
   align-items: center;
 }
 .hero-slim-brand,
@@ -793,46 +814,43 @@ button, textarea { font: inherit; }
 .hero-slim-copy {
   min-width: 0;
   display: grid;
-  gap: 12px;
+  gap: 4px;
   width: 100%;
   max-width: none;
-  padding-right: clamp(18px, 5.6vw, 144px);
+  padding-right: 0;
   justify-items: start;
   align-content: center;
   text-align: left;
 }
 .hero-slim-wordmark {
-  width: 170px;
-  margin: 0 0 10px;
+  width: 88px;
+  margin: 0;
 }
 .hero-slim-logo {
-  width: clamp(150px, 12.4vw, 198px);
-  height: clamp(150px, 12.4vw, 198px);
-  border-radius: 38px;
+  width: 52px;
+  height: 52px;
+  border-radius: 13px;
+  box-shadow: none;
 }
 .hero-slim-title {
   margin: 0;
   max-width: none;
   white-space: nowrap;
-  font-size: clamp(38px, 3.55vw, 60px);
-  line-height: 0.98;
-  letter-spacing: -0.03em;
-  text-shadow: 0 10px 28px rgba(84, 22, 15, 0.20);
+  font-size: clamp(24px, 2.2vw, 32px);
+  line-height: 1.05;
+  letter-spacing: 0;
+  text-shadow: none;
 }
 .hero-slim-kicker {
   margin: 0;
   max-width: 52ch;
-  font-size: clamp(20px, 1.85vw, 28px);
-  line-height: 1.34;
+  font-size: 13px;
+  line-height: 1.35;
   font-weight: 700;
   color: rgba(255,245,240,0.98);
 }
 .hero-slim-text {
-  margin: 0;
-  max-width: 84ch;
-  font-size: clamp(15px, 1.2vw, 18px);
-  line-height: 1.78;
-  color: rgba(255,244,239,0.92);
+  display: none;
 }
 .hero-slim-collab {
   position: relative;
@@ -954,6 +972,170 @@ button, textarea { font: inherit; }
   flex-wrap: wrap;
   gap: 10px;
   margin-top: 6px;
+}
+.btn.tiny {
+  min-height: 0;
+  padding: 7px 10px;
+  font-size: 11px;
+}
+.status-pill {
+  padding: 8px 11px;
+  border: 1px solid var(--oracle-line);
+  background: #f7f8fa;
+  color: #4b5563;
+}
+.status-pill.good {
+  border-color: rgba(47, 143, 91, 0.22);
+  background: rgba(47, 143, 91, 0.10);
+  color: #226f47;
+}
+.status-pill.warn,
+.status-pill.medium {
+  border-color: rgba(187, 138, 50, 0.26);
+  background: rgba(187, 138, 50, 0.12);
+  color: #805d1d;
+}
+.status-pill.bad,
+.status-pill.high {
+  border-color: rgba(186, 45, 29, 0.24);
+  background: rgba(186, 45, 29, 0.10);
+  color: #9f3428;
+}
+.status-pill.low {
+  border-color: rgba(12, 122, 122, 0.18);
+  background: rgba(12, 122, 122, 0.08);
+  color: #0c6b6b;
+}
+.meta-pill.soft {
+  padding: 7px 10px;
+  background: #f7f8fa;
+  border: 1px solid var(--oracle-line);
+  color: #55616d;
+}
+.clarifications-panel {
+  border-color: rgba(12, 122, 122, 0.18);
+}
+.clarification-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.conversation-state {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 13px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--oracle-line);
+  background: #f7f8fa;
+}
+.conversation-state strong {
+  color: var(--oracle-slate);
+  font-size: 13px;
+}
+.context-vault-panel {
+  border-color: rgba(187, 138, 50, 0.18);
+}
+.context-vault-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.context-artifact-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.context-artifact-card {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid var(--oracle-line);
+  background: linear-gradient(180deg, #ffffff, #faf9f7);
+}
+.context-artifact-card.missing,
+.context-artifact-card.invalid {
+  border-color: rgba(186,45,29,0.22);
+  background: linear-gradient(180deg, #fffafa, #fff4f1);
+}
+.context-artifact-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.context-artifact-card strong {
+  min-width: 0;
+  color: var(--oracle-slate);
+  font-size: 14px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.clarification-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+.clarification-card {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--oracle-line);
+  background: #fff;
+}
+.clarification-card.high {
+  border-color: rgba(186, 45, 29, 0.22);
+  background: linear-gradient(180deg, rgba(186, 45, 29, 0.04), #fff);
+}
+.clarification-card.medium {
+  border-color: rgba(187, 138, 50, 0.22);
+  background: linear-gradient(180deg, rgba(187, 138, 50, 0.05), #fff);
+}
+.clarification-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.clarification-answer {
+  min-height: 82px;
+}
+.planner-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.planner-lanes,
+.blocked-task-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+.planner-lane-grid,
+.task-list {
+  display: grid;
+  gap: 12px;
+}
+.planner-lane,
+.task-card {
+  display: grid;
+  gap: 9px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--oracle-line);
+  background: #fff;
+}
+.planner-lane {
+  background: linear-gradient(180deg, rgba(12, 122, 122, 0.05), #fff);
+  border-color: rgba(12, 122, 122, 0.16);
+}
+.task-card {
+  background: linear-gradient(180deg, rgba(199, 70, 52, 0.04), #fff);
+  border-color: rgba(199, 70, 52, 0.14);
 }
 .repo-inline-state {
   border-radius: 16px;
@@ -1609,6 +1791,278 @@ button, textarea { font: inherit; }
   font-size: 11px;
   color: #5f6b76;
 }
+.agent-cockpit-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+  gap: 16px;
+  align-items: stretch;
+}
+.agent-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 178px), 1fr));
+  gap: 12px;
+}
+.agent-card {
+  width: 100%;
+  min-height: 132px;
+  border: 1px solid var(--oracle-line);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff, #f9f8f6);
+  padding: 14px;
+  text-align: left;
+  display: grid;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(31, 41, 51, 0.05);
+}
+.agent-card:hover,
+.agent-card.active {
+  border-color: rgba(199,70,52,0.30);
+  box-shadow: 0 16px 34px rgba(199,70,52,0.12);
+}
+.agent-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.agent-avatar {
+  min-width: 54px;
+  height: 42px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(180deg, var(--oracle-red), #9f3428);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  padding: 0 9px;
+  text-transform: uppercase;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.24);
+}
+.agent-avatar.arch {
+  background: linear-gradient(180deg, #425466, #1f2933);
+}
+.agent-avatar.test {
+  background: linear-gradient(180deg, var(--oracle-teal), #075f5f);
+}
+.agent-avatar.a11y {
+  background: linear-gradient(180deg, #4f6f52, #2f5d3f);
+}
+.agent-avatar.sec {
+  background: linear-gradient(180deg, #7c4d25, #5d3516);
+}
+.agent-avatar.build,
+.agent-avatar.verify {
+  background: linear-gradient(180deg, #55616d, #2d3843);
+}
+.agent-avatar.plan,
+.agent-avatar.arb {
+  background: linear-gradient(180deg, var(--oracle-gold), #8f6420);
+}
+.agent-card strong {
+  color: var(--oracle-slate);
+  font-size: 14px;
+  line-height: 1.35;
+}
+.agent-card p {
+  margin: 0;
+  color: #5f6b76;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.agent-detail-panel {
+  border: 1px solid var(--oracle-line);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff, #f8f7f5);
+  padding: 16px;
+  min-height: 100%;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+.agent-detail-panel h3 {
+  margin: 0;
+  color: var(--oracle-slate);
+  font-size: 18px;
+}
+.agent-detail-section {
+  display: grid;
+  gap: 5px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(31, 41, 51, 0.08);
+}
+.agent-detail-section label {
+  margin: 0;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6d7781;
+  font-weight: 800;
+}
+.agent-detail-section p {
+  margin: 0;
+  color: #3f4a54;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.review-workspace-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.reviewer-tab-list {
+  display: grid;
+  gap: 10px;
+}
+.reviewer-tab {
+  width: 100%;
+  border: 1px solid var(--oracle-line);
+  border-radius: 16px;
+  background: #fff;
+  color: var(--oracle-ink);
+  padding: 12px;
+  text-align: left;
+  cursor: pointer;
+  display: grid;
+  gap: 8px;
+}
+.reviewer-tab.active {
+  border-color: rgba(199,70,52,0.34);
+  background: #fff6f3;
+}
+.reviewer-tab strong {
+  color: var(--oracle-slate);
+  font-size: 13px;
+}
+.reviewer-tab span {
+  color: #5f6b76;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.review-detail {
+  min-width: 0;
+  display: grid;
+  gap: 14px;
+}
+.review-finding-card {
+  border: 1px solid var(--oracle-line);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff, #faf8f7);
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+.review-finding-head {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.review-finding-card strong {
+  color: var(--oracle-slate);
+  font-size: 15px;
+  line-height: 1.45;
+}
+.suggestion-editor {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  background: #f4f6f8;
+  border: 1px solid var(--oracle-line);
+}
+.suggestion-editor textarea {
+  width: 100%;
+  min-height: 86px;
+  resize: vertical;
+  border: 1px solid var(--oracle-line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #fff;
+  color: var(--oracle-ink);
+  line-height: 1.5;
+  font-size: 13px;
+}
+.review-action-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.review-packet-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.review-file-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+.review-file-card {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  border: 1px solid var(--oracle-line);
+  border-radius: 16px;
+  background: #fff;
+  padding: 13px 14px;
+}
+.review-file-card.risk {
+  border-color: rgba(186,45,29,0.22);
+  background: linear-gradient(180deg, #fffafa, #fff7f4);
+}
+.review-file-card strong {
+  min-width: 0;
+  color: var(--oracle-slate);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.review-diff-stat {
+  margin: 14px 0 0;
+  max-height: 180px;
+  overflow: auto;
+  border-radius: 14px;
+  border: 1px solid var(--oracle-line);
+  background: #202b36;
+  color: #f6f8fa;
+  padding: 12px;
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+.advanced-evidence-panel {
+  border-style: dashed;
+}
+.advanced-evidence-details {
+  border: 1px solid var(--oracle-line);
+  border-radius: 18px;
+  background: #f7f8fa;
+  overflow: hidden;
+}
+.advanced-evidence-details > summary {
+  cursor: pointer;
+  padding: 14px 16px;
+  color: var(--oracle-slate);
+  font-weight: 800;
+  list-style-position: inside;
+}
+.advanced-evidence-details[open] > summary {
+  border-bottom: 1px solid var(--oracle-line);
+  background: #fff;
+}
+.advanced-evidence-content {
+  display: grid;
+  gap: 18px;
+  padding: 16px;
+}
+.btn.tiny {
+  padding: 8px 10px;
+  font-size: 12px;
+}
 .metric-grid {
   margin-top: 22px;
   display: grid;
@@ -1646,7 +2100,7 @@ button, textarea { font: inherit; }
 }
 .layout-grid {
   display: grid;
-  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
   margin-top: 22px;
   align-items: start;
@@ -2091,12 +2545,6 @@ button, textarea { font: inherit; }
 .help-list li {
   margin-bottom: 8px;
 }
-.footer-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
-  gap: 18px;
-  margin-top: 20px;
-}
 .muted { color: #5f6b76; }
 .small-note { font-size: 12px; line-height: 1.6; color: #5f6b76; }
 :root[data-theme="dark"] {
@@ -2128,6 +2576,11 @@ button, textarea { font: inherit; }
 :root[data-theme="dark"] .mini-stat,
 :root[data-theme="dark"] .subcard,
 :root[data-theme="dark"] .candidate-card,
+:root[data-theme="dark"] .agent-card,
+:root[data-theme="dark"] .agent-detail-panel,
+:root[data-theme="dark"] .reviewer-tab,
+:root[data-theme="dark"] .review-finding-card,
+:root[data-theme="dark"] .suggestion-editor,
 :root[data-theme="dark"] .tab-btn,
 :root[data-theme="dark"] .repo-inline-state,
 :root[data-theme="dark"] .override-editor,
@@ -2165,6 +2618,11 @@ button, textarea { font: inherit; }
   color: var(--oracle-ink);
   border-color: var(--oracle-line);
 }
+:root[data-theme="dark"] .suggestion-editor textarea {
+  background: #0f1720;
+  color: var(--oracle-ink);
+  border-color: var(--oracle-line);
+}
 :root[data-theme="dark"] .control-textarea:disabled,
 :root[data-theme="dark"] .control-input:disabled,
 :root[data-theme="dark"] .control-select:disabled,
@@ -2194,6 +2652,9 @@ button, textarea { font: inherit; }
 :root[data-theme="dark"] .chart-copy p,
 :root[data-theme="dark"] .tab-header-copy p,
 :root[data-theme="dark"] .workflow-copy p,
+:root[data-theme="dark"] .agent-card p,
+:root[data-theme="dark"] .agent-detail-section p,
+:root[data-theme="dark"] .agent-detail-section label,
 :root[data-theme="dark"] .workflow-note p,
 :root[data-theme="dark"] .workflow-kpi p,
 :root[data-theme="dark"] .workflow-artifacts,
@@ -2202,6 +2663,7 @@ button, textarea { font: inherit; }
 :root[data-theme="dark"] .candidate-preview,
 :root[data-theme="dark"] .bar-label,
 :root[data-theme="dark"] .input-item,
+:root[data-theme="dark"] .reviewer-tab span,
 :root[data-theme="dark"] .input-item-action,
 :root[data-theme="dark"] .repo-inline-state p,
 :root[data-theme="dark"] .intake-status-hint,
@@ -2209,6 +2671,13 @@ button, textarea { font: inherit; }
 :root[data-theme="dark"] .subcard h3,
 :root[data-theme="dark"] .ring-center span {
   color: #9db0c3;
+}
+:root[data-theme="dark"] .agent-detail-section {
+  border-top-color: rgba(157, 176, 195, 0.16);
+}
+:root[data-theme="dark"] .reviewer-tab.active {
+  background: linear-gradient(180deg, rgba(199,70,52,0.18), rgba(88,27,20,0.12));
+  border-color: rgba(255,184,170,0.24);
 }
 :root[data-theme="dark"] .bar-track {
   background: #263341;
@@ -2289,28 +2758,29 @@ button, textarea { font: inherit; }
   }
 }
 @media (max-width: 1240px) {
-  .hero-top, .hero-support, .hero-grid, .layout-grid, .chart-grid, .footer-grid { grid-template-columns: 1fr; }
+  .hero-top, .hero-support, .hero-grid, .layout-grid, .chart-grid { grid-template-columns: 1fr; }
   .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .server-grid { grid-template-columns: 1fr; }
   .server-grid > .subcard, .server-grid > .subcard.wide { grid-column: span 1; }
-  .intake-grid, .workflow-kpis { grid-template-columns: 1fr; }
+  .intake-grid, .workflow-kpis, .context-vault-summary, .review-packet-summary { grid-template-columns: 1fr; }
+  .agent-cockpit-grid, .review-workspace-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 860px) {
   .fedit-shell { padding: 16px; }
-  .hero { padding: 22px; }
+  .hero { padding: 14px; }
   .workflow-header { flex-direction: column; }
   .intake-header { flex-direction: column; align-items: flex-start; }
   .hero.hero-slim { min-height: 0; }
-  .hero-theme-bar { margin-bottom: 14px; }
+  .hero-theme-bar { margin-bottom: 0; }
   .hero-slim-row {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    text-align: center;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    justify-items: start;
+    text-align: left;
+    gap: 10px;
   }
   .hero-slim-copy {
-    order: 2;
-    justify-items: center;
-    text-align: center;
+    justify-items: start;
+    text-align: left;
     padding-right: 0;
   }
   .hero-slim-title {
@@ -2318,13 +2788,13 @@ button, textarea { font: inherit; }
   }
   .hero-slim-brand,
   .hero-slim-side {
-    width: 100%;
+    width: auto;
   }
   .hero-slim-brand {
-    order: 1;
+    order: 0;
   }
   .hero-slim-side {
-    order: 3;
+    order: 0;
   }
   .intake-actions-bar {
     flex-direction: column;
@@ -2361,29 +2831,27 @@ button, textarea { font: inherit; }
   .intake-action-cluster .btn { width: 100%; }
   .control-inline { grid-template-columns: 1fr; }
   .tab-content { padding: 16px; }
-  .hero.hero-slim { padding: 18px; }
+  .hero.hero-slim { padding: 10px 12px; border-radius: 14px; }
+  .theme-toggle { padding: 5px 8px; font-size: 11px; }
+  .theme-toggle-label { display: none; }
   .hero-slim-logo {
-    width: 108px;
-    height: 108px;
-    border-radius: 26px;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
   }
   .hero-slim-wordmark {
-    width: 134px;
-    margin-bottom: 12px;
+    width: 74px;
+    margin-bottom: 0;
   }
   .hero-slim-title {
-    font-size: clamp(30px, 8vw, 42px);
-    max-width: 12ch;
+    font-size: clamp(21px, 7vw, 28px);
+    max-width: none;
     white-space: normal;
-    line-height: 1.02;
+    line-height: 1.05;
   }
   .hero-slim-kicker {
-    max-width: 24ch;
-    font-size: clamp(16px, 4.2vw, 20px);
-  }
-  .hero-slim-text {
-    max-width: 30ch;
-    font-size: 15px;
+    max-width: none;
+    font-size: 12px;
   }
 }`;
 }
@@ -2428,6 +2896,8 @@ function renderFeditApp(model) {
     (MODEL.meta && MODEL.meta.workItemType) || ''
   ].join('|');
   var STORAGE_KEY = 'odt-fedit-runtime-v10::' + STORAGE_SCOPE;
+  var RUN_SESSION_KEY = 'odt-fedit-active-run-v1::' + STORAGE_SCOPE;
+  var RUN_SESSION_MAX_AGE_MS = 8 * 60 * 60 * 1000;
   var THEME_STORAGE_KEY = 'oracle-developer-twin-theme-v1';
   var TABS = [
     { id: 'plan', label: 'Plan' },
@@ -2450,6 +2920,11 @@ function renderFeditApp(model) {
       { key: 'compliance', label: 'Compliance' },
       { key: 'verify', label: 'Verification' }
     ];
+  var EMPTY_CLARIFICATIONS = { status: 'not_generated', summary: { total: 0, open: 0, unresolvedHigh: 0 }, questions: [] };
+  var EMPTY_CONVERSATION = { phase: 'draft', status: 'not_started', nextAction: 'Start with intake, then run ODT.' };
+  var EMPTY_AGENTIC = { taskGraph: null, executionPlan: null, schedulerDecision: null, agentRoster: null, reviewerPlan: null, reviewerFindings: null, reviewSuggestions: null, arbitratorDecision: null, currentCycle: null, reworkPlan: '', reworkPrompt: '', verificationResults: null, cycleHistory: null };
+  var EMPTY_CONTEXT_ARTIFACTS = { status: 'empty', summary: { total: 0, ready: 0, missing: 0, invalid: 0 }, artifacts: [] };
+  var EMPTY_REVIEW_PACKET = { status: 'not_refreshed', summary: { changedFiles: 0, staged: 0, unstaged: 0, untracked: 0, outOfScope: 0 }, files: [], nextAction: 'Refresh after a patch exists.' };
 
   function parseStageCounts() {
     var raw = String((MODEL.metrics && MODEL.metrics.stagesCompleted) || '0/0').split('/');
@@ -2497,6 +2972,51 @@ function renderFeditApp(model) {
     } catch (error) {
       // ignore storage failures in demo mode
     }
+  }
+
+  function clearRunSession() {
+    try {
+      window.sessionStorage.removeItem(RUN_SESSION_KEY);
+    } catch (error) {
+      // ignore storage failures in demo mode
+    }
+  }
+
+  function readRunSession() {
+    try {
+      var raw = window.sessionStorage.getItem(RUN_SESSION_KEY);
+      if (!raw) return null;
+      var parsed = JSON.parse(raw);
+      var savedAt = Number(parsed && parsed.savedAt);
+      if (!parsed || !parsed.fingerprint || !savedAt || (Date.now() - savedAt) > RUN_SESSION_MAX_AGE_MS) {
+        clearRunSession();
+        return null;
+      }
+      return parsed;
+    } catch (error) {
+      clearRunSession();
+      return null;
+    }
+  }
+
+  function markRunSession(fingerprint) {
+    if (!fingerprint) return;
+    try {
+      window.sessionStorage.setItem(RUN_SESSION_KEY, JSON.stringify({
+        fingerprint: fingerprint,
+        savedAt: Date.now()
+      }));
+    } catch (error) {
+      // ignore storage failures in demo mode
+    }
+  }
+
+  function shouldRestoreSavedRun(saved) {
+    if (!saved || !saved.hasRun) return false;
+    var activeSession = readRunSession();
+    if (!activeSession || !activeSession.fingerprint) return false;
+    var savedFingerprint = saved.lastRunFingerprint || buildRunFingerprint(saved);
+    return savedFingerprint === activeSession.fingerprint;
   }
 
   function readTheme() {
@@ -2586,6 +3106,11 @@ function renderFeditApp(model) {
       },
       codexLaunch: buildIdleCodexLaunch(),
       completion: buildIdleCompletion(),
+      clarifications: normalizeClarifications(EMPTY_CLARIFICATIONS),
+      conversation: normalizeConversation(EMPTY_CONVERSATION),
+      agentic: normalizeAgentic(EMPTY_AGENTIC),
+      contextArtifacts: normalizeContextArtifacts(EMPTY_CONTEXT_ARTIFACTS),
+      reviewPacket: normalizeReviewPacket(EMPTY_REVIEW_PACKET),
       lastRunFingerprint: '',
       promptProviderStatus: getPromptProviderStatus(),
       reviewEdits: '',
@@ -2593,10 +3118,15 @@ function renderFeditApp(model) {
       uploadStatus: ''
     };
 
+    if (forceClean) {
+      clearRunSession();
+    }
+
     if (forceClean || !saved) {
       return base;
     }
 
+    var savedHasRun = shouldRestoreSavedRun(saved);
     return {
       ticket: saved.ticket || base.ticket,
       targetRepoPath: saved.targetRepoPath || base.targetRepoPath,
@@ -2604,15 +3134,20 @@ function renderFeditApp(model) {
       referenceDocs: Array.isArray(saved.referenceDocs) ? uniqStrings(saved.referenceDocs) : base.referenceDocs,
       agentTool: saved.agentTool || base.agentTool,
       running: false,
-      hasRun: Boolean(saved.hasRun),
+      hasRun: savedHasRun,
       activeTab: saved.activeTab || base.activeTab,
-      stepStatus: Boolean(saved.hasRun) ? createDoneStepStatus() : base.stepStatus,
+      stepStatus: savedHasRun ? createDoneStepStatus() : base.stepStatus,
       apiStatus: base.apiStatus,
       serverHealth: base.serverHealth,
       repoStatus: base.repoStatus,
       codexLaunch: base.codexLaunch,
       completion: base.completion,
-      lastRunFingerprint: saved.lastRunFingerprint || (saved.hasRun ? buildRunFingerprint(saved) : ''),
+      clarifications: savedHasRun ? normalizeClarifications(MODEL.clarifications || EMPTY_CLARIFICATIONS) : base.clarifications,
+      conversation: savedHasRun ? normalizeConversation(MODEL.conversation || EMPTY_CONVERSATION) : base.conversation,
+      agentic: savedHasRun ? normalizeAgentic(MODEL.agentic || EMPTY_AGENTIC) : base.agentic,
+      contextArtifacts: savedHasRun ? normalizeContextArtifacts(MODEL.contextArtifacts || EMPTY_CONTEXT_ARTIFACTS) : base.contextArtifacts,
+      reviewPacket: savedHasRun ? normalizeReviewPacket(MODEL.reviewPacket || EMPTY_REVIEW_PACKET) : base.reviewPacket,
+      lastRunFingerprint: savedHasRun ? (saved.lastRunFingerprint || buildRunFingerprint(saved)) : '',
       promptProviderStatus: base.promptProviderStatus,
       reviewEdits: typeof saved.reviewEdits === 'string' ? saved.reviewEdits : base.reviewEdits,
       promptOverrides: normalizePromptOverrides(saved.promptOverrides || base.promptOverrides),
@@ -2649,6 +3184,14 @@ function renderFeditApp(model) {
   function shorten(text, max) {
     var raw = String(text || '');
     return raw.length > max ? raw.slice(0, max - 1) + '…' : raw;
+  }
+
+  function formatBytes(bytes) {
+    var value = Number(bytes) || 0;
+    if (!value) return '0 B';
+    if (value < 1024) return value + ' B';
+    if (value < 1024 * 1024) return (value / 1024).toFixed(1) + ' KB';
+    return (value / (1024 * 1024)).toFixed(1) + ' MB';
   }
 
   function formatRepoAnalysisMode(mode, includeSuffix) {
@@ -2700,6 +3243,42 @@ function renderFeditApp(model) {
       mockupImages: uniqStrings(base.mockupImages || []).slice().sort(),
       referenceDocs: uniqStrings(base.referenceDocs || []).slice().sort()
     });
+  }
+
+  function parseRunFingerprint(fingerprint) {
+    if (!fingerprint) return {};
+    try {
+      return JSON.parse(fingerprint);
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function isNewAssignmentRequest(runtime, requestPayload) {
+    if (!runtime || !runtime.hasRun) return false;
+    var previous = parseRunFingerprint(runtime.lastRunFingerprint || '');
+    if (!previous.ticket && !previous.targetRepoPath) return false;
+    var previousTicket = String(previous.ticket || '').trim();
+    var previousRepo = String(previous.targetRepoPath || '').trim();
+    var nextTicket = String((requestPayload && requestPayload.ticket) || '').trim();
+    var nextRepo = String((requestPayload && requestPayload.targetRepoPath) || '').trim();
+    return previousTicket !== nextTicket || previousRepo !== nextRepo;
+  }
+
+  function hasCurrentWorkflowState(runtime) {
+    if (!runtime) return false;
+    if (runtime.hasRun) return true;
+    if (runtime.running) return true;
+    if (runtime.codexLaunch && runtime.codexLaunch.status && runtime.codexLaunch.status !== 'idle') return true;
+    var clarifications = normalizeClarifications(runtime.clarifications);
+    if (clarifications.questions.length || clarifications.status !== 'not_generated') return true;
+    var conversation = normalizeConversation(runtime.conversation);
+    if (conversation.phase !== 'draft' || conversation.status !== 'not_started') return true;
+    var agentic = normalizeAgentic(runtime.agentic);
+    if (agentic.taskGraph || agentic.executionPlan || agentic.agentRoster || agentic.reviewerFindings || agentic.currentCycle) return true;
+    var contextArtifacts = normalizeContextArtifacts(runtime.contextArtifacts);
+    if (contextArtifacts.artifacts.length || (contextArtifacts.summary && contextArtifacts.summary.total)) return true;
+    return false;
   }
 
   function getAgentExecutionState(runtime) {
@@ -2847,6 +3426,226 @@ function renderFeditApp(model) {
 
   function getPromptProviderStatus(runtime) {
     return normalizePromptProviderStatus((runtime && runtime.promptProviderStatus) || MODEL.promptGeneration || {});
+  }
+
+  function normalizeClarifications(source) {
+    var payload = source && typeof source === 'object' ? source : {};
+    var summary = payload.summary && typeof payload.summary === 'object' ? payload.summary : {};
+    var questions = Array.isArray(payload.questions) ? payload.questions : [];
+    return {
+      generatedAt: payload.generatedAt || '',
+      updatedAt: payload.updatedAt || '',
+      status: payload.status || (questions.length ? 'ready_to_continue' : 'not_generated'),
+      summary: {
+        total: Number(summary.total) || questions.length,
+        open: Number(summary.open) || 0,
+        unresolvedHigh: Number(summary.unresolvedHigh) || 0,
+        status: summary.status || payload.status || '',
+        nextAction: summary.nextAction || payload.nextAction || ''
+      },
+      questions: questions.map(function (question, index) {
+        return {
+          id: question.id || ('question-' + (index + 1)),
+          stage: question.stage || 'intake',
+          severity: question.severity || 'medium',
+          question: question.question || '',
+          why: question.why || '',
+          answerFormat: question.answerFormat || '',
+          suggestedAnswer: question.suggestedAnswer || '',
+          answer: typeof question.answer === 'string' ? question.answer : '',
+          status: question.status || (question.answer ? 'answered' : 'open'),
+          updatedAt: question.updatedAt || '',
+          draftDirty: Boolean(question.draftDirty)
+        };
+      })
+    };
+  }
+
+  function mergeClarificationDrafts(serverSource, localSource) {
+    var serverClarifications = normalizeClarifications(serverSource);
+    var localClarifications = normalizeClarifications(localSource);
+    var localById = {};
+    localClarifications.questions.forEach(function (question) {
+      if (question.id) localById[question.id] = question;
+    });
+    var mergedQuestions = serverClarifications.questions.map(function (question) {
+      var localQuestion = localById[question.id];
+      if (!localQuestion || !localQuestion.draftDirty) return question;
+      var answer = typeof localQuestion.answer === 'string' ? localQuestion.answer : '';
+      return Object.assign({}, question, {
+        answer: answer,
+        status: answer.trim() ? 'answered' : 'open',
+        draftDirty: true
+      });
+    });
+    return Object.assign({}, serverClarifications, { questions: mergedQuestions });
+  }
+
+  function normalizeConversation(source) {
+    var payload = source && typeof source === 'object' ? source : {};
+    return {
+      phase: payload.phase || 'draft',
+      status: payload.status || 'not_started',
+      nextAction: payload.nextAction || 'Generate clarifications or run ODT.',
+      updatedAt: payload.updatedAt || '',
+      clearedAt: payload.clearedAt || ''
+    };
+  }
+
+  function hasBlockingClarifications(runtime) {
+    var clarifications = normalizeClarifications(runtime && runtime.clarifications);
+    return Boolean(clarifications.summary && clarifications.summary.unresolvedHigh > 0);
+  }
+
+  function normalizeReviewDecision(value) {
+    var decision = String(value || '').trim().toLowerCase().replace(/[\\s-]+/g, '_');
+    if (decision === 'accepted' || decision === 'rejected' || decision === 'needs_rework' || decision === 'ignored') return decision;
+    return 'pending';
+  }
+
+  function summarizeReviewSuggestions(suggestions) {
+    var items = Array.isArray(suggestions) ? suggestions : [];
+    return {
+      total: items.length,
+      pending: items.filter(function (item) { return normalizeReviewDecision(item.decision) === 'pending'; }).length,
+      accepted: items.filter(function (item) { return normalizeReviewDecision(item.decision) === 'accepted'; }).length,
+      needsRework: items.filter(function (item) { return normalizeReviewDecision(item.decision) === 'needs_rework'; }).length,
+      rejected: items.filter(function (item) { return normalizeReviewDecision(item.decision) === 'rejected'; }).length,
+      ignored: items.filter(function (item) { return normalizeReviewDecision(item.decision) === 'ignored'; }).length
+    };
+  }
+
+  function normalizeReviewSuggestions(source) {
+    var payload = source && typeof source === 'object' ? source : {};
+    var suggestions = Array.isArray(payload.suggestions) ? payload.suggestions : [];
+    var normalized = suggestions.map(function (item, index) {
+      return {
+        id: item.id || ('suggestion-' + (index + 1)),
+        reviewerId: item.reviewerId || '',
+        reviewerName: item.reviewerName || 'Reviewer',
+        findingIndex: Number(item.findingIndex) || 0,
+        severity: item.severity || 'low',
+        title: item.title || 'Reviewer finding',
+        detail: item.detail || '',
+        sourceRecommendation: item.sourceRecommendation || '',
+        files: Array.isArray(item.files) ? item.files : [],
+        decision: normalizeReviewDecision(item.decision),
+        suggestion: typeof item.suggestion === 'string' ? item.suggestion : (item.sourceRecommendation || ''),
+        note: typeof item.note === 'string' ? item.note : '',
+        updatedAt: item.updatedAt || ''
+      };
+    });
+    return {
+      generatedAt: payload.generatedAt || '',
+      updatedAt: payload.updatedAt || '',
+      status: payload.status || (normalized.length ? 'ready' : 'empty'),
+      cycleId: payload.cycleId || '',
+      summary: payload.summary && typeof payload.summary === 'object' ? payload.summary : summarizeReviewSuggestions(normalized),
+      suggestions: normalized
+    };
+  }
+
+  function normalizeAgentic(source) {
+    var payload = source && typeof source === 'object' ? source : {};
+    return {
+      taskGraph: payload.taskGraph && typeof payload.taskGraph === 'object' ? payload.taskGraph : null,
+      executionPlan: payload.executionPlan && typeof payload.executionPlan === 'object' ? payload.executionPlan : null,
+      schedulerDecision: payload.schedulerDecision && typeof payload.schedulerDecision === 'object' ? payload.schedulerDecision : null,
+      agentRoster: payload.agentRoster && typeof payload.agentRoster === 'object' ? payload.agentRoster : null,
+      reviewerPlan: payload.reviewerPlan && typeof payload.reviewerPlan === 'object' ? payload.reviewerPlan : null,
+      reviewerFindings: payload.reviewerFindings && typeof payload.reviewerFindings === 'object' ? payload.reviewerFindings : null,
+      reviewSuggestions: normalizeReviewSuggestions(payload.reviewSuggestions),
+      arbitratorDecision: payload.arbitratorDecision && typeof payload.arbitratorDecision === 'object' ? payload.arbitratorDecision : null,
+      currentCycle: payload.currentCycle && typeof payload.currentCycle === 'object' ? payload.currentCycle : null,
+      reworkPlan: typeof payload.reworkPlan === 'string' ? payload.reworkPlan : '',
+      reworkPrompt: typeof payload.reworkPrompt === 'string' ? payload.reworkPrompt : '',
+      verificationResults: payload.verificationResults && typeof payload.verificationResults === 'object' ? payload.verificationResults : null,
+      cycleHistory: payload.cycleHistory && typeof payload.cycleHistory === 'object' ? payload.cycleHistory : null
+    };
+  }
+
+  function normalizeContextArtifacts(source) {
+    var payload = source && typeof source === 'object' ? source : {};
+    var rawArtifacts = Array.isArray(payload.artifacts) ? payload.artifacts : [];
+    var artifacts = rawArtifacts.map(function (item, index) {
+      return {
+        id: item.id || item.path || ('context-artifact-' + (index + 1)),
+        path: item.path || '',
+        absolutePath: item.absolutePath || '',
+        name: item.name || item.path || 'Context artifact',
+        extension: item.extension || '',
+        kind: item.kind || 'document',
+        managed: Boolean(item.managed),
+        exists: Boolean(item.exists),
+        size: Number(item.size) || 0,
+        status: item.status || 'missing',
+        processingStrategy: item.processingStrategy || '',
+        recommendation: item.recommendation || ''
+      };
+    });
+    var sourceSummary = payload.summary && typeof payload.summary === 'object' ? payload.summary : {};
+    var ready = Number(sourceSummary.ready);
+    var missing = Number(sourceSummary.missing);
+    var invalid = Number(sourceSummary.invalid);
+    var summary = {
+      total: Number(sourceSummary.total) || artifacts.length,
+      ready: Number.isFinite(ready) ? ready : artifacts.filter(function (item) { return item.status === 'ready'; }).length,
+      missing: Number.isFinite(missing) ? missing : artifacts.filter(function (item) { return item.status === 'missing'; }).length,
+      invalid: Number.isFinite(invalid) ? invalid : artifacts.filter(function (item) { return item.status === 'invalid'; }).length,
+      images: Number(sourceSummary.images) || artifacts.filter(function (item) { return item.kind === 'image'; }).length,
+      pdfs: Number(sourceSummary.pdfs) || artifacts.filter(function (item) { return item.kind === 'pdf'; }).length,
+      spreadsheets: Number(sourceSummary.spreadsheets) || artifacts.filter(function (item) { return item.kind === 'spreadsheet'; }).length,
+      documents: Number(sourceSummary.documents) || artifacts.filter(function (item) { return item.kind === 'document'; }).length
+    };
+    return {
+      generatedAt: payload.generatedAt || '',
+      status: payload.status || (summary.missing || summary.invalid ? 'needs_attention' : (summary.total ? 'ready' : 'empty')),
+      summary: summary,
+      artifacts: artifacts,
+      nextAction: payload.nextAction || ''
+    };
+  }
+
+  function hasBlockingContextArtifacts(runtime) {
+    var contextArtifacts = normalizeContextArtifacts(runtime && runtime.contextArtifacts);
+    return Boolean((contextArtifacts.summary.missing || 0) + (contextArtifacts.summary.invalid || 0));
+  }
+
+  function normalizeReviewPacket(source) {
+    var payload = source && typeof source === 'object' ? source : {};
+    var rawFiles = Array.isArray(payload.files) ? payload.files : [];
+    var files = rawFiles.map(function (file, index) {
+      return {
+        path: file.path || ('changed-file-' + (index + 1)),
+        status: file.status || 'modified',
+        code: file.code || '',
+        staged: Boolean(file.staged),
+        unstaged: Boolean(file.unstaged),
+        untracked: Boolean(file.untracked),
+        kind: file.kind || 'other',
+        inPlannedScope: file.inPlannedScope !== false,
+        reviewRisk: file.reviewRisk || 'normal'
+      };
+    });
+    var rawSummary = payload.summary && typeof payload.summary === 'object' ? payload.summary : {};
+    return {
+      generatedAt: payload.generatedAt || '',
+      status: payload.status || (files.length ? 'changes_detected' : 'clean'),
+      targetRepoPath: payload.targetRepoPath || '',
+      summary: {
+        changedFiles: Number(rawSummary.changedFiles) || files.length,
+        staged: Number(rawSummary.staged) || files.filter(function (file) { return file.staged; }).length,
+        unstaged: Number(rawSummary.unstaged) || files.filter(function (file) { return file.unstaged; }).length,
+        untracked: Number(rawSummary.untracked) || files.filter(function (file) { return file.untracked; }).length,
+        outOfScope: Number(rawSummary.outOfScope) || files.filter(function (file) { return file.reviewRisk === 'out_of_scope'; }).length,
+        dependency: Number(rawSummary.dependency) || files.filter(function (file) { return file.reviewRisk === 'dependency_review'; }).length,
+        data: Number(rawSummary.data) || files.filter(function (file) { return file.reviewRisk === 'schema_review'; }).length
+      },
+      files: files,
+      diffStat: payload.diffStat && typeof payload.diffStat === 'object' ? payload.diffStat : { staged: '', unstaged: '' },
+      diffPreview: payload.diffPreview || '',
+      nextAction: payload.nextAction || ''
+    };
   }
 
   function summarizePromptProviderStatus(status) {
@@ -3110,59 +3909,95 @@ function renderFeditApp(model) {
   }
 
   function WorkflowBoard(props) {
-    var doneCount = (MODEL.steps || []).filter(function (step) {
-      return props.runtime.stepStatus[step.id] === 'done';
-    }).length;
-    var totalStages = (MODEL.steps || []).length || 7;
-    var workflowCards = (MODEL.steps || []).map(function (step, index) {
-      var status = props.runtime.stepStatus[step.id] || '';
-      var stateLabel = status === 'done' ? 'Completed' : status === 'running' ? 'Running' : 'Queued';
-      var artifacts = MODEL.artifactLabelsByStep && MODEL.artifactLabelsByStep[step.id] ? MODEL.artifactLabelsByStep[step.id].join(', ') : 'Generated artifacts vary by step';
-      return h('article', { className: 'workflow-card ' + status, key: step.id }, [
-        h('div', { className: 'workflow-index', key: 'index' }, status === 'done' ? '✓' : String(index + 1)),
-        h('div', { className: 'workflow-copy', key: 'copy' }, [
-          h('strong', { key: 'label' }, step.label),
-          h('p', { key: 'detail' }, step.detail),
-          h('span', { className: 'workflow-state', key: 'state' }, stateLabel),
-          h('div', { className: 'workflow-artifacts', key: 'artifacts' }, 'Artifacts: ' + artifacts)
-        ])
-      ]);
+    var clarifications = normalizeClarifications(props.runtime.clarifications);
+    var agentic = normalizeAgentic(props.runtime.agentic);
+    var questions = clarifications.questions || [];
+    var hasAnswers = questions.some(function (question) {
+      return Boolean(String(question.answer || '').trim());
     });
+    var hasPlan = Boolean(agentic.taskGraph || agentic.executionPlan || props.runtime.hasRun);
+    var hasAgentRun = Boolean(props.runtime.codexLaunch && props.runtime.codexLaunch.status && props.runtime.codexLaunch.status !== 'idle');
+    var hasReviewCycle = Boolean(agentic.currentCycle || (agentic.cycleHistory && agentic.cycleHistory.summary && agentic.cycleHistory.summary.total));
+    var verification = agentic.verificationResults || {};
+    var flowSteps = [
+      {
+        label: '1. Intake',
+        status: props.runtime.ticket && props.runtime.targetRepoPath ? 'done' : 'running',
+        state: props.runtime.ticket && props.runtime.targetRepoPath ? 'Ready' : 'Current',
+        detail: 'Paste the work item and select the target repo. Mockups/docs are optional but useful.',
+        action: props.runtime.ticket && props.runtime.targetRepoPath ? 'Intake is ready.' : 'Start here.'
+      },
+      {
+        label: '2. Clarify',
+        status: questions.length ? (hasAnswers ? 'done' : 'running') : '',
+        state: questions.length ? (hasAnswers ? 'Answered' : 'Needs Input') : 'Optional',
+        detail: 'ODT asks only when missing context can change implementation, review, or safety decisions.',
+        action: questions.length ? 'Save answers before continuing.' : 'No blockers detected; continue or generate questions if you want a double-check.'
+      },
+      {
+        label: '3. Plan',
+        status: hasPlan ? 'done' : '',
+        state: hasPlan ? 'Planned' : 'Waiting',
+        detail: 'Run ODT to build the task graph, scheduler decision, file impact, and workpacks.',
+        action: props.runtime.hasRun ? 'Review Planner / Scheduler.' : 'Click Run digital worker.'
+      },
+      {
+        label: '4. Delegate',
+        status: hasAgentRun ? 'done' : '',
+        state: hasAgentRun ? 'Launched' : 'Waiting',
+        detail: 'Send the planned work or focused rework prompt to Codex/Cline from the dashboard.',
+        action: hasAgentRun ? 'Monitor Execution Health.' : 'Delegate after plan looks right.'
+      },
+      {
+        label: '5. Review Cycle',
+        status: hasReviewCycle ? 'done' : '',
+        state: hasReviewCycle ? 'Recorded' : 'Waiting',
+        detail: 'Run reviewer swarm so architecture, test, accessibility, security, and build reviewers produce a decision.',
+        action: hasReviewCycle ? 'Use the scoreboard to decide next step.' : 'Run after agent changes are ready.'
+      },
+      {
+        label: '6. Verify / Close',
+        status: verification.status ? (verification.status === 'passed' ? 'done' : 'running') : '',
+        state: verification.status ? titleizeStatus(verification.status) : 'Waiting',
+        detail: 'Run tests/build evidence, then do the final human diff review before merge.',
+        action: verification.status ? 'Evidence is attached to the current cycle.' : 'Run verification before closeout.'
+      }
+    ];
     var kpis = [
       {
-        label: 'Stages Completed',
-        value: doneCount + '/' + totalStages,
-        note: 'Completed workflow checkpoints'
+        label: 'Current Flow',
+        value: props.runtime.hasRun ? 'Agentic' : 'Intake',
+        note: props.runtime.hasRun ? 'Planner, reviewers, and cycles are available' : 'Start with requirement and repo'
       },
       {
-        label: 'Readiness Score',
-        value: props.runtime.hasRun ? (MODEL.readinessScore + '%') : '0%',
-        note: 'Intake and evidence readiness'
+        label: 'Questions',
+        value: String((clarifications.summary && clarifications.summary.total) || questions.length || 0),
+        note: ((clarifications.summary && clarifications.summary.unresolvedHigh) || 0) + ' high-severity open'
       },
       {
-        label: 'Candidate Files',
-        value: props.runtime.hasRun ? String(MODEL.metrics.candidateFiles || 0) : '0',
-        note: 'Repo-informed implementation targets'
+        label: 'Review Cycles',
+        value: String((agentic.cycleHistory && agentic.cycleHistory.summary && agentic.cycleHistory.summary.total) || 0),
+        note: agentic.currentCycle ? (agentic.currentCycle.label || agentic.currentCycle.id || 'Latest cycle ready') : 'None yet'
       },
       {
-        label: 'Blast Radius',
-        value: props.runtime.hasRun ? String(MODEL.metrics.blastRadius || 0) : '0',
-        note: 'Potentially impacted files'
+        label: 'Verification',
+        value: verification.status ? titleizeStatus(verification.status) : 'Not Run',
+        note: 'Tests/build evidence for the latest cycle'
       }
     ];
     return h('section', { className: 'card workflow-panel' }, [
       h('div', { className: 'workflow-header', key: 'head' }, [
         h('div', { key: 'copy' }, [
-          h('p', { className: 'card-title', key: 'label' }, 'Delivery Workflow'),
-          h('h2', { key: 'title' }, 'Seven governed stages from intake to review'),
-          h('p', { className: 'card-subtitle', key: 'desc' }, 'Track how Oracle Developer Twin moves a work item through planning, evidence, implementation guidance, and human review without losing visibility.')
+          h('p', { className: 'card-title', key: 'label' }, 'Developer Flow'),
+          h('h2', { key: 'title' }, 'Use ODT as an interactive coding copilot control room'),
+          h('p', { className: 'card-subtitle', key: 'desc' }, 'This is the practical path for a new developer: give ODT the work item, clarify only what matters, plan, delegate, review, verify, and close with a human diff review.')
         ]),
         h('div', { className: 'workflow-summary', key: 'summary' }, [
-          h('span', { key: 'label' }, 'Progress'),
-          h('strong', { key: 'value' }, doneCount + '/' + totalStages),
+          h('span', { key: 'label' }, 'Next'),
+          h('strong', { key: 'value' }, props.runtime.hasRun ? 'Review' : 'Run'),
           h('small', { key: 'note' }, props.runtime.hasRun
-            ? 'Evidence stays visible for review after the latest run.'
-            : 'Run once to populate the workflow with evidence and handoff context.')
+            ? 'Inspect the Planner, Review Cycle, and Execution Health panels.'
+            : 'Paste the work item, select the repo, then run the digital worker.')
         ])
       ]),
       h('div', { className: 'workflow-kpis', key: 'kpis' }, kpis.map(function (item) {
@@ -3172,7 +4007,17 @@ function renderFeditApp(model) {
           h('p', { key: 'note' }, item.note)
         ]);
       })),
-      h('div', { className: 'workflow-grid', key: 'grid' }, workflowCards)
+      h('div', { className: 'workflow-grid', key: 'grid' }, flowSteps.map(function (step) {
+        return h('article', { className: 'workflow-card ' + step.status, key: step.label }, [
+          h('div', { className: 'workflow-index', key: 'index' }, step.label.slice(0, 1)),
+          h('div', { className: 'workflow-copy', key: 'copy' }, [
+            h('strong', { key: 'label' }, step.label),
+            h('p', { key: 'detail' }, step.detail),
+            h('span', { className: 'workflow-state', key: 'state' }, step.state),
+            h('div', { className: 'workflow-artifacts', key: 'artifacts' }, step.action)
+          ])
+        ]);
+      }))
     ]);
   }
 
@@ -3203,6 +4048,944 @@ function renderFeditApp(model) {
         ])
       ]);
     }));
+  }
+
+  function avatarForAgent(agent) {
+    var id = String((agent && agent.id) || '').toLowerCase();
+    var name = String((agent && agent.name) || '').toLowerCase();
+    var text = id + ' ' + name;
+    if (text.indexOf('planner') >= 0 || text.indexOf('scheduler') >= 0) return { label: 'PLAN', tone: 'plan' };
+    if (text.indexOf('main-developer') >= 0 || text.indexOf('developer') >= 0) return { label: 'DEV', tone: 'dev' };
+    if (text.indexOf('architecture') >= 0) return { label: 'ARCH', tone: 'arch' };
+    if (text.indexOf('unit') >= 0 || text.indexOf('test') >= 0) return { label: 'TEST', tone: 'test' };
+    if (text.indexOf('accessibility') >= 0 || text.indexOf('a11y') >= 0) return { label: 'A11Y', tone: 'a11y' };
+    if (text.indexOf('security') >= 0 || text.indexOf('compliance') >= 0) return { label: 'SEC', tone: 'sec' };
+    if (text.indexOf('build') >= 0 || text.indexOf('verify') >= 0) return { label: 'BUILD', tone: 'build' };
+    if (text.indexOf('arbitrator') >= 0 || text.indexOf('merge') >= 0) return { label: 'ARB', tone: 'arb' };
+    return { label: 'AI', tone: 'dev' };
+  }
+
+  function toneForDecision(value) {
+    var decision = normalizeReviewDecision(value);
+    if (decision === 'accepted') return 'good';
+    if (decision === 'needs_rework') return 'bad';
+    if (decision === 'rejected' || decision === 'ignored') return 'warn';
+    return 'low';
+  }
+
+  function toneForAgentStatus(value) {
+    var status = String(value || '').toLowerCase();
+    if (status.indexOf('failed') >= 0 || status.indexOf('blocked') >= 0 || status.indexOf('rework') >= 0) return 'bad';
+    if (status.indexOf('running') >= 0 || status.indexOf('waiting') >= 0 || status.indexOf('pending') >= 0) return 'warn';
+    if (status.indexOf('completed') >= 0 || status.indexOf('ready') >= 0 || status.indexOf('passed') >= 0) return 'good';
+    return 'low';
+  }
+
+  function isAgentMatch(agent, value) {
+    var text = String(value || '').toLowerCase();
+    var id = String((agent && agent.id) || '').toLowerCase();
+    var name = String((agent && agent.name) || '').toLowerCase();
+    if (!text) return false;
+    return Boolean((id && (text === id || text.indexOf(id) >= 0)) || (name && (text === name || text.indexOf(name) >= 0)));
+  }
+
+  function findAgentTask(agent, agentic) {
+    var taskId = agent && agent.currentTaskId;
+    var tasks = agentic && agentic.taskGraph && Array.isArray(agentic.taskGraph.tasks) ? agentic.taskGraph.tasks : [];
+    var lanes = agentic && agentic.executionPlan && Array.isArray(agentic.executionPlan.parallelLanes) ? agentic.executionPlan.parallelLanes : [];
+    var task = taskId ? tasks.find(function (item) { return item.id === taskId; }) : null;
+    var lane = lanes.find(function (item) {
+      return (taskId && item.taskId === taskId) || isAgentMatch(agent, item.lane) || isAgentMatch(agent, item.agent);
+    }) || null;
+    return { task: task || null, lane: lane };
+  }
+
+  function promptPathForAgent(agent) {
+    var id = String((agent && agent.id) || '').toLowerCase();
+    if (id === 'main-developer') return 'reports/odt/execute/prompt.md';
+    if (id === 'planner-scheduler') return 'reports/odt/agentic/scheduler-decision.json';
+    if (id === 'merge-arbitrator') return 'reports/odt/agentic/arbitrator-decision.json';
+    if (id === 'build-verifier') return 'reports/odt/agentic/review-prompts/build-verifier.md';
+    if (id.indexOf('reviewer') >= 0) return 'reports/odt/agentic/review-prompts/' + id + '.md';
+    return (agent && agent.output) || 'reports/odt/agentic/';
+  }
+
+  function expectedOutputForAgent(agent) {
+    var id = String((agent && agent.id) || '').toLowerCase();
+    if (id === 'planner-scheduler') return 'Task order, parallel lanes, blockers, and next action.';
+    if (id === 'main-developer') return 'A focused patch inside the approved write scope, with notes for reviewers.';
+    if (id === 'merge-arbitrator') return 'Merged reviewer decision: approve, ask human, rework, or verify.';
+    if (id === 'build-verifier') return 'Install, lint, test, build, and smoke-check evidence or exact manual commands.';
+    if (id.indexOf('reviewer') >= 0) return 'Read-only findings with severity, affected files, and developer action.';
+    return 'Agent-owned evidence for the current assignment.';
+  }
+
+  function buildAgentDetailModel(agent, agentic, reviewerStatus) {
+    var match = findAgentTask(agent, agentic);
+    var task = match.task || {};
+    var lane = match.lane || {};
+    var allowedFiles = Array.isArray(agent.allowedFiles) && agent.allowedFiles.length
+      ? agent.allowedFiles
+      : (Array.isArray(lane.allowedFiles) && lane.allowedFiles.length ? lane.allowedFiles : (Array.isArray(task.allowedFiles) ? task.allowedFiles : []));
+    var acceptance = Array.isArray(task.acceptanceCriteria) && task.acceptanceCriteria.length
+      ? ' Acceptance: ' + task.acceptanceCriteria.slice(0, 2).join(' ')
+      : '';
+    var plan = task.title || lane.task || agent.responsibility || 'Plan appears after ODT generates the task graph.';
+    return {
+      plan: plan + acceptance,
+      expectedOutput: expectedOutputForAgent(agent),
+      scope: allowedFiles.length ? allowedFiles.slice(0, 5).join(', ') + (allowedFiles.length > 5 ? ' +' + (allowedFiles.length - 5) : '') : 'Read-only or repo-wide review scope.',
+      promptPath: promptPathForAgent(agent),
+      artifactPath: agent.output || (reviewerStatus && reviewerStatus.output) || promptPathForAgent(agent)
+    };
+  }
+
+  function findSuggestionForFinding(reviewSuggestions, reviewer, findingIndex, finding) {
+    var suggestions = normalizeReviewSuggestions(reviewSuggestions).suggestions;
+    var reviewerId = reviewer.id || '';
+    var title = finding && finding.title ? finding.title : '';
+    return suggestions.find(function (item) {
+      return item.reviewerId === reviewerId && Number(item.findingIndex) === Number(findingIndex);
+    }) || suggestions.find(function (item) {
+      return item.reviewerName === reviewer.name && item.title === title;
+    }) || null;
+  }
+
+  function patchLocalReviewSuggestion(setRuntime, suggestion) {
+    if (!suggestion || !suggestion.id) return;
+    setRuntime(function (current) {
+      var agentic = normalizeAgentic(current.agentic);
+      var reviewSuggestions = normalizeReviewSuggestions(agentic.reviewSuggestions);
+      var matched = false;
+      var nextSuggestions = reviewSuggestions.suggestions.map(function (item) {
+        if (item.id !== suggestion.id) return item;
+        matched = true;
+        return Object.assign({}, item, suggestion, {
+          decision: normalizeReviewDecision(suggestion.decision)
+        });
+      });
+      if (!matched) {
+        nextSuggestions.push(Object.assign({}, suggestion, {
+          decision: normalizeReviewDecision(suggestion.decision)
+        }));
+      }
+      var nextReviewSuggestions = Object.assign({}, reviewSuggestions, {
+        updatedAt: new Date().toISOString(),
+        summary: summarizeReviewSuggestions(nextSuggestions),
+        suggestions: nextSuggestions
+      });
+      return Object.assign({}, current, {
+        agentic: Object.assign({}, agentic, { reviewSuggestions: nextReviewSuggestions })
+      });
+    });
+  }
+
+  function ClarificationsPanel(props) {
+    var runtime = props.runtime;
+    var clarifications = normalizeClarifications(runtime.clarifications);
+    var conversation = normalizeConversation(runtime.conversation);
+    var questions = clarifications.questions || [];
+    var summary = clarifications.summary || {};
+    var blocked = Number(summary.unresolvedHigh || 0) > 0;
+    var isOnline = runtime.serverHealth.status === 'online';
+    var locked = runtime.running || isAgentExecutionBusy(runtime) || !isOnline;
+    var subtitle = questions.length
+      ? (blocked
+        ? 'ODT is paused until critical answers are supplied.'
+        : 'Only decision-critical questions are shown here.')
+      : 'No blocking questions detected. For clear work, you can run or delegate without answering generic prompts.';
+
+    return h(SectionCard, {
+      title: 'Clarifications Needed',
+      subtitle: subtitle,
+      className: 'clarifications-panel',
+      extra: h('span', { className: 'status-pill ' + (blocked ? 'bad' : questions.length ? 'good' : 'warn') }, blocked ? 'Blocked' : questions.length ? 'Ready' : 'Not Generated')
+    }, [
+      h('div', { className: 'clarification-summary', key: 'summary' }, [
+        h('div', { className: 'mini-stat', key: 'total' }, [
+          h('label', { key: 'l' }, 'Questions'),
+          h(MiniStatValue, { value: String(summary.total || questions.length || 0), variant: 'status', key: 'v' }),
+          h('div', { className: 'small-note', key: 'n' }, 'Decision-critical prompts')
+        ]),
+        h('div', { className: 'mini-stat', key: 'open' }, [
+          h('label', { key: 'l' }, 'Open'),
+          h(MiniStatValue, { value: String(summary.open || 0), variant: blocked ? 'danger' : 'status', key: 'v' }),
+          h('div', { className: 'small-note', key: 'n' }, 'Need developer input')
+        ]),
+        h('div', { className: 'mini-stat', key: 'high' }, [
+          h('label', { key: 'l' }, 'High Severity'),
+          h(MiniStatValue, { value: String(summary.unresolvedHigh || 0), variant: blocked ? 'danger' : 'status', key: 'v' }),
+          h('div', { className: 'small-note', key: 'n' }, 'Blocks delegation')
+        ])
+      ]),
+      h('div', { className: 'conversation-state', key: 'conversation' }, [
+        h('strong', { key: 'phase' }, 'Conversation: ' + titleizeStatus(conversation.phase || conversation.status || 'draft')),
+        h('div', { className: 'small-note', key: 'next' }, conversation.nextAction || (summary.nextAction || 'Generate clarifications or continue.'))
+      ]),
+      questions.length ? h('div', { className: 'clarification-list', key: 'questions' }, questions.map(function (question, index) {
+        var severityClass = question.severity === 'high' ? 'high' : question.severity === 'low' ? 'low' : 'medium';
+        return h('article', { className: 'clarification-card ' + severityClass, key: question.id || index }, [
+          h('div', { className: 'clarification-card-head', key: 'head' }, [
+            h('span', { className: 'status-pill ' + severityClass, key: 'severity' }, titleizeStatus(question.severity || 'medium')),
+            h('span', { className: 'meta-pill soft', key: 'stage' }, stageLabelFromKey(question.stage || 'intake')),
+            h('span', { className: 'meta-pill soft', key: 'status' }, titleizeStatus(question.status || 'open'))
+          ]),
+          h('strong', { key: 'question' }, question.question || 'Clarification question'),
+          question.why ? h('div', { className: 'small-note', key: 'why' }, question.why) : null,
+          question.answerFormat ? h('div', { className: 'small-note', key: 'format' }, 'Answer format: ' + question.answerFormat) : null,
+          question.suggestedAnswer ? h('button', {
+            className: 'btn ghost tiny',
+            disabled: locked,
+            onClick: function () {
+              props.setRuntime(function (current) {
+	                var currentClarifications = normalizeClarifications(current.clarifications);
+	                var nextQuestions = currentClarifications.questions.map(function (item) {
+	                  return item.id === question.id ? Object.assign({}, item, {
+	                    answer: question.suggestedAnswer,
+	                    status: question.suggestedAnswer.trim() ? 'answered' : 'open',
+	                    draftDirty: true
+	                  }) : item;
+	                });
+	                return Object.assign({}, current, {
+	                  clarifications: Object.assign({}, currentClarifications, { questions: nextQuestions })
+                });
+              });
+            },
+            key: 'suggested'
+          }, 'Use Suggested Answer') : null,
+          h('textarea', {
+            className: 'control-textarea clarification-answer',
+            value: question.answer || '',
+            disabled: locked,
+            placeholder: 'Type the answer ODT should remember for this task...',
+            onChange: function (event) {
+              var nextValue = event && event.target ? event.target.value : '';
+              props.setRuntime(function (current) {
+	                var currentClarifications = normalizeClarifications(current.clarifications);
+	                var nextQuestions = currentClarifications.questions.map(function (item) {
+	                  return item.id === question.id ? Object.assign({}, item, {
+	                    answer: nextValue,
+	                    status: nextValue.trim() ? 'answered' : 'open',
+	                    draftDirty: true
+	                  }) : item;
+	                });
+	                return Object.assign({}, current, {
+	                  clarifications: Object.assign({}, currentClarifications, { questions: nextQuestions })
+                });
+              });
+            },
+            key: 'answer'
+          })
+        ]);
+      })) : h('div', { className: 'small-note', key: 'empty' }, 'No required clarification questions right now. ODT will infer normal UI, test, accessibility, and dependency defaults from the repo unless the requirement is ambiguous.'),
+      h('div', { className: 'section-inline-actions', key: 'actions' }, [
+        h('button', {
+          className: 'btn ghost',
+          disabled: locked,
+          onClick: props.onGenerate,
+          title: 'Ask ODT to generate only decision-critical clarification questions from the current intake.',
+          key: 'generate'
+        }, questions.length ? 'Refresh Questions' : 'Generate Questions'),
+        h('button', {
+          className: 'btn secondary',
+          disabled: locked || !questions.length,
+          onClick: props.onSave,
+          title: 'Save the current clarification answers for this assignment.',
+          key: 'save'
+        }, 'Save Answers'),
+        h('button', {
+          className: 'btn primary',
+          disabled: locked || blocked,
+          onClick: props.onContinue,
+          title: blocked ? 'Answer high-severity questions before continuing.' : 'Continue the current assignment using saved clarification answers.',
+          key: 'continue'
+        }, blocked ? 'Answer Required' : 'Continue Task')
+      ])
+    ]);
+  }
+
+  function ContextVaultPanel(props) {
+    var contextArtifacts = normalizeContextArtifacts(props.runtime.contextArtifacts);
+    var summary = contextArtifacts.summary || {};
+    var artifacts = contextArtifacts.artifacts || [];
+    var blocked = Boolean((summary.missing || 0) + (summary.invalid || 0));
+    var statusTone = blocked ? 'bad' : (summary.total ? 'good' : 'warn');
+    var statusLabel = blocked ? 'Fix Needed' : (summary.total ? 'Ready' : 'Optional');
+
+    return h(SectionCard, {
+      title: 'Context Vault',
+      subtitle: blocked
+        ? 'ODT found stale or invalid attachment references that would break delegated agent prompts.'
+        : 'Images, PDFs, spreadsheets, and reference docs are checked before agents receive them.',
+      className: 'context-vault-panel',
+      extra: h('span', { className: 'status-pill ' + statusTone }, statusLabel)
+    }, [
+      h('div', { className: 'context-vault-summary', key: 'summary' }, [
+        h('div', { className: 'mini-stat', key: 'total' }, [
+          h('label', { key: 'l' }, 'Artifacts'),
+          h(MiniStatValue, { value: String(summary.total || 0), variant: 'numeric', key: 'v' }),
+          h('div', { className: 'small-note', key: 'n' }, 'Attached to this task')
+        ]),
+        h('div', { className: 'mini-stat', key: 'ready' }, [
+          h('label', { key: 'l' }, 'Ready'),
+          h(MiniStatValue, { value: String(summary.ready || 0), variant: 'status', key: 'v' }),
+          h('div', { className: 'small-note', key: 'n' }, 'Safe for agent prompts')
+        ]),
+        h('div', { className: 'mini-stat', key: 'missing' }, [
+          h('label', { key: 'l' }, 'Missing'),
+          h(MiniStatValue, { value: String((summary.missing || 0) + (summary.invalid || 0)), variant: blocked ? 'danger' : 'status', key: 'v' }),
+          h('div', { className: 'small-note', key: 'n' }, 'Blocks delegation')
+        ])
+      ]),
+      h('div', { className: 'small-note', key: 'next' }, contextArtifacts.nextAction || (summary.total ? 'Context artifacts are available for this task.' : 'Upload only the files that materially help the implementation.')),
+      artifacts.length ? h('div', { className: 'context-artifact-list', key: 'artifacts' }, artifacts.map(function (artifact) {
+        var tone = artifact.status === 'ready' ? 'good' : 'bad';
+        var label = artifact.kind === 'image'
+          ? 'Image'
+          : artifact.kind === 'pdf'
+            ? 'PDF'
+            : artifact.kind === 'spreadsheet'
+              ? 'Sheet'
+              : 'Doc';
+        return h('article', { className: 'context-artifact-card ' + artifact.status, key: artifact.id }, [
+          h('div', { className: 'context-artifact-head', key: 'head' }, [
+            h('span', { className: 'status-pill ' + tone, key: 'status' }, titleizeStatus(artifact.status)),
+            h('span', { className: 'meta-pill soft', key: 'kind' }, label),
+            h('span', { className: 'meta-pill soft', key: 'size' }, formatBytes(artifact.size))
+          ]),
+          h('strong', { key: 'name', title: artifact.name }, shorten(artifact.name, 82)),
+          h('div', { className: 'artifact-path', key: 'path' }, artifact.path || artifact.absolutePath || 'No path available'),
+          artifact.processingStrategy ? h('div', { className: 'small-note', key: 'strategy' }, artifact.processingStrategy) : null,
+          artifact.recommendation ? h('div', { className: 'small-note', key: 'recommendation' }, artifact.recommendation) : null
+        ]);
+      })) : h('div', { className: 'input-item empty', key: 'empty' }, 'No context artifacts attached. That is fine for pure backend, API, refactor, or test-only work.')
+    ]);
+  }
+
+  function AgentCockpit(props) {
+    var runtime = props.runtime;
+    var agentic = normalizeAgentic(runtime.agentic);
+    var roster = agentic.agentRoster || {};
+    var reviewerPlan = agentic.reviewerPlan || {};
+    var reviewerFindings = agentic.reviewerFindings || {};
+    var arbitrator = agentic.arbitratorDecision || {};
+    var rosterAgents = Array.isArray(roster.agents) ? roster.agents : [];
+    var reviewerStatuses = {};
+    (Array.isArray(reviewerPlan.reviewers) ? reviewerPlan.reviewers : []).forEach(function (reviewer) {
+      reviewerStatuses[reviewer.id] = reviewer;
+    });
+    (Array.isArray(reviewerFindings.reviewers) ? reviewerFindings.reviewers : []).forEach(function (reviewer) {
+      reviewerStatuses[reviewer.id] = Object.assign({}, reviewerStatuses[reviewer.id] || {}, reviewer);
+    });
+    var cards = rosterAgents.map(function (agent) {
+      var merged = Object.assign({}, agent, reviewerStatuses[agent.id] || {});
+      var status = agent.id === 'main-developer'
+        ? getAgentExecutionState(runtime).status
+        : (merged.status || (agent.id === 'planner-scheduler' ? ((agentic.executionPlan && agentic.executionPlan.status) || roster.status || 'planned') : 'waiting'));
+      return Object.assign({}, merged, {
+        status: status,
+        statusLabel: titleizeStatus(status),
+        tone: toneForAgentStatus(status)
+      });
+    });
+    if (arbitrator.decision) {
+      cards.push({
+        id: 'merge-arbitrator',
+        name: 'Merge Arbitrator',
+        mode: 'decision',
+        responsibility: arbitrator.reason || 'Combine reviewer findings and decide the next step.',
+        status: arbitrator.decision,
+        statusLabel: titleizeStatus(arbitrator.decision),
+        tone: toneForAgentStatus(arbitrator.decision),
+        score: arbitrator.readinessScore || null,
+        output: 'reports/odt/agentic/arbitrator-decision.json'
+      });
+    }
+    var _a = useState(cards[0] && cards[0].id), activeAgentId = _a[0], setActiveAgentId = _a[1];
+    var active = cards.find(function (item) { return item.id === activeAgentId; }) || cards[0] || null;
+    var activeFindings = active && Array.isArray((reviewerStatuses[active.id] || {}).findings)
+      ? (reviewerStatuses[active.id] || {}).findings
+      : [];
+    var activeDetail = active ? buildAgentDetailModel(active, agentic, reviewerStatuses[active.id] || {}) : null;
+
+    return h(SectionCard, {
+      title: 'Agent Cockpit',
+      subtitle: cards.length
+        ? 'Click an agent to see what it owns, current state, output, and next evidence.'
+        : 'Agent status appears after the planner creates the roster.',
+      className: 'agent-cockpit',
+      extra: h('span', { className: 'status-pill ' + (cards.length ? 'good' : 'warn') }, cards.length ? cards.length + ' Agents' : 'Waiting')
+    }, [
+      cards.length ? h('div', { className: 'agent-cockpit-grid', key: 'grid' }, [
+        h('div', { className: 'agent-card-grid', key: 'cards' }, cards.map(function (agent) {
+          var avatar = avatarForAgent(agent);
+          return h('button', {
+            className: 'agent-card ' + (active && active.id === agent.id ? 'active' : ''),
+            onClick: function () { setActiveAgentId(agent.id); },
+            key: agent.id || agent.name
+          }, [
+            h('div', { className: 'agent-card-head', key: 'head' }, [
+              h('span', {
+                className: 'agent-avatar ' + avatar.tone,
+                title: (agent.name || agent.id || 'Agent') + ' role',
+                key: 'avatar'
+              }, avatar.label),
+              h('span', { className: 'status-pill ' + agent.tone, key: 'status' }, agent.statusLabel || 'Status')
+            ]),
+            h('strong', { key: 'name' }, agent.name || agent.id || 'Agent'),
+            h('p', { key: 'role' }, shorten(agent.responsibility || 'Role assigned by ODT planner.', 120))
+          ]);
+        })),
+        active ? h('aside', { className: 'agent-detail-panel', key: 'detail' }, [
+          h('h3', { key: 'name' }, active.name || active.id || 'Agent'),
+          h('div', { className: 'status-pill-row', key: 'pills' }, [
+            h('span', { className: 'status-pill ' + active.tone, key: 'status' }, active.statusLabel || 'Status'),
+            h('span', { className: 'meta-pill soft', key: 'mode' }, titleizeStatus(active.mode || 'agent')),
+            active.score ? h('span', { className: 'meta-pill soft', key: 'score' }, active.score + '/10') : null
+          ]),
+          h('div', { className: 'agent-detail-section', key: 'plan' }, [
+            h('label', { key: 'label' }, 'Plan / prompt'),
+            h('p', { key: 'value' }, activeDetail.plan)
+          ]),
+          h('div', { className: 'agent-detail-section', key: 'expected' }, [
+            h('label', { key: 'label' }, 'Expected output'),
+            h('p', { key: 'value' }, activeDetail.expectedOutput)
+          ]),
+          h('div', { className: 'agent-detail-section', key: 'scope' }, [
+            h('label', { key: 'label' }, 'Scope'),
+            h('p', { key: 'value' }, activeDetail.scope)
+          ]),
+          h('div', { className: 'artifact-path', key: 'prompt' }, 'Prompt source: ' + activeDetail.promptPath),
+          activeFindings.length ? h('div', { key: 'findings' }, [
+            h('strong', { key: 'title' }, 'Latest findings'),
+            h('ul', { className: 'list-inline', key: 'list' }, activeFindings.slice(0, 3).map(function (finding, index) {
+              return h('li', { key: active.id + '-finding-' + index }, titleizeStatus(finding.severity || 'low') + ': ' + (finding.title || 'Finding'));
+            }))
+          ]) : null,
+          activeDetail.artifactPath ? h('div', { className: 'artifact-path', key: 'output' }, 'Output: ' + activeDetail.artifactPath) : null
+        ]) : null
+      ]) : h('div', { className: 'small-note', key: 'empty' }, 'Run ODT planning to create the planner, main developer, reviewer, verifier, and arbitrator roster.')
+    ]);
+  }
+
+  function ReviewWorkspace(props) {
+    var runtime = props.runtime;
+    var agentic = normalizeAgentic(runtime.agentic);
+    var reviewerFindings = agentic.reviewerFindings || {};
+    var reviewSuggestions = normalizeReviewSuggestions(agentic.reviewSuggestions);
+    var reviewers = Array.isArray(reviewerFindings.reviewers) ? reviewerFindings.reviewers : [];
+    var summary = reviewSuggestions.summary || summarizeReviewSuggestions(reviewSuggestions.suggestions);
+    var _a = useState(reviewers[0] && reviewers[0].id), activeReviewerId = _a[0], setActiveReviewerId = _a[1];
+    var activeReviewer = reviewers.find(function (reviewer) { return reviewer.id === activeReviewerId; }) || reviewers[0] || null;
+    var locked = runtime.running || isAgentExecutionBusy(runtime) || runtime.serverHealth.status !== 'online';
+
+    return h(SectionCard, {
+      title: 'Review Workspace',
+      subtitle: reviewers.length
+        ? 'Open each reviewer tab, decide which findings matter, and send accepted suggestions into the next rework prompt.'
+        : 'Run the reviewer swarm after a patch exists to create actionable review tabs.',
+      className: 'review-workspace',
+      extra: h('span', { className: 'status-pill ' + (reviewers.length ? 'good' : 'warn') }, reviewers.length ? (summary.accepted || 0) + ' Accepted' : 'No Reviews')
+    }, [
+      reviewers.length ? h('div', { className: 'planner-summary', key: 'summary' }, [
+        h('div', { className: 'mini-stat', key: 'total' }, [
+          h('label', { key: 'l' }, 'Review Items'),
+          h(MiniStatValue, { value: String(summary.total || 0), variant: 'status', key: 'v' }),
+          h('div', { className: 'small-note', key: 'n' }, 'Findings available for developer decision')
+        ]),
+        h('div', { className: 'mini-stat', key: 'accepted' }, [
+          h('label', { key: 'l' }, 'Accepted'),
+          h(MiniStatValue, { value: String(summary.accepted || 0), variant: 'status', key: 'v' }),
+          h('div', { className: 'small-note', key: 'n' }, 'Included in rework prompt')
+        ]),
+        h('div', { className: 'mini-stat', key: 'rework' }, [
+          h('label', { key: 'l' }, 'Needs Rework'),
+          h(MiniStatValue, { value: String(summary.needsRework || 0), variant: (summary.needsRework || 0) ? 'danger' : 'status', key: 'v' }),
+          h('div', { className: 'small-note', key: 'n' }, 'Must be addressed before close')
+        ]),
+        h('div', { className: 'mini-stat', key: 'pending' }, [
+          h('label', { key: 'l' }, 'Pending'),
+          h(MiniStatValue, { value: String(summary.pending || 0), variant: 'status', key: 'v' }),
+          h('div', { className: 'small-note', key: 'n' }, 'Awaiting developer decision')
+        ])
+      ]) : null,
+      reviewers.length ? h('div', { className: 'review-workspace-grid', key: 'grid' }, [
+        h('div', { className: 'reviewer-tab-list', key: 'tabs' }, reviewers.map(function (reviewer) {
+          var findings = Array.isArray(reviewer.findings) ? reviewer.findings : [];
+          var high = findings.filter(function (item) { return item.severity === 'high'; }).length;
+          var medium = findings.filter(function (item) { return item.severity === 'medium'; }).length;
+          return h('button', {
+            className: 'reviewer-tab ' + (activeReviewer && activeReviewer.id === reviewer.id ? 'active' : ''),
+            onClick: function () { setActiveReviewerId(reviewer.id); },
+            key: reviewer.id || reviewer.name
+          }, [
+            h('strong', { key: 'name' }, reviewer.name || reviewer.id || 'Reviewer'),
+            h('span', { key: 'summary' }, reviewer.summary || (findings.length + ' finding(s)')),
+            h('span', { key: 'risk' }, high + ' high · ' + medium + ' medium · score ' + (reviewer.score || 'n/a'))
+          ]);
+        })),
+        activeReviewer ? h('div', { className: 'review-detail', key: 'detail' }, [
+          h('div', { className: 'subcard', key: 'intro' }, [
+            h('h3', { key: 'title' }, activeReviewer.name || 'Reviewer'),
+            h('div', { className: 'small-note', key: 'summary' }, activeReviewer.summary || 'Review details are available below.'),
+            h('div', { className: 'artifact-path', key: 'output' }, activeReviewer.output || 'reports/odt/agentic/reviews/')
+          ]),
+          (Array.isArray(activeReviewer.findings) ? activeReviewer.findings : []).map(function (finding, index) {
+            var suggestion = findSuggestionForFinding(reviewSuggestions, activeReviewer, index, finding);
+            if (!suggestion) {
+              suggestion = {
+                id: (activeReviewer.id || activeReviewer.name || 'reviewer') + '-' + index,
+                reviewerId: activeReviewer.id || '',
+                reviewerName: activeReviewer.name || '',
+                findingIndex: index,
+                severity: finding.severity || 'low',
+                title: finding.title || 'Reviewer finding',
+                detail: finding.detail || '',
+                sourceRecommendation: finding.recommendation || '',
+                files: finding.files || [],
+                decision: 'pending',
+                suggestion: finding.recommendation || '',
+                note: ''
+              };
+            }
+            return h('article', { className: 'review-finding-card', key: suggestion.id || index }, [
+              h('div', { className: 'review-finding-head', key: 'head' }, [
+                h('span', { className: 'status-pill ' + (finding.severity === 'high' ? 'bad' : finding.severity === 'medium' ? 'warn' : 'low'), key: 'severity' }, titleizeStatus(finding.severity || 'low')),
+                h('span', { className: 'status-pill ' + toneForDecision(suggestion.decision), key: 'decision' }, titleizeStatus(normalizeReviewDecision(suggestion.decision))),
+                suggestion.files && suggestion.files.length ? h('span', { className: 'meta-pill soft', key: 'files' }, suggestion.files.length + ' file(s)') : null
+              ]),
+              h('strong', { key: 'title' }, finding.title || 'Reviewer finding'),
+              h('div', { className: 'small-note', key: 'detail' }, finding.detail || 'No detail supplied.'),
+              finding.recommendation ? h('div', { className: 'small-note', key: 'recommendation' }, 'Recommendation: ' + finding.recommendation) : null,
+              suggestion.files && suggestion.files.length ? h('div', { className: 'artifact-path', key: 'paths' }, suggestion.files.join(', ')) : null,
+              h('div', { className: 'suggestion-editor', key: 'editor' }, [
+                h('label', { key: 'label' }, 'Developer suggestion / decision note'),
+                h('textarea', {
+                  value: suggestion.suggestion || '',
+                  disabled: locked,
+                  placeholder: 'Rewrite the action you want the Main Developer agent to consider...',
+                  onChange: function (event) {
+                    var nextValue = event && event.target ? event.target.value : '';
+                    patchLocalReviewSuggestion(props.setRuntime, Object.assign({}, suggestion, { suggestion: nextValue }));
+                  },
+                  key: 'suggestion'
+                }),
+                h('textarea', {
+                  value: suggestion.note || '',
+                  disabled: locked,
+                  placeholder: 'Optional rationale, rejection reason, or human note...',
+                  onChange: function (event) {
+                    var nextValue = event && event.target ? event.target.value : '';
+                    patchLocalReviewSuggestion(props.setRuntime, Object.assign({}, suggestion, { note: nextValue }));
+                  },
+                  key: 'note'
+                }),
+                h('div', { className: 'review-action-row', key: 'actions' }, [
+                  h('button', {
+                    className: 'btn secondary tiny',
+                    disabled: locked,
+                    onClick: function () { props.onSaveReviewSuggestion(Object.assign({}, suggestion, { decision: 'accepted' })); },
+                    title: 'Accept this finding and include it in the next rework prompt.',
+                    key: 'accept'
+                  }, 'Accept'),
+                  h('button', {
+                    className: 'btn secondary tiny',
+                    disabled: locked,
+                    onClick: function () { props.onSaveReviewSuggestion(Object.assign({}, suggestion, { decision: 'needs_rework' })); },
+                    title: 'Mark this finding as required rework.',
+                    key: 'rework'
+                  }, 'Needs Rework'),
+                  h('button', {
+                    className: 'btn ghost tiny',
+                    disabled: locked,
+                    onClick: function () { props.onSaveReviewSuggestion(Object.assign({}, suggestion, { decision: 'rejected' })); },
+                    title: 'Reject this finding and save the rationale.',
+                    key: 'reject'
+                  }, 'Reject'),
+                  h('button', {
+                    className: 'btn ghost tiny',
+                    disabled: locked,
+                    onClick: function () { props.onSaveReviewSuggestion(Object.assign({}, suggestion, { decision: 'ignored' })); },
+                    title: 'Ignore this finding for the current cycle.',
+                    key: 'ignore'
+                  }, 'Ignore'),
+                  h('button', {
+                    className: 'btn ghost tiny',
+                    disabled: locked,
+                    onClick: function () { props.onSaveReviewSuggestion(suggestion); },
+                    title: 'Save the current note without changing the decision.',
+                    key: 'save'
+                  }, 'Save Note')
+                ])
+              ])
+            ]);
+          })
+        ]) : null
+      ]) : h('div', { className: 'blocked-task-list', key: 'empty' }, [
+        h('strong', { key: 'title' }, 'No reviewer tabs yet'),
+        h('div', { className: 'small-note', key: 'copy' }, 'After the Main Developer produces changes, run the reviewer swarm. ODT will split architecture, tests, accessibility, security, and build verification into separate review tabs.'),
+        h('div', { className: 'section-inline-actions', key: 'actions' }, [
+          h('button', {
+            className: 'btn secondary',
+            disabled: locked,
+            onClick: props.onRunReviewers,
+            key: 'run'
+          }, 'Run Reviewer Swarm')
+        ])
+      ])
+    ]);
+  }
+
+  function ReviewPacketPanel(props) {
+    var packet = normalizeReviewPacket(props.runtime.reviewPacket);
+    var summary = packet.summary || {};
+    var files = packet.files || [];
+    var risky = (summary.outOfScope || 0) + (summary.dependency || 0) + (summary.data || 0);
+    var tone = risky ? 'bad' : (files.length ? 'good' : 'warn');
+    var diffStat = [packet.diffStat && packet.diffStat.staged ? 'Staged:\\n' + packet.diffStat.staged : '', packet.diffStat && packet.diffStat.unstaged ? 'Unstaged:\\n' + packet.diffStat.unstaged : ''].filter(Boolean).join('\\n\\n');
+    var locked = props.runtime.running || props.runtime.serverHealth.status !== 'online';
+
+    return h(SectionCard, {
+      title: 'Review Packet',
+      subtitle: files.length
+        ? 'Source-of-truth changed files from the target repo, before final approval.'
+        : 'No target repo changes detected yet. This stays useful for frontend, backend, database, and test-only tasks.',
+      className: 'review-packet-panel',
+      extra: h('span', { className: 'status-pill ' + tone }, titleizeStatus(packet.status || 'clean'))
+    }, [
+      h('div', { className: 'review-packet-summary', key: 'summary' }, [
+        h('div', { className: 'mini-stat', key: 'changed' }, [
+          h('label', { key: 'l' }, 'Changed'),
+          h(MiniStatValue, { value: String(summary.changedFiles || 0), variant: 'numeric', key: 'v' }),
+          h('div', { className: 'small-note', key: 'n' }, 'Files in target repo')
+        ]),
+        h('div', { className: 'mini-stat', key: 'unstaged' }, [
+          h('label', { key: 'l' }, 'Unstaged'),
+          h(MiniStatValue, { value: String(summary.unstaged || 0), variant: 'status', key: 'v' }),
+          h('div', { className: 'small-note', key: 'n' }, 'Needs developer review')
+        ]),
+        h('div', { className: 'mini-stat', key: 'untracked' }, [
+          h('label', { key: 'l' }, 'Untracked'),
+          h(MiniStatValue, { value: String(summary.untracked || 0), variant: 'status', key: 'v' }),
+          h('div', { className: 'small-note', key: 'n' }, 'New files')
+        ]),
+        h('div', { className: 'mini-stat', key: 'risk' }, [
+          h('label', { key: 'l' }, 'Review Risk'),
+          h(MiniStatValue, { value: String(risky), variant: risky ? 'danger' : 'status', key: 'v' }),
+          h('div', { className: 'small-note', key: 'n' }, 'Scope, dependency, or data flags')
+        ])
+      ]),
+      h('div', { className: 'small-note', key: 'next' }, packet.nextAction || 'Review packet refreshes from the local context server.'),
+      h('div', { className: 'section-inline-actions', key: 'actions' }, [
+        h('button', {
+          className: 'btn secondary',
+          disabled: locked,
+          onClick: props.onRefresh,
+          title: 'Refresh changed files, scope flags, and git diff stats from the target repo.',
+          key: 'refresh'
+        }, 'Refresh Review Packet')
+      ]),
+      files.length ? h('div', { className: 'review-file-list', key: 'files' }, files.slice(0, 12).map(function (file) {
+        var risk = file.reviewRisk && file.reviewRisk !== 'normal';
+        return h('article', { className: 'review-file-card ' + (risk ? 'risk' : ''), key: file.path }, [
+          h('div', { className: 'review-finding-head', key: 'head' }, [
+            h('span', { className: 'status-pill ' + (risk ? 'bad' : 'good'), key: 'status' }, titleizeStatus(file.status)),
+            h('span', { className: 'meta-pill soft', key: 'kind' }, titleizeStatus(file.kind)),
+            h('span', { className: 'meta-pill soft', key: 'scope' }, file.inPlannedScope ? 'Planned Scope' : 'Outside Scope')
+          ]),
+          h('strong', { key: 'path' }, file.path),
+          risk ? h('div', { className: 'small-note', key: 'risk' }, 'Risk: ' + titleizeStatus(file.reviewRisk)) : null
+        ]);
+      })) : h('div', { className: 'input-item empty', key: 'empty' }, 'No changed files detected in the selected target repo.'),
+      diffStat ? h('pre', { className: 'review-diff-stat', key: 'diff' }, diffStat) : null
+    ]);
+  }
+
+  function PlannerPanel(props) {
+    var agentic = normalizeAgentic(props.runtime.agentic);
+    var taskGraph = agentic.taskGraph || {};
+    var executionPlan = agentic.executionPlan || {};
+    var schedulerDecision = agentic.schedulerDecision || {};
+    var agentRoster = agentic.agentRoster || {};
+    var reviewerPlan = agentic.reviewerPlan || {};
+    var reviewerFindings = agentic.reviewerFindings || {};
+    var arbitratorDecision = agentic.arbitratorDecision || {};
+    var currentCycle = agentic.currentCycle || {};
+    var reworkPrompt = agentic.reworkPrompt || '';
+    var verificationResults = agentic.verificationResults || {};
+    var tasks = Array.isArray(taskGraph.tasks) ? taskGraph.tasks : [];
+    var implementationTasks = tasks.filter(function (task) {
+      return String(task.id || '').indexOf('task-') === 0;
+    });
+    var reviewTasks = tasks.filter(function (task) {
+      return task.kind === 'review';
+    });
+    var lanes = Array.isArray(executionPlan.parallelLanes) ? executionPlan.parallelLanes : [];
+    var blockedTasks = Array.isArray(executionPlan.blockedTasks) ? executionPlan.blockedTasks : [];
+    var rosterAgents = Array.isArray(agentRoster.agents) ? agentRoster.agents : [];
+    var reviewerAgents = Array.isArray(reviewerPlan.reviewers) ? reviewerPlan.reviewers : [];
+    var reviewerResults = Array.isArray(reviewerFindings.reviewers) ? reviewerFindings.reviewers : [];
+    var verificationSteps = Array.isArray(verificationResults.steps) ? verificationResults.steps : [];
+    var locked = props.runtime.running || isAgentExecutionBusy(props.runtime) || props.runtime.serverHealth.status !== 'online';
+    var arbitratorTone = arbitratorDecision.decision === 'rework_required'
+      ? 'bad'
+      : arbitratorDecision.decision === 'human_review_with_cautions'
+        ? 'warn'
+        : arbitratorDecision.decision === 'ready_for_human_review'
+          ? 'good'
+          : 'warn';
+
+    return h(SectionCard, {
+      title: 'Planner / Scheduler',
+      subtitle: tasks.length
+        ? 'ODT task order, parallel lanes, and blocked work for this assignment.'
+        : 'Planner output appears after clarifications are generated or a run starts.',
+      className: 'planner-panel',
+      extra: h('span', { className: 'status-pill ' + (executionPlan.status === 'blocked' ? 'bad' : tasks.length ? 'good' : 'warn') }, executionPlan.status ? titleizeStatus(executionPlan.status) : 'Not Planned')
+    }, [
+      h('div', { className: 'planner-summary', key: 'summary' }, [
+        h('div', { className: 'mini-stat', key: 'tasks' }, [
+          h('label', { key: 'l' }, 'Tasks'),
+          h(MiniStatValue, { value: String(tasks.length || 0), variant: 'status', key: 'v' }),
+          h('div', { className: 'small-note', key: 'n' }, implementationTasks.length + ' implementation · ' + reviewTasks.length + ' review')
+        ]),
+        h('div', { className: 'mini-stat', key: 'next' }, [
+          h('label', { key: 'l' }, 'Next Action'),
+          h(MiniStatValue, { value: titleizeStatus(executionPlan.nextAction || 'not planned'), max: 28, variant: 'status', key: 'v' }),
+          h('div', { className: 'small-note', key: 'n' }, schedulerDecision.reason || 'Generate a plan to see sequencing guidance.')
+        ]),
+        h('div', { className: 'mini-stat', key: 'first' }, [
+          h('label', { key: 'l' }, 'First Task'),
+          h(MiniStatValue, { value: executionPlan.recommendedFirstTaskId || 'n/a', variant: 'status', key: 'v' }),
+          h('div', { className: 'small-note', key: 'n' }, 'What the scheduler recommends first')
+        ]),
+        h('div', { className: 'mini-stat', key: 'arbitrator' }, [
+          h('label', { key: 'l' }, 'Arbitrator'),
+          h(MiniStatValue, { value: arbitratorDecision.decision ? titleizeStatus(arbitratorDecision.decision) : 'not run', max: 28, variant: arbitratorTone === 'bad' ? 'danger' : 'status', key: 'v' }),
+          h('div', { className: 'small-note', key: 'n' }, arbitratorDecision.readinessScore ? ('Readiness ' + arbitratorDecision.readinessScore + '/10') : 'Run reviewer swarm after patch')
+        ]),
+        h('div', { className: 'mini-stat', key: 'verification' }, [
+          h('label', { key: 'l' }, 'Verification'),
+          h(MiniStatValue, { value: verificationResults.status ? titleizeStatus(verificationResults.status) : 'not run', max: 20, variant: verificationResults.status === 'failed' ? 'danger' : 'status', key: 'v' }),
+          h('div', { className: 'small-note', key: 'n' }, verificationResults.summary
+            ? ((verificationResults.summary.passed || 0) + ' passed · ' + (verificationResults.summary.failed || 0) + ' failed')
+            : 'Run tests/build evidence for this cycle')
+        ])
+      ]),
+      lanes.length ? h('div', { className: 'planner-lanes', key: 'lanes' }, [
+        h('strong', { key: 'title' }, 'Parallel Lanes'),
+        h('div', { className: 'planner-lane-grid', key: 'grid' }, lanes.map(function (lane, index) {
+          return h('article', { className: 'planner-lane', key: lane.lane || index }, [
+            h('span', { className: 'meta-pill soft', key: 'agent' }, lane.agent || lane.lane || 'Agent'),
+            h('strong', { key: 'task' }, lane.task || lane.taskId || 'Planned work'),
+            h('div', { className: 'small-note', key: 'files' }, lane.allowedFiles && lane.allowedFiles.length
+              ? 'Allowed files: ' + lane.allowedFiles.slice(0, 3).join(', ') + (lane.allowedFiles.length > 3 ? ' +' + (lane.allowedFiles.length - 3) : '')
+              : 'No write scope yet; read/review only.')
+          ]);
+        }))
+      ]) : null,
+      rosterAgents.length ? h('div', { className: 'planner-lanes', key: 'roster' }, [
+        h('strong', { key: 'title' }, 'Agent Roster'),
+        h('div', { className: 'small-note', key: 'strategy' }, titleizeStatus(agentRoster.strategy || 'single_writer_parallel_reviewers')),
+        h('div', { className: 'planner-lane-grid', key: 'grid' }, rosterAgents.slice(0, 6).map(function (agent) {
+          return h('article', { className: 'planner-lane', key: agent.id || agent.name }, [
+            h('span', { className: 'meta-pill soft', key: 'mode' }, titleizeStatus(agent.mode || 'agent')),
+            h('strong', { key: 'name' }, agent.name || agent.id || 'Agent'),
+            h('div', { className: 'small-note', key: 'role' }, agent.responsibility || 'Role will be assigned by the planner.')
+          ]);
+        }))
+      ]) : null,
+      reviewerAgents.length ? h('div', { className: 'blocked-task-list', key: 'reviewer-plan' }, [
+        h('strong', { key: 'title' }, 'Reviewer Swarm'),
+        h('div', { className: 'small-note', key: 'summary' }, titleizeStatus(reviewerPlan.status || 'waiting') + ' · ' + reviewerAgents.length + ' reviewer lanes · Trigger: ' + titleizeStatus(reviewerPlan.trigger || 'main_developer_patch_completed')),
+        h('div', { className: 'section-inline-actions', key: 'actions' }, [
+          h('button', {
+            className: 'btn secondary',
+            disabled: locked || !reviewerAgents.length,
+            onClick: props.onRunReviewers,
+            title: 'Run read-only reviewer agents and generate a merge arbitrator decision.',
+            key: 'run-reviewers'
+          }, 'Run Reviewer Swarm')
+        ].concat([
+          h('button', {
+            className: 'btn ghost',
+            disabled: locked,
+            onClick: props.onRunVerification,
+            title: 'Run target repo lint, test, and build scripts and attach evidence to the current review cycle.',
+            key: 'run-verification'
+          }, 'Run Verification')
+        ]).concat(arbitratorDecision.decision ? [
+          h('button', {
+            className: 'btn ghost',
+            disabled: locked,
+            onClick: props.onPrepareRework,
+            title: 'Create a focused Main Developer prompt from reviewer findings and the arbitrator decision.',
+            key: 'prepare-rework'
+          }, 'Prepare Rework Prompt')
+        ] : []).concat(reworkPrompt ? [
+          h('button', {
+            className: 'btn secondary',
+            disabled: locked,
+            onClick: props.onLaunchRework,
+            title: 'Open the selected coding agent with the prepared Review Cycle rework prompt.',
+            key: 'launch-rework'
+          }, 'Send Rework to Main Developer')
+        ] : [])),
+        h('ul', { className: 'list-inline', key: 'items' }, reviewerAgents.slice(0, 5).map(function (agent) {
+          return h('li', { key: agent.id || agent.name }, (agent.name || 'Reviewer') + ': ' + titleizeStatus(agent.status || 'waiting') + (agent.score ? ' · ' + agent.score + '/10' : ''));
+        })),
+        reviewerPlan.aggregator ? h('div', { className: 'small-note', key: 'aggregator' }, 'Aggregator: ' + (reviewerPlan.aggregator.name || 'Merge Arbitrator') + ' - ' + titleizeStatus(reviewerPlan.aggregator.status || 'waiting')) : null
+      ]) : null,
+      currentCycle.id ? h('div', { className: 'blocked-task-list', key: 'review-cycle' }, [
+        h('strong', { key: 'title' }, currentCycle.label || ('Review Cycle ' + (currentCycle.number || ''))),
+        h('div', { className: 'small-note', key: 'state' }, titleizeStatus(currentCycle.decision || currentCycle.status || 'unknown') + ' · readiness ' + (currentCycle.readinessScore || 0) + '/10'),
+        h('div', { className: 'small-note', key: 'verify' }, 'Verification: ' + titleizeStatus(currentCycle.verificationStatus || verificationResults.status || 'not run')),
+        h('div', { className: 'small-note', key: 'artifacts' }, 'Artifacts: ' + ((currentCycle.artifacts && (currentCycle.artifacts.verifyResults || currentCycle.artifacts.reworkPrompt)) || 'reports/odt/agentic/rework-prompt.md'))
+      ]) : null,
+      verificationResults.status ? h('div', { className: 'blocked-task-list', key: 'verification-results' }, [
+        h('strong', { key: 'title' }, 'Verification Evidence'),
+        h('div', { className: 'small-note', key: 'summary' }, titleizeStatus(verificationResults.status) + ' · ' + ((verificationResults.summary && verificationResults.summary.total) || verificationSteps.length || 0) + ' command(s) · reports/odt/agentic/verify-results.md'),
+        verificationSteps.length ? h('ul', { className: 'list-inline', key: 'steps' }, verificationSteps.slice(0, 4).map(function (step) {
+          return h('li', { key: step.id || step.label || step.commandLine }, (step.label || step.id || 'Command') + ': ' + titleizeStatus(step.status || 'unknown'));
+        })) : null
+      ]) : null,
+      reworkPrompt ? h('div', { className: 'blocked-task-list', key: 'rework-prompt' }, [
+        h('strong', { key: 'title' }, 'Main Developer Rework Prompt'),
+        h('div', { className: 'small-note', key: 'summary' }, 'Prepared from reviewer findings. Open reports/odt/agentic/rework-prompt.md for the full prompt.'),
+        h('pre', { className: 'log-preview', key: 'preview' }, reworkPrompt.slice(0, 900) + (reworkPrompt.length > 900 ? '\\n...' : ''))
+      ]) : null,
+      reviewerResults.length ? h('div', { className: 'task-list', key: 'reviewer-results' }, reviewerResults.slice(0, 5).map(function (result) {
+        var highCount = (result.findings || []).filter(function (item) { return item.severity === 'high'; }).length;
+        var mediumCount = (result.findings || []).filter(function (item) { return item.severity === 'medium'; }).length;
+        return h('article', { className: 'task-card', key: result.id || result.name }, [
+          h('div', { className: 'clarification-card-head', key: 'head' }, [
+            h('span', { className: 'status-pill ' + (highCount ? 'bad' : mediumCount ? 'warn' : 'good'), key: 'status' }, result.score ? result.score + '/10' : titleizeStatus(result.status || 'reviewed')),
+            h('span', { className: 'meta-pill soft', key: 'mode' }, titleizeStatus(result.mode || 'read_only'))
+          ]),
+          h('strong', { key: 'name' }, result.name || result.id || 'Reviewer'),
+          h('div', { className: 'small-note', key: 'summary' }, result.summary || 'Reviewer findings are available in artifacts.'),
+          result.findings && result.findings.length ? h('div', { className: 'small-note', key: 'first-finding' }, result.findings[0].title + ': ' + result.findings[0].detail) : null
+        ]);
+      })) : null,
+      arbitratorDecision.reason ? h('div', { className: 'blocked-task-list', key: 'arbitrator-decision' }, [
+        h('strong', { key: 'title' }, 'Merge Arbitrator Decision'),
+        h('div', { className: 'small-note', key: 'reason' }, arbitratorDecision.reason),
+        h('div', { className: 'small-note', key: 'next' }, 'Next: ' + (arbitratorDecision.nextAction || 'review findings'))
+      ]) : null,
+      tasks.length ? h('div', { className: 'task-list', key: 'tasks' }, implementationTasks.slice(0, 6).map(function (task) {
+        return h('article', { className: 'task-card', key: task.id }, [
+          h('div', { className: 'clarification-card-head', key: 'head' }, [
+            h('span', { className: 'status-pill good', key: 'id' }, task.id),
+            h('span', { className: 'meta-pill soft', key: 'kind' }, titleizeStatus(task.kind)),
+            h('span', { className: 'meta-pill soft', key: 'agent' }, task.suggestedAgent || 'Main Developer')
+          ]),
+          h('strong', { key: 'title' }, task.title || 'Planned task'),
+          h('div', { className: 'small-note', key: 'verify' }, task.verification && task.verification.length
+            ? 'Verify: ' + task.verification.join(', ')
+            : 'Verification will be added by the planner.')
+        ]);
+      })) : h('div', { className: 'small-note', key: 'empty' }, 'No task graph has been generated yet. Generate clarifications or run ODT to create Planner v1 output.'),
+      blockedTasks.length ? h('div', { className: 'blocked-task-list', key: 'blocked' }, [
+        h('strong', { key: 'title' }, 'Blocked / Waiting'),
+        h('ul', { className: 'list-inline', key: 'items' }, blockedTasks.map(function (item, index) {
+          return h('li', { key: 'blocked-' + index }, (item.task || 'Task') + ': ' + (item.reason || 'waiting'));
+        }))
+      ]) : null
+    ]);
+  }
+
+  function cycleTone(value) {
+    var status = String(value || '').toLowerCase();
+    if (status.indexOf('ready') >= 0 || status === 'passed') return 'good';
+    if (status.indexOf('rework') >= 0 || status === 'failed') return 'bad';
+    return 'warn';
+  }
+
+  function ReviewCycleScoreboard(props) {
+    var agentic = normalizeAgentic(props.runtime.agentic);
+    var history = agentic.cycleHistory || {};
+    var summary = history.summary || {};
+    var cycles = Array.isArray(history.cycles) ? history.cycles : [];
+    var latest = cycles.length ? cycles[cycles.length - 1] : null;
+    var bars = cycles.slice(-8).map(function (cycle) {
+      return {
+        label: cycle.label || cycle.id,
+        value: Number(cycle.readinessScore || 0),
+        color: cycle.highFindings ? '#8b1e13' : (cycle.verificationStatus === 'passed' ? 'linear-gradient(90deg, #2f7d57, #66a981)' : 'linear-gradient(90deg, #c74634, #de7d61)')
+      };
+    });
+
+    return h(SectionCard, {
+      title: 'Review Cycle Scoreboard',
+      subtitle: cycles.length
+        ? 'Cycle trend, decisions, findings, and verification evidence.'
+        : 'Review cycle history appears after reviewer or verification runs.',
+      className: 'planner-panel',
+      extra: h('span', { className: 'status-pill ' + (latest ? cycleTone(latest.decision || latest.status) : 'warn') }, latest ? titleizeStatus(latest.decision || latest.status) : 'No Cycles')
+    }, [
+      h('div', { className: 'planner-summary', key: 'summary' }, [
+        h('div', { className: 'mini-stat', key: 'total' }, [
+          h('label', { key: 'l' }, 'Cycles'),
+          h(MiniStatValue, { value: String(summary.total || cycles.length || 0), variant: 'status', key: 'v' }),
+          h('div', { className: 'small-note', key: 'n' }, latest ? (latest.label || latest.id) : 'No cycle yet')
+        ]),
+        h('div', { className: 'mini-stat', key: 'score' }, [
+          h('label', { key: 'l' }, 'Latest Score'),
+          h(MiniStatValue, { value: String(summary.latestReadinessScore || (latest && latest.readinessScore) || 0) + '/10', variant: 'numeric', key: 'v' }),
+          h('div', { className: 'small-note', key: 'n' }, 'Delta ' + ((summary.readinessDelta || 0) >= 0 ? '+' : '') + (summary.readinessDelta || 0))
+        ]),
+        h('div', { className: 'mini-stat', key: 'verification' }, [
+          h('label', { key: 'l' }, 'Verification'),
+          h(MiniStatValue, { value: titleizeStatus(summary.latestVerificationStatus || (latest && latest.verificationStatus) || 'not run'), max: 22, variant: summary.latestVerificationStatus === 'failed' ? 'danger' : 'status', key: 'v' }),
+          h('div', { className: 'small-note', key: 'n' }, (summary.cyclesWithFailedVerification || 0) + ' cycle(s) with failed/blocking verification')
+        ]),
+        h('div', { className: 'mini-stat', key: 'highs' }, [
+          h('label', { key: 'l' }, 'High Findings'),
+          h(MiniStatValue, { value: String(latest ? (latest.highFindings || 0) : 0), variant: latest && latest.highFindings ? 'danger' : 'status', key: 'v' }),
+          h('div', { className: 'small-note', key: 'n' }, (summary.cyclesWithHighFindings || 0) + ' cycle(s) with high findings')
+        ])
+      ]),
+      bars.length ? h('div', { className: 'planner-lanes', key: 'trend' }, [
+        h('strong', { key: 'title' }, 'Readiness Trend'),
+        h(BarChart, { items: bars, key: 'bars' })
+      ]) : null,
+      cycles.length ? h('div', { className: 'task-list', key: 'cycles' }, cycles.slice(-6).reverse().map(function (cycle) {
+        var verificationSummary = cycle.verificationSummary || {};
+        return h('article', { className: 'task-card', key: cycle.id || cycle.label }, [
+          h('div', { className: 'clarification-card-head', key: 'head' }, [
+            h('span', { className: 'status-pill ' + cycleTone(cycle.decision || cycle.status), key: 'decision' }, titleizeStatus(cycle.decision || cycle.status || 'unknown')),
+            h('span', { className: 'meta-pill soft', key: 'score' }, (cycle.readinessScore || 0) + '/10'),
+            h('span', { className: 'meta-pill soft', key: 'verify' }, 'Verify ' + titleizeStatus(cycle.verificationStatus || 'not run'))
+          ]),
+          h('strong', { key: 'title' }, cycle.label || cycle.id || 'Review Cycle'),
+          h('div', { className: 'small-note', key: 'findings' }, 'Findings: ' + (cycle.highFindings || 0) + ' high · ' + (cycle.mediumFindings || 0) + ' medium · ' + (cycle.lowFindings || 0) + ' low'),
+          h('div', { className: 'small-note', key: 'verify-summary' }, verificationSummary.total
+            ? ('Checks: ' + (verificationSummary.passed || 0) + ' passed · ' + (verificationSummary.failed || 0) + ' failed')
+            : 'Checks: not recorded'),
+          h('div', { className: 'small-note', key: 'artifacts' }, 'Artifacts: ' + ((cycle.artifacts && (cycle.artifacts.arbitratorDecision || cycle.artifacts.verifyResults)) || 'reports/odt/agentic/cycles/'))
+        ]);
+      })) : null
+    ]);
+  }
+
+  function AdvancedEvidencePanel(props) {
+    return h(SectionCard, {
+      title: 'Advanced Evidence',
+      subtitle: 'Detailed reports, diagnostics, charts, and generated artifacts for deeper audit work.',
+      className: 'advanced-evidence-panel',
+      extra: h('span', { className: 'status-pill warn' }, 'Collapsed')
+    }, [
+      h('details', { className: 'advanced-evidence-details', key: 'details' }, [
+        h('summary', { key: 'summary' }, 'Open detailed evidence and diagnostics'),
+        h('div', { className: 'advanced-evidence-content', key: 'content' }, [
+          h(ReviewCycleScoreboard, { runtime: props.runtime, key: 'cycle-scoreboard' }),
+          h(ServerPanel, { runtime: props.runtime, key: 'server' }),
+          h(ChartPanel, { runtime: props.runtime, key: 'charts-a' }),
+          h(AnalysisPanel, { runtime: props.runtime, key: 'charts-b' }),
+          h(TabPanel, { runtime: props.runtime, setRuntime: props.setRuntime, onReanalyze: props.onReanalyze, key: 'tabs' })
+        ])
+      ])
+    ]);
   }
 
   function CandidateGrid(props) {
@@ -3595,10 +5378,10 @@ function renderFeditApp(model) {
           controlsLocked && isAgentBusy ? h('div', { className: 'intake-status-hint', key: 'lock' }, 'Inputs are temporarily locked while the current delegated agent run is active so the work item stays governed and traceable.') : null,
           h('div', { className: 'human-review-guide', key: 'review-guide' }, [
             h('strong', { key: 'title' }, 'Human Review Path'),
-            h('p', { key: 'step-1' }, '1. Review the generated evidence below in Delivery Workflow, Outcome Snapshot, Execution Health, and the Review Surface tabs.'),
-            h('p', { key: 'step-2' }, '2. Add requested changes in Reviewer Additions / Deletions or use Stage Overrides when a reviewer wants to steer one specific stage.'),
+            h('p', { key: 'step-1' }, '1. Confirm Context Vault, Planner, Review Workspace, and Review Packet.'),
+            h('p', { key: 'step-2' }, '2. Accept, reject, or mark reviewer findings as required rework. Use Stage Overrides only when one stage needs special steering.'),
             h('p', { key: 'step-3' }, runtime.hasRun
-              ? '3. Click Update & Re-analyze after review edits, then Delegate to Agent only after the plan looks right. Final code approval still happens in the repo diff and changed files.'
+              ? '3. Refresh the Review Packet before approval so final review is grounded in the target repo diff.'
               : '3. Run the digital worker first. After the first run, use the same review path before delegating implementation.')
           ])
         ])
@@ -3948,28 +5731,26 @@ function renderFeditApp(model) {
   function HeroHeader(props) {
     var nextThemeLabel = props.theme === 'dark' ? 'Light mode' : 'Dark mode';
     return h('section', { className: 'hero hero-slim' }, [
-      h('div', { className: 'hero-theme-bar', key: 'theme-bar' }, [
-        h('button', {
-          type: 'button',
-          className: 'theme-toggle',
-          onClick: props.onToggleTheme,
-          'aria-label': 'Switch to ' + nextThemeLabel.toLowerCase(),
-          title: 'Switch to ' + nextThemeLabel.toLowerCase(),
-          key: 'theme-toggle'
-        }, [
-          h('span', { className: 'theme-toggle-label', key: 'label' }, 'Theme'),
-          h('span', { className: 'theme-toggle-value', key: 'value' }, props.theme === 'dark' ? 'Dark' : 'Light')
-        ])
-      ]),
       h('div', { className: 'hero-slim-row', key: 'row' }, [
         h('div', { className: 'hero-slim-brand', key: 'brand' }, [
           h('img', { className: 'hero-worker-logo hero-slim-logo', src: DIGITAL_WORKER_ASSET_RELATIVE_PATH, alt: 'Oracle Developer Twin digital worker', key: 'logo' })
         ]),
         h('div', { className: 'hero-slim-copy', key: 'copy' }, [
-          h('img', { className: 'oracle-wordmark hero-slim-wordmark', src: ORACLE_WORDMARK_DATA_URI, alt: 'Oracle', key: 'wordmark' }),
           h('h1', { className: 'hero-slim-title', key: 'title' }, 'Oracle Developer Twin'),
-          h('p', { className: 'hero-slim-kicker', key: 'kicker' }, 'Human-reviewed digital worker for frontend delivery'),
-          h('p', { className: 'hero-slim-text', key: 'text' }, 'Turns one requirement into repo-aware planning, accessibility evidence, and governed implementation handoff.')
+          h('p', { className: 'hero-slim-kicker', key: 'kicker' }, 'Agent cockpit for governed developer work')
+        ]),
+        h('div', { className: 'hero-theme-bar', key: 'theme-bar' }, [
+          h('button', {
+            type: 'button',
+            className: 'theme-toggle',
+            onClick: props.onToggleTheme,
+            'aria-label': 'Switch to ' + nextThemeLabel.toLowerCase(),
+            title: 'Switch to ' + nextThemeLabel.toLowerCase(),
+            key: 'theme-toggle'
+          }, [
+            h('span', { className: 'theme-toggle-label', key: 'label' }, 'Theme'),
+            h('span', { className: 'theme-toggle-value', key: 'value' }, props.theme === 'dark' ? 'Dark' : 'Light')
+          ])
         ])
       ])
     ]);
@@ -4398,10 +6179,42 @@ function renderFeditApp(model) {
       });
     }
 
+    function refreshClarifications() {
+      return getJson('/odt/clarifications').then(function (payload) {
+        return normalizeClarifications(payload);
+      }).catch(function () {
+        return normalizeClarifications(getRuntimeSnapshot().clarifications || MODEL.clarifications);
+      });
+    }
+
+    function refreshConversation() {
+      return getJson('/odt/conversation').then(function (payload) {
+        return normalizeConversation(payload);
+      }).catch(function () {
+        return normalizeConversation(getRuntimeSnapshot().conversation || MODEL.conversation);
+      });
+    }
+
+    function refreshAgentic() {
+      return getJson('/odt/agentic').then(function (payload) {
+        return normalizeAgentic(payload);
+      }).catch(function () {
+        return normalizeAgentic(getRuntimeSnapshot().agentic || MODEL.agentic);
+      });
+    }
+
+    function refreshContextArtifacts() {
+      return getJson('/odt/context-artifacts').then(function (payload) {
+        return normalizeContextArtifacts(payload);
+      }).catch(function () {
+        return normalizeContextArtifacts(getRuntimeSnapshot().contextArtifacts || MODEL.contextArtifacts);
+      });
+    }
+
     function syncStatuses() {
       var requestedRuntime = getRuntimeSnapshot();
       var requestedRepoPath = requestedRuntime.targetRepoPath || '';
-      Promise.all([refreshServerHealth(), refreshRepoStatus(), refreshCodexStatus(), refreshPromptProviderStatus()]).then(function (values) {
+      Promise.all([refreshServerHealth(), refreshRepoStatus(), refreshCodexStatus(), refreshPromptProviderStatus(), refreshClarifications(), refreshConversation(), refreshAgentic(), refreshContextArtifacts()]).then(function (values) {
         var completion = completionFromLaunch(values[2]);
         setRuntime(function (current) {
           var nextRepoStatus = values[1];
@@ -4415,12 +6228,21 @@ function renderFeditApp(model) {
             nextLaunch = current.codexLaunch;
             nextCompletion = current.completion;
           }
+          if (!hasCurrentWorkflowState(current)) {
+            nextLaunch = current.codexLaunch;
+            nextCompletion = current.completion;
+          }
+          var useLiveWorkflowArtifacts = hasCurrentWorkflowState(current);
           return Object.assign({}, current, {
             serverHealth: values[0],
             repoStatus: (requestedRepoPath === (current.targetRepoPath || '')) ? repoStatus : current.repoStatus,
             codexLaunch: nextLaunch,
             completion: nextCompletion,
-            promptProviderStatus: values[3]
+            promptProviderStatus: values[3],
+            clarifications: useLiveWorkflowArtifacts ? mergeClarificationDrafts(values[4], current.clarifications) : current.clarifications,
+            conversation: useLiveWorkflowArtifacts ? values[5] : current.conversation,
+            agentic: useLiveWorkflowArtifacts ? values[6] : current.agentic,
+            contextArtifacts: useLiveWorkflowArtifacts ? values[7] : current.contextArtifacts
           });
         });
       });
@@ -4454,7 +6276,7 @@ function renderFeditApp(model) {
     }
 
     function browseForRepo() {
-      if (runtime.running || isAgentExecutionBusy(runtime) || runtime.serverHealth.status !== 'online') return;
+      if (runtime.running || runtime.serverHealth.status !== 'online') return;
       setRuntime(function (current) {
         return Object.assign({}, current, {
           apiStatus: 'Opening macOS folder chooser for target repo selection...'
@@ -4548,6 +6370,7 @@ function renderFeditApp(model) {
           return Object.assign({}, current, {
             mockupImages: uniqStrings(designInputs.mockupImages || current.mockupImages || []),
             referenceDocs: uniqStrings(designInputs.referenceDocs || current.referenceDocs || []),
+            contextArtifacts: normalizeContextArtifacts(result.contextArtifacts || current.contextArtifacts),
             uploadStatus: 'Uploaded ' + ((result.saved && result.saved.length) || 0) + ' file(s). These will be used for analysis and planning prompts.',
             apiStatus: 'Design inputs uploaded successfully. Run digital worker to refresh full artifacts.'
           });
@@ -4585,6 +6408,7 @@ function renderFeditApp(model) {
           return Object.assign({}, current, {
             mockupImages: uniqStrings(designInputs.mockupImages || []),
             referenceDocs: uniqStrings(designInputs.referenceDocs || []),
+            contextArtifacts: normalizeContextArtifacts(result.contextArtifacts || current.contextArtifacts),
             uploadStatus: result.removed
               ? 'Design input removed. The next run will use the updated file set.'
               : 'That design input was already cleared.',
@@ -4630,6 +6454,7 @@ function renderFeditApp(model) {
           return Object.assign({}, current, {
             mockupImages: uniqStrings(designInputs.mockupImages || []),
             referenceDocs: uniqStrings(designInputs.referenceDocs || []),
+            contextArtifacts: normalizeContextArtifacts(result.contextArtifacts || current.contextArtifacts),
             uploadStatus: 'All uploaded design inputs were cleared.',
             apiStatus: 'Uploaded design inputs cleared. Re-analyze when you are ready.'
           });
@@ -4663,9 +6488,8 @@ function renderFeditApp(model) {
       });
     }, [runtime.targetRepoPath, runtime.ticket]);
 
-    function runWorker() {
-      if (runtime.running || isAgentExecutionBusy(runtime)) return;
-      var requestPayload = {
+    function buildCurrentRequestPayload(extra) {
+      return Object.assign({
         ticket: runtime.ticket || '',
         reviewEdits: runtime.reviewEdits || '',
         promptOverrides: normalizePromptOverrides(runtime.promptOverrides),
@@ -4674,15 +6498,374 @@ function renderFeditApp(model) {
         workItemType: MODEL.meta.workItemType,
         mockupImages: runtime.mockupImages,
         referenceDocs: runtime.referenceDocs
-      };
+      }, extra || {});
+    }
+
+    function applyNeedsInputResult(result, fallbackMessage) {
+      var clarifications = normalizeClarifications(result && result.clarifications);
+      var conversation = normalizeConversation({
+        phase: 'needs_input',
+        status: clarifications.status,
+        nextAction: (clarifications.summary && clarifications.summary.nextAction) || fallbackMessage
+      });
+      setRuntime(function (current) {
+        return Object.assign({}, current, {
+          running: false,
+          clarifications: clarifications,
+          contextArtifacts: normalizeContextArtifacts((result && result.contextArtifacts) || current.contextArtifacts),
+          conversation: conversation,
+          apiStatus: result.note || fallbackMessage || 'ODT paused for clarification answers before continuing.'
+        });
+      });
+    }
+
+    function generateClarifications() {
+      if (runtime.running || isAgentExecutionBusy(runtime) || runtime.serverHealth.status !== 'online') return;
+      var requestPayload = buildCurrentRequestPayload();
+      setRuntime(function (current) {
+        return Object.assign({}, current, {
+          apiStatus: 'Generating decision-critical clarification questions...'
+        });
+      });
+      postJson('/odt/clarifications/generate', requestPayload).then(function (result) {
+        setRuntime(function (current) {
+          return Object.assign({}, current, {
+            clarifications: normalizeClarifications(result.clarifications),
+            agentic: normalizeAgentic(result.agentic),
+            contextArtifacts: normalizeContextArtifacts(result.contextArtifacts || current.contextArtifacts),
+            conversation: normalizeConversation({
+              phase: result.status === 'needs_input' ? 'needs_input' : 'ready_to_continue',
+              status: result.status,
+              nextAction: result.clarifications && result.clarifications.summary ? result.clarifications.summary.nextAction : ''
+            }),
+            apiStatus: result.status === 'needs_input'
+              ? 'Clarifications generated. Answer high-severity questions before continuing.'
+              : 'No critical blockers found. ODT can continue.'
+          });
+        });
+      }).catch(function (error) {
+        setRuntime(function (current) {
+          return Object.assign({}, current, {
+            apiStatus: 'Unable to generate clarifications. ' + error.message
+          });
+        });
+      });
+    }
+
+    function saveClarificationAnswers() {
+      if (runtime.running || isAgentExecutionBusy(runtime) || runtime.serverHealth.status !== 'online') return;
+      var clarifications = normalizeClarifications(runtime.clarifications);
+      setRuntime(function (current) {
+        return Object.assign({}, current, {
+          apiStatus: 'Saving clarification answers...'
+        });
+      });
+      postJson('/odt/clarifications/answer', {
+        targetRepoPath: runtime.targetRepoPath || '',
+        answers: clarifications.questions.map(function (question) {
+          return {
+            id: question.id,
+            answer: question.answer || ''
+          };
+        })
+      }).then(function (result) {
+        var nextClarifications = normalizeClarifications(result.clarifications);
+        setRuntime(function (current) {
+          return Object.assign({}, current, {
+            clarifications: nextClarifications,
+            agentic: normalizeAgentic(result.agentic),
+            contextArtifacts: normalizeContextArtifacts(result.contextArtifacts || current.contextArtifacts),
+            conversation: normalizeConversation({
+              phase: nextClarifications.status === 'needs_input' ? 'needs_input' : 'ready_to_continue',
+              status: nextClarifications.status,
+              nextAction: nextClarifications.summary.nextAction
+            }),
+            apiStatus: nextClarifications.summary.unresolvedHigh
+              ? 'Answers saved. High-severity questions are still open.'
+              : 'Answers saved. ODT can continue.'
+          });
+        });
+      }).catch(function (error) {
+        setRuntime(function (current) {
+          return Object.assign({}, current, {
+            apiStatus: 'Unable to save clarification answers. ' + error.message
+          });
+        });
+      });
+    }
+
+    function continueCurrentTask() {
+      if (runtime.running || isAgentExecutionBusy(runtime) || runtime.serverHealth.status !== 'online') return;
+      var requestPayload = buildCurrentRequestPayload();
       var submittedFingerprint = buildRunFingerprint(requestPayload);
       setRuntime(function (current) {
         return Object.assign({}, current, {
           running: true,
+          apiStatus: 'Continuing current assignment with saved clarification answers...'
+        });
+      });
+      postJson('/odt/continue', requestPayload).then(function (result) {
+        if (result && result.status === 'needs_input') {
+          applyNeedsInputResult(result, 'ODT is still paused for high-severity clarification answers.');
+          return { paused: true };
+        }
+        markRunSession(submittedFingerprint);
+        setRuntime(function (current) {
+          return Object.assign({}, current, {
+            running: false,
+            hasRun: true,
+            lastRunFingerprint: submittedFingerprint,
+            clarifications: normalizeClarifications(result && result.clarifications),
+            agentic: normalizeAgentic(result && result.agentic),
+            contextArtifacts: normalizeContextArtifacts((result && result.contextArtifacts) || current.contextArtifacts),
+            conversation: normalizeConversation({ phase: 'ready_for_review', status: 'ok', nextAction: 'Review refreshed artifacts.' }),
+            apiStatus: 'Current assignment continued. Reloading latest artifacts...'
+          });
+        });
+        window.setTimeout(function () {
+          window.location.reload();
+        }, 900);
+        return { paused: false };
+      }).catch(function (error) {
+        Promise.all([refreshServerHealth(), refreshCodexStatus(), refreshPromptProviderStatus()]).then(function (values) {
+          var completion = completionFromLaunch(values[1]);
+          setRuntime(function (current) {
+            return Object.assign({}, current, {
+              running: false,
+              apiStatus: 'Continue failed. ' + error.message,
+              serverHealth: values[0],
+              codexLaunch: values[1],
+              completion: completion,
+              promptProviderStatus: values[2]
+            });
+          });
+        });
+      });
+    }
+
+    function runReviewerSwarm() {
+      if (runtime.running || isAgentExecutionBusy(runtime) || runtime.serverHealth.status !== 'online') return;
+      var requestPayload = buildCurrentRequestPayload();
+      setRuntime(function (current) {
+        return Object.assign({}, current, {
+          running: true,
+          apiStatus: 'Running read-only reviewer swarm and merge arbitrator...'
+        });
+      });
+      postJson('/odt/reviewers/run', requestPayload).then(function (result) {
+        var decision = result && result.arbitratorDecision ? result.arbitratorDecision : {};
+        setRuntime(function (current) {
+          return Object.assign({}, current, {
+            running: false,
+            agentic: normalizeAgentic(result && result.agentic),
+            reviewPacket: normalizeReviewPacket((result && result.reviewPacket) || current.reviewPacket),
+            apiStatus: decision.decision
+              ? 'Reviewer swarm complete. Arbitrator decision: ' + titleizeStatus(decision.decision) + '.'
+              : 'Reviewer swarm complete.'
+          });
+        });
+      }).catch(function (error) {
+        setRuntime(function (current) {
+          return Object.assign({}, current, {
+            running: false,
+            apiStatus: 'Reviewer swarm failed. ' + error.message
+          });
+        });
+      });
+    }
+
+    function saveReviewSuggestion(suggestion) {
+      if (runtime.running || isAgentExecutionBusy(runtime) || runtime.serverHealth.status !== 'online' || !suggestion || !suggestion.id) return;
+      var normalizedSuggestion = Object.assign({}, suggestion, {
+        decision: normalizeReviewDecision(suggestion.decision)
+      });
+      patchLocalReviewSuggestion(setRuntime, normalizedSuggestion);
+      setRuntime(function (current) {
+        return Object.assign({}, current, {
+          apiStatus: 'Saving review decision for ' + (normalizedSuggestion.reviewerName || 'reviewer') + '...'
+        });
+      });
+      postJson('/odt/review-suggestions/update', buildCurrentRequestPayload({
+        suggestions: [normalizedSuggestion]
+      })).then(function (result) {
+        var summary = result && result.reviewSuggestions && result.reviewSuggestions.summary ? result.reviewSuggestions.summary : {};
+        setRuntime(function (current) {
+          return Object.assign({}, current, {
+            agentic: normalizeAgentic(result && result.agentic),
+            apiStatus: 'Review decision saved. Accepted ' + (summary.accepted || 0) + ', needs rework ' + (summary.needsRework || 0) + '.'
+          });
+        });
+      }).catch(function (error) {
+        setRuntime(function (current) {
+          return Object.assign({}, current, {
+            apiStatus: 'Unable to save review decision. ' + error.message
+          });
+        });
+      });
+    }
+
+    function prepareReworkPrompt() {
+      if (runtime.running || isAgentExecutionBusy(runtime) || runtime.serverHealth.status !== 'online') return;
+      var requestPayload = buildCurrentRequestPayload();
+      setRuntime(function (current) {
+        return Object.assign({}, current, {
+          running: true,
+          apiStatus: 'Preparing focused Main Developer rework prompt from reviewer findings...'
+        });
+      });
+      postJson('/odt/rework/prepare', requestPayload).then(function (result) {
+        var cycle = result && result.currentCycle ? result.currentCycle : {};
+        setRuntime(function (current) {
+          return Object.assign({}, current, {
+            running: false,
+            agentic: normalizeAgentic(result && result.agentic),
+            apiStatus: cycle.id
+              ? 'Prepared ' + (cycle.label || cycle.id) + ' rework prompt.'
+              : 'Prepared rework prompt.'
+          });
+        });
+      }).catch(function (error) {
+        setRuntime(function (current) {
+          return Object.assign({}, current, {
+            running: false,
+            apiStatus: 'Unable to prepare rework prompt. ' + error.message
+          });
+        });
+      });
+    }
+
+    function launchReworkPrompt() {
+      if (runtime.running || isAgentExecutionBusy(runtime) || runtime.serverHealth.status !== 'online') return;
+      var selectedTool = runtime.agentTool || 'codex';
+      var requestPayload = buildCurrentRequestPayload({
+        tool: selectedTool,
+        mode: 'terminal'
+      });
+      setRuntime(function (current) {
+        return Object.assign({}, current, {
+          running: true,
+          apiStatus: 'Opening focused Review Cycle rework in a visible ' + selectedTool + ' task...',
+          codexLaunch: buildIdleCodexLaunch('Clearing stale delegated agent logs before launching focused Main Developer rework.'),
+          completion: buildIdleCompletion('Preparing focused rework delegation from the latest reviewer findings.')
+        });
+      });
+      postJson('/odt/rework/launch', requestPayload).then(function (result) {
+        return Promise.all([refreshCodexStatus(), refreshPromptProviderStatus()]).then(function (values) {
+          var launch = values[0] || (result && result.launch);
+          var completion = completionFromLaunch(launch);
+          setRuntime(function (current) {
+            return Object.assign({}, current, {
+              running: false,
+              agentic: normalizeAgentic((result && result.agentic) || current.agentic),
+              apiStatus: selectedTool + ' was opened in Terminal with the focused Review Cycle rework prompt.',
+              codexLaunch: launch,
+              completion: completion,
+              promptProviderStatus: values[1]
+            });
+          });
+        });
+      }).catch(function (error) {
+        Promise.all([refreshServerHealth(), refreshCodexStatus(), refreshPromptProviderStatus()]).then(function (values) {
+          var completion = completionFromLaunch(values[1]);
+          setRuntime(function (current) {
+            return Object.assign({}, current, {
+              running: false,
+              apiStatus: 'Focused rework launch failed. Ensure the local context server is active and the CLI is authenticated. ' + error.message,
+              serverHealth: values[0],
+              codexLaunch: values[1],
+              completion: completion,
+              promptProviderStatus: values[2]
+            });
+          });
+        });
+      });
+    }
+
+    function runVerificationEvidence() {
+      if (runtime.running || isAgentExecutionBusy(runtime) || runtime.serverHealth.status !== 'online') return;
+      var requestPayload = buildCurrentRequestPayload();
+      setRuntime(function (current) {
+        return Object.assign({}, current, {
+          running: true,
+          apiStatus: 'Running target repo verification for the current review cycle...'
+        });
+      });
+      postJson('/odt/verify/run', requestPayload).then(function (result) {
+        var verification = result && result.verificationResults ? result.verificationResults : {};
+        setRuntime(function (current) {
+          return Object.assign({}, current, {
+            running: false,
+            agentic: normalizeAgentic(result && result.agentic),
+            apiStatus: verification.status
+              ? 'Verification ' + titleizeStatus(verification.status) + '. Evidence written to reports/odt/agentic/verify-results.md.'
+              : 'Verification evidence written.'
+          });
+        });
+      }).catch(function (error) {
+        setRuntime(function (current) {
+          return Object.assign({}, current, {
+            running: false,
+            apiStatus: 'Verification failed to run. ' + error.message
+          });
+        });
+      });
+    }
+
+    function refreshReviewPacketNow() {
+      if (runtime.running || runtime.serverHealth.status !== 'online') return;
+      var requestPayload = buildCurrentRequestPayload();
+      setRuntime(function (current) {
+        return Object.assign({}, current, {
+          apiStatus: 'Refreshing Review Packet from the target repo git diff...'
+        });
+      });
+      postJson('/odt/review-packet/refresh', requestPayload).then(function (result) {
+        var packet = normalizeReviewPacket(result && result.reviewPacket);
+        setRuntime(function (current) {
+          return Object.assign({}, current, {
+            reviewPacket: packet,
+            apiStatus: 'Review Packet refreshed. Changed files: ' + (packet.summary.changedFiles || 0) + '.'
+          });
+        });
+      }).catch(function (error) {
+        setRuntime(function (current) {
+          return Object.assign({}, current, {
+            apiStatus: 'Review Packet refresh failed. ' + error.message
+          });
+        });
+      });
+    }
+
+    function runWorker() {
+      if (runtime.running || isAgentExecutionBusy(runtime)) return;
+      var requestPayload = buildCurrentRequestPayload();
+      var startsNewAssignment = isNewAssignmentRequest(runtime, requestPayload);
+      if (startsNewAssignment) {
+        requestPayload = Object.assign({}, requestPayload, { newTask: true });
+        clearRunSession();
+      }
+      var submittedFingerprint = buildRunFingerprint(requestPayload);
+      setRuntime(function (current) {
+        return Object.assign({}, current, startsNewAssignment ? {
+          hasRun: false,
+          lastRunFingerprint: '',
+          clarifications: normalizeClarifications(EMPTY_CLARIFICATIONS),
+          conversation: normalizeConversation(EMPTY_CONVERSATION),
+          agentic: normalizeAgentic(EMPTY_AGENTIC),
+          contextArtifacts: normalizeContextArtifacts(EMPTY_CONTEXT_ARTIFACTS),
+          reviewPacket: normalizeReviewPacket(EMPTY_REVIEW_PACKET)
+        } : {}, {
+          running: true,
           stepStatus: {},
-          apiStatus: 'Updating intake and running ODT pipeline...',
-          codexLaunch: buildIdleCodexLaunch('Starting a fresh governed run. Previous delegated agent preview has been cleared.'),
-          completion: buildIdleCompletion('Preparing a fresh governed run. Delegated agent status will repopulate after launch.')
+          apiStatus: startsNewAssignment
+            ? 'Starting a new assignment. Clearing stale runtime state before ODT runs...'
+            : 'Updating intake and running ODT pipeline...',
+          codexLaunch: buildIdleCodexLaunch(startsNewAssignment
+            ? 'Starting a new assignment. Previous delegated agent preview and stale execution state will be cleared.'
+            : 'Starting a fresh governed run. Previous delegated agent preview has been cleared.'),
+          completion: buildIdleCompletion(startsNewAssignment
+            ? 'Preparing a clean governed run for the new assignment.'
+            : 'Preparing a fresh governed run. Delegated agent status will repopulate after launch.')
         });
       });
 
@@ -4691,11 +6874,19 @@ function renderFeditApp(model) {
           return Object.assign({}, current, { serverHealth: health });
         });
         return postJson('/odt/run', requestPayload);
-      }).then(function () {
+      }).then(function (result) {
+        if (result && result.status === 'needs_input') {
+          applyNeedsInputResult(result, 'ODT paused. Answer the critical clarification questions, then continue.');
+          return { paused: true };
+        }
+        markRunSession(submittedFingerprint);
         setRuntime(function (current) {
           return Object.assign({}, current, {
             hasRun: true,
-            lastRunFingerprint: submittedFingerprint
+            lastRunFingerprint: submittedFingerprint,
+            clarifications: normalizeClarifications(result && result.clarifications),
+            agentic: normalizeAgentic(result && result.agentic),
+            contextArtifacts: normalizeContextArtifacts((result && result.contextArtifacts) || current.contextArtifacts)
           });
         });
         var chain = Promise.resolve();
@@ -4725,10 +6916,12 @@ function renderFeditApp(model) {
             });
           });
         });
-        return chain;
-      }).then(function () {
+        return chain.then(function () { return { paused: false }; });
+      }).then(function (previous) {
+        if (previous && previous.paused) return null;
         return Promise.all([refreshCodexStatus(), refreshPromptProviderStatus()]).then(function (values) {
           var completion = completionFromLaunch(values[0]);
+          markRunSession(submittedFingerprint);
           setRuntime(function (current) {
             return Object.assign({}, current, {
               running: false,
@@ -4764,23 +6957,49 @@ function renderFeditApp(model) {
     function launchCodex() {
       if (runtime.running || isAgentExecutionBusy(runtime)) return;
       var selectedTool = runtime.agentTool || 'codex';
-      var requestPayload = {
-        ticket: runtime.ticket || '',
-        reviewEdits: runtime.reviewEdits || '',
-        promptOverrides: normalizePromptOverrides(runtime.promptOverrides),
-        targetRepoPath: runtime.targetRepoPath || '',
-        profile: MODEL.meta.profile,
-        workItemType: MODEL.meta.workItemType,
-        mockupImages: runtime.mockupImages,
-        referenceDocs: runtime.referenceDocs
-      };
+      if (hasBlockingClarifications(runtime)) {
+        setRuntime(function (current) {
+          return Object.assign({}, current, {
+            apiStatus: 'Delegation is blocked until high-severity clarification questions are answered.'
+          });
+        });
+        return;
+      }
+      if (hasBlockingContextArtifacts(runtime)) {
+        setRuntime(function (current) {
+          return Object.assign({}, current, {
+            apiStatus: 'Delegation is blocked because one or more attached context files are missing. Re-upload or remove stale references first.'
+          });
+        });
+        return;
+      }
+      var requestPayload = buildCurrentRequestPayload();
+      var startsNewAssignment = isNewAssignmentRequest(runtime, requestPayload);
+      if (startsNewAssignment) {
+        requestPayload = Object.assign({}, requestPayload, { newTask: true });
+        clearRunSession();
+      }
       var submittedFingerprint = buildRunFingerprint(requestPayload);
       setRuntime(function (current) {
-        return Object.assign({}, current, {
+        return Object.assign({}, current, startsNewAssignment ? {
+          hasRun: false,
+          lastRunFingerprint: '',
+          clarifications: normalizeClarifications(EMPTY_CLARIFICATIONS),
+          conversation: normalizeConversation(EMPTY_CONVERSATION),
+          agentic: normalizeAgentic(EMPTY_AGENTIC),
+          contextArtifacts: normalizeContextArtifacts(EMPTY_CONTEXT_ARTIFACTS),
+          reviewPacket: normalizeReviewPacket(EMPTY_REVIEW_PACKET)
+        } : {}, {
           running: true,
-          apiStatus: 'Preparing execution prompt and opening a visible ' + selectedTool + ' task...',
-          codexLaunch: buildIdleCodexLaunch('Refreshing the execution bundle and clearing the prior agent response preview...'),
-          completion: buildIdleCompletion('Preparing the next delegated agent launch...')
+          apiStatus: startsNewAssignment
+            ? 'Preparing a clean new assignment before opening a visible ' + selectedTool + ' task...'
+            : 'Preparing execution prompt and opening a visible ' + selectedTool + ' task...',
+          codexLaunch: buildIdleCodexLaunch(startsNewAssignment
+            ? 'Clearing stale execution state before launching the selected agent...'
+            : 'Refreshing the execution bundle and clearing the prior agent response preview...'),
+          completion: buildIdleCompletion(startsNewAssignment
+            ? 'Preparing a clean delegated agent launch for the new assignment.'
+            : 'Preparing the next delegated agent launch...')
         });
       });
       refreshServerHealth().then(function (health) {
@@ -4788,22 +7007,45 @@ function renderFeditApp(model) {
           return Object.assign({}, current, { serverHealth: health });
         });
         return postJson('/odt/run', requestPayload);
-      }).then(function () {
+      }).then(function (result) {
+        if (result && result.status === 'needs_input') {
+          applyNeedsInputResult(result, 'Delegation paused. Answer the critical clarification questions, then continue.');
+          return { paused: true };
+        }
+        markRunSession(submittedFingerprint);
         setRuntime(function (current) {
           return Object.assign({}, current, {
             hasRun: true,
-            lastRunFingerprint: submittedFingerprint
+            lastRunFingerprint: submittedFingerprint,
+            clarifications: normalizeClarifications(result && result.clarifications),
+            agentic: normalizeAgentic(result && result.agentic),
+            contextArtifacts: normalizeContextArtifacts((result && result.contextArtifacts) || current.contextArtifacts)
           });
         });
+        return { paused: false };
+      }).then(function (result) {
+        if (result && result.paused) return { skipped: true };
         return postJson('/odt/agent/launch', {
           targetRepoPath: runtime.targetRepoPath || '',
           tool: selectedTool,
           mode: 'terminal',
           refresh: false
         });
-      }).then(function () {
+      }).then(function (launchResult) {
+        if (launchResult && launchResult.skipped) return null;
+        if (launchResult && launchResult.status === 'needs_input') {
+          setRuntime(function (current) {
+            return Object.assign({}, current, {
+              running: false,
+              contextArtifacts: normalizeContextArtifacts(launchResult.contextArtifacts || current.contextArtifacts),
+              apiStatus: launchResult.note || 'Agent launch paused. Fix context artifacts before retrying.'
+            });
+          });
+          return null;
+        }
         return Promise.all([refreshCodexStatus(), refreshPromptProviderStatus()]).then(function (values) {
           var completion = completionFromLaunch(values[0]);
+          markRunSession(submittedFingerprint);
           setRuntime(function (current) {
             return Object.assign({}, current, {
               running: false,
@@ -4843,6 +7085,7 @@ function renderFeditApp(model) {
       var currentRuntime = getRuntimeSnapshot();
       function finishReset(message) {
         clearStorage();
+        clearRunSession();
         setRuntime(function () {
           var fresh = createInitialRuntime({ forceClean: true });
           return Object.assign({}, fresh, {
@@ -4873,6 +7116,12 @@ function renderFeditApp(model) {
         }).catch(function () {
           return null;
         }),
+        postJson('/intake', {
+          targetRepoPath: currentRuntime.targetRepoPath || '',
+          resetStaleState: true
+        }).catch(function () {
+          return null;
+        }),
         postJson('/odt/agent/reset', {
           targetRepoPath: currentRuntime.targetRepoPath || '',
           tool: currentRuntime.agentTool || 'codex',
@@ -4884,64 +7133,6 @@ function renderFeditApp(model) {
         finishReset('Workspace reset. Uploaded inputs and delegated agent state were cleared for the next run.');
       });
     }
-
-    var overrideCount = activePromptOverrideCount(runtime.promptOverrides);
-    var hasOptionalIntakeSignals = Boolean(
-      (runtime.mockupImages && runtime.mockupImages.length)
-      || (runtime.referenceDocs && runtime.referenceDocs.length)
-      || (runtime.reviewEdits && runtime.reviewEdits.trim())
-      || overrideCount
-    );
-    var preRunPromptHardening = [
-      {
-        label: 'Requirement clarity',
-        status: runtime.ticket && runtime.ticket.trim() ? 'ready' : 'needs_input',
-        detail: runtime.ticket && runtime.ticket.trim()
-          ? 'A work item has been provided and is ready for the first analysis pass.'
-          : 'Paste the Jira story, defect, or request so ODT can plan safely.'
-      },
-      {
-        label: 'Repository context',
-        status: runtime.targetRepoPath && runtime.targetRepoPath.trim() ? 'ready' : 'needs_input',
-        detail: runtime.targetRepoPath && runtime.targetRepoPath.trim()
-          ? 'The target repo path is set for impact analysis and delegated execution.'
-          : 'Add the target repository path so ODT can reason about real code impact.'
-      },
-      {
-        label: 'Design and reviewer input',
-        status: hasOptionalIntakeSignals ? 'ready' : 'attention',
-        detail: hasOptionalIntakeSignals
-          ? 'Design references, reviewer notes, or stage overrides are attached and will flow into the next run.'
-          : 'Optional inputs are not attached yet. You can still run, but the digital worker will rely on default intent.'
-      },
-      {
-        label: 'Accessibility posture',
-        status: 'ready',
-        detail: 'Oracle VPAT / WCAG guidance stays in the planning path from the start.'
-      }
-    ];
-    var preRunArtifacts = (MODEL.artifacts || []).map(function (item) {
-      return {
-        label: item.label,
-        path: item.path,
-        status: 'missing',
-        note: item.note
-      };
-    });
-    var preRunExplainability = [
-      {
-        label: 'Why these modules are in scope',
-        detail: 'ODT explains how the request maps to likely modules before any implementation handoff begins.'
-      },
-      {
-        label: 'Why these files were selected',
-        detail: 'Candidate-file reasoning becomes visible after the first repo analysis run.'
-      },
-      {
-        label: 'Why human review matters',
-        detail: 'Delegation stays visible, but approval and release decisions remain with the developer or reviewer.'
-      }
-    ];
 
     return h('main', { className: 'fedit-shell' }, [
       h(HeroHeader, {
@@ -4971,57 +7162,49 @@ function renderFeditApp(model) {
       }),
       h(WorkflowBoard, { runtime: runtime, key: 'workflow' }),
       h('section', { className: 'layout-grid', key: 'layout' }, [
-        h('div', { className: 'stack sidebar-rail', key: 'left' }, [
-          h(OutcomePanel, { runtime: runtime, key: 'outcome' }),
-          h(PromptProviderPanel, { runtime: runtime, key: 'provider' })
-        ]),
-        h('div', { className: 'stack main-rail', key: 'right' }, [
-          h(ServerPanel, { runtime: runtime, key: 'server' }),
-          h(ChartPanel, { runtime: runtime, key: 'charts-a' }),
-          h(AnalysisPanel, { runtime: runtime, key: 'charts-b' }),
-          h(TabPanel, { runtime: runtime, setRuntime: setRuntime, onReanalyze: runWorker, key: 'tabs' })
-        ])
-      ]),
-      h('section', { className: 'footer-grid', key: 'footer' }, runtime.hasRun ? [
-        h(SectionCard, {
-          title: 'Prompt Hardening Checkpoints',
-          subtitle: 'Show what the digital worker validated before recommending implementation work.'
-        }, [
-          h(DetailList, { items: MODEL.promptHardening.questions, statusContext: 'checklist', key: 'details' }),
-          h('ul', { className: 'list-inline', key: 'criteria' }, (MODEL.promptHardening.criteria || []).map(function (item, index) {
-            return h('li', { key: 'criterion-' + index }, item);
-          }))
-        ]),
-        h('div', { className: 'stack', key: 'right' }, [
-          h(SectionCard, {
-            title: 'Artifact Timeline',
-            subtitle: 'These generated files are the evidence package for implementation, review, and stakeholder walkthroughs.',
-            key: 'artifacts'
-          }, [h(ArtifactList, { items: MODEL.artifacts, statusContext: 'artifact', key: 'list' })]),
-          h(SectionCard, {
-            title: 'Explainability',
-            subtitle: 'Narrative evidence showing why Oracle Developer Twin surfaced these areas.',
-            key: 'explain'
-          }, [h(DetailList, { items: MODEL.explainability, showStatus: false, key: 'list' })])
-        ])
-      ] : [
-        h(SectionCard, {
-          title: 'Prompt Hardening Checkpoints',
-          subtitle: 'What Oracle Developer Twin validates before the first run begins.'
-        }, [
-          h(DetailList, { key: 'list', items: preRunPromptHardening, statusContext: 'checklist' })
-        ]),
-        h('div', { className: 'stack', key: 'right-empty' }, [
-          h(SectionCard, {
-            title: 'Artifact Timeline',
-            subtitle: 'What the first successful run will generate.',
-            key: 'artifacts-empty'
-          }, [h(ArtifactList, { key: 'list', items: preRunArtifacts, statusContext: 'artifact' })]),
-          h(SectionCard, {
-            title: 'Explainability',
-            subtitle: 'How Oracle Developer Twin tells the story after analysis.',
-            key: 'explain-empty'
-          }, [h(DetailList, { key: 'list', items: preRunExplainability, showStatus: false })])
+        h('div', { className: 'stack main-rail', key: 'main' }, [
+          h(ClarificationsPanel, {
+            runtime: runtime,
+            setRuntime: setRuntime,
+            onGenerate: generateClarifications,
+            onSave: saveClarificationAnswers,
+            onContinue: continueCurrentTask,
+            key: 'clarifications'
+          }),
+          h(ContextVaultPanel, {
+            runtime: runtime,
+            key: 'context-vault'
+          }),
+          h(AgentCockpit, {
+            runtime: runtime,
+            key: 'agent-cockpit'
+          }),
+          h(PlannerPanel, {
+            runtime: runtime,
+            onRunReviewers: runReviewerSwarm,
+            onRunVerification: runVerificationEvidence,
+            onPrepareRework: prepareReworkPrompt,
+            onLaunchRework: launchReworkPrompt,
+            key: 'planner'
+          }),
+          h(ReviewWorkspace, {
+            runtime: runtime,
+            setRuntime: setRuntime,
+            onRunReviewers: runReviewerSwarm,
+            onSaveReviewSuggestion: saveReviewSuggestion,
+            key: 'review-workspace'
+          }),
+          h(ReviewPacketPanel, {
+            runtime: runtime,
+            onRefresh: refreshReviewPacketNow,
+            key: 'review-packet'
+          }),
+          h(AdvancedEvidencePanel, {
+            runtime: runtime,
+            setRuntime: setRuntime,
+            onReanalyze: runWorker,
+            key: 'advanced-evidence'
+          })
         ])
       ])
     ]);
@@ -5039,6 +7222,7 @@ function renderFeditApp(model) {
 
 function renderFeditPage(payload) {
   const model = buildFeditViewModel(payload);
+  const assetVersion = encodeURIComponent(model.meta.generatedAt || new Date().toISOString());
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -5067,13 +7251,13 @@ function renderFeditPage(payload) {
       document.documentElement.style.colorScheme = theme;
     }());
   </script>
-  <link rel="stylesheet" href="./fedit.css" />
+  <link rel="stylesheet" href="./fedit.css?v=${assetVersion}" />
 </head>
 <body>
   <div id="app"></div>
   <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js" onerror="this.onerror=null;this.src='../../node_modules/react/umd/react.production.min.js';"></script>
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js" onerror="this.onerror=null;this.src='../../node_modules/react-dom/umd/react-dom.production.min.js';"></script>
-  <script src="./fedit-app.js"></script>
+  <script src="./fedit-app.js?v=${assetVersion}"></script>
 </body>
 </html>`;
 }

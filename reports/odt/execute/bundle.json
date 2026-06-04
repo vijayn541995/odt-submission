@@ -1,17 +1,17 @@
 {
-  "generatedAt": "2026-04-24T12:04:20.125Z",
+  "generatedAt": "2026-05-14T13:04:55.515Z",
   "workspaceRoot": "/Users/vn105957/Desktop/odt-submission",
   "targetRepoPath": "/Users/vn105957/Desktop/lpDev/journey-builder-js/",
   "intake": {
-    "title": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc...",
-    "featureName": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc...",
-    "summary": "when attempting to add a Journey Note, after entering the note and clicking Add, the screen will go white and a 404 Page Not Found error displays. See attachments.\n\n \n\nI am able to replicate this in our demo environment and also tested adding a note to an activity and an event and experienced the same issue.",
+    "title": "JOURNEY-25271 Create Assessment",
+    "featureName": "JOURNEY-25271 Create Assessment",
+    "summary": "JOURNEY-25271 Create Assessment\nThe option 'Assessment' displays in the activity dropdown list.\nSelection displays the following:\nBreadcrumb updated to display 'Activities >> New Assessment'.\nInfo icon displays the message: 'Assessments are graded evaluations of the user's proficiency.'\nTitle 'Activity Details - Assessment'\nThe activity contains the following elements:\nActivity Name\nRequired field.\nUnique Name amongst Assessments in organization.\nFree text field.\nField alert message displayed when not unique: 'The Assessment name must be unique.'\nSupports 155 characters.\nCharacter counter is displayed.\nSpecial characters are accepted.\nPlaceholder text 'Enter the activity name.'\nWhen no characters are present in the field, the message is displayed: 'This field is required.'\nDisplay Name\n\"Display Name” header is displayed with info icon.\nMessage is displayed as a tool tip upon clicking on info icon \"Enter the name that is displayed to the learner.\" \nFree text field.\nRequired field.\nSupports special characters.\nName is not required to be unique.\nSupports 155 characters.\nCharacter counter is displayed.\nDescription \nFree text field.\nPlaceholder text displayed: 'Enter the activity description.'\nCharacter limit of 1024.\nCharacter counter displayed.\nRich text editor displayed.",
     "reviewEdits": "",
     "promptOverrides": {
       "intake": "",
       "impact": "",
       "design": "",
-      "code": "Dont use If  conditions you can change the entity_id to user_id for the fix",
+      "code": "",
       "unitTests": "",
       "compliance": "",
       "verify": ""
@@ -19,7 +19,7 @@
     "targetRepoPath": "/Users/vn105957/Desktop/lpDev/journey-builder-js/",
     "workItemType": "feature",
     "jira": {
-      "ticketId": "",
+      "ticketId": "ODT-DEMO-STORY-101",
       "url": ""
     },
     "scope": {
@@ -29,14 +29,12 @@
     },
     "requirements": {
       "acceptanceCriteria": [
-        "User can filter activities by keyword without leaving the page",
-        "Filtering updates are announced clearly for assistive technology users",
-        "Keyboard users can open, clear, and navigate filter controls"
+        "JOURNEY-25271 Create Assessment The option 'Assessment' displays in the activity dropdown list."
       ],
       "nonFunctional": [
         "a11y",
         "performance",
-        "analytics"
+        "unit-tests"
       ],
       "outOfScope": [
         "No backend API changes",
@@ -44,7 +42,10 @@
       ]
     },
     "designInputs": {
-      "mockupImages": [],
+      "mockupImages": [
+        "reports/odt/uploads/1778763461275-1-Screenshot_2026-05-14_at_2.49.57_PM.png",
+        "reports/odt/uploads/1778763541461-1-Screenshot_2026-05-14_at_6.28.44_PM.png"
+      ],
       "referenceDocs": [],
       "jiraLinks": []
     },
@@ -54,9 +55,17 @@
       "approvedLibrariesOnly": true
     },
     "developerHints": {
-      "suspectedAreas": [],
-      "relatedComponents": [],
-      "notes": "Optional only. ODT should infer impact areas from the repo when hints are not provided."
+      "suspectedAreas": [
+        "src/App.jsx",
+        "src/components/FilterBar.jsx",
+        "src/components/ActivityList.jsx"
+      ],
+      "relatedComponents": [
+        "Employee list",
+        "Filter controls",
+        "Home page hero and content layout"
+      ],
+      "notes": "Use the attached mockup as visual direction for the finder section and keep accessibility behavior explicit in labels, status text, keyboard flow, and clear actions."
     },
     "defectContext": {
       "defectId": "",
@@ -67,7 +76,7 @@
   },
   "odt": {
     "summary": {
-      "generatedAt": "2026-04-24T12:04:20.114Z",
+      "generatedAt": "2026-05-14T13:04:55.504Z",
       "totalStages": 7,
       "completedStages": 7,
       "failedStages": 0,
@@ -77,18 +86,18 @@
       {
         "name": "intake",
         "status": "completed",
-        "startedAt": "2026-04-24T12:04:18.200Z",
-        "finishedAt": "2026-04-24T12:04:18.215Z",
+        "startedAt": "2026-05-14T13:04:52.446Z",
+        "finishedAt": "2026-05-14T13:04:52.456Z",
         "detail": {
           "intakeFile": "reports/dev-twin/intake.json",
           "intakeQuestionsFile": "reports/dev-twin/intake-questions.md",
           "missingFieldsFile": "reports/dev-twin/intake-missing-fields.md",
           "intakeStatus": "ready",
           "missingFieldCount": 0,
-          "featureName": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc...",
+          "featureName": "JOURNEY-25271 Create Assessment",
           "workItemType": "feature",
           "reviewEditsActive": false,
-          "promptOverridesActive": 1,
+          "promptOverridesActive": 0,
           "complexity": "medium",
           "imageInputs": [],
           "workspaceRoot": "/Users/vn105957/Desktop/odt-submission",
@@ -98,24 +107,24 @@
       {
         "name": "impact",
         "status": "completed",
-        "startedAt": "2026-04-24T12:04:18.225Z",
-        "finishedAt": "2026-04-24T12:04:18.927Z",
+        "startedAt": "2026-05-14T13:04:52.465Z",
+        "finishedAt": "2026-05-14T13:04:53.193Z",
         "detail": {
           "blastRadius": 18,
-          "modules": 6,
+          "modules": 3,
           "sourceFiles": 18,
           "testFiles": 0,
           "inferenceMode": "repo_inferred_manifest",
           "candidateFiles": 12,
           "keywords": [
-            "attempting",
             "journey",
-            "note",
-            "after",
-            "entering",
-            "clicking",
-            "screen",
-            "will"
+            "25271",
+            "create",
+            "assessment",
+            "option",
+            "displays",
+            "activity",
+            "dropdown"
           ],
           "rankedFileCount": 12,
           "topConfidence": 0.99,
@@ -127,11 +136,11 @@
       {
         "name": "compliance",
         "status": "completed",
-        "startedAt": "2026-04-24T12:04:18.225Z",
-        "finishedAt": "2026-04-24T12:04:20.035Z",
+        "startedAt": "2026-05-14T13:04:52.465Z",
+        "finishedAt": "2026-05-14T13:04:55.422Z",
         "detail": {
           "status": "completed",
-          "blockers": 501,
+          "blockers": 505,
           "verifyStatus": "action_required",
           "dashboard": "reports/a11y-twin/index.html",
           "complianceMapFile": "reports/odt/compliance-mapping.md",
@@ -143,8 +152,8 @@
       {
         "name": "design",
         "status": "completed",
-        "startedAt": "2026-04-24T12:04:20.047Z",
-        "finishedAt": "2026-04-24T12:04:20.057Z",
+        "startedAt": "2026-05-14T13:04:55.433Z",
+        "finishedAt": "2026-05-14T13:04:55.444Z",
         "detail": {
           "designFile": "reports/odt/tech-design.md",
           "designJsonFile": "reports/odt/tech-design.json",
@@ -154,8 +163,8 @@
       {
         "name": "code-workpack",
         "status": "completed",
-        "startedAt": "2026-04-24T12:04:20.068Z",
-        "finishedAt": "2026-04-24T12:04:20.078Z",
+        "startedAt": "2026-05-14T13:04:55.453Z",
+        "finishedAt": "2026-05-14T13:04:55.463Z",
         "detail": {
           "codeWorkpack": "reports/dev-twin/code-workpack.md",
           "available": true,
@@ -167,8 +176,8 @@
       {
         "name": "test-workpack",
         "status": "completed",
-        "startedAt": "2026-04-24T12:04:20.068Z",
-        "finishedAt": "2026-04-24T12:04:20.086Z",
+        "startedAt": "2026-05-14T13:04:55.453Z",
+        "finishedAt": "2026-05-14T13:04:55.473Z",
         "detail": {
           "testWorkpack": "reports/dev-twin/unit-test-workpack.md",
           "available": true,
@@ -179,8 +188,8 @@
       {
         "name": "verify-summary",
         "status": "completed",
-        "startedAt": "2026-04-24T12:04:20.096Z",
-        "finishedAt": "2026-04-24T12:04:20.104Z",
+        "startedAt": "2026-05-14T13:04:55.483Z",
+        "finishedAt": "2026-05-14T13:04:55.492Z",
         "detail": {
           "note": "Run summary generated for human review.",
           "decision": "go_with_conditions",
@@ -206,15 +215,15 @@
       ]
     },
     "intake": {
-      "title": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc...",
-      "featureName": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc...",
-      "summary": "when attempting to add a Journey Note, after entering the note and clicking Add, the screen will go white and a 404 Page Not Found error displays. See attachments.\n\n \n\nI am able to replicate this in our demo environment and also tested adding a note to an activity and an event and experienced the same issue.",
+      "title": "JOURNEY-25271 Create Assessment",
+      "featureName": "JOURNEY-25271 Create Assessment",
+      "summary": "JOURNEY-25271 Create Assessment\nThe option 'Assessment' displays in the activity dropdown list.\nSelection displays the following:\nBreadcrumb updated to display 'Activities >> New Assessment'.\nInfo icon displays the message: 'Assessments are graded evaluations of the user's proficiency.'\nTitle 'Activity Details - Assessment'\nThe activity contains the following elements:\nActivity Name\nRequired field.\nUnique Name amongst Assessments in organization.\nFree text field.\nField alert message displayed when not unique: 'The Assessment name must be unique.'\nSupports 155 characters.\nCharacter counter is displayed.\nSpecial characters are accepted.\nPlaceholder text 'Enter the activity name.'\nWhen no characters are present in the field, the message is displayed: 'This field is required.'\nDisplay Name\n\"Display Name” header is displayed with info icon.\nMessage is displayed as a tool tip upon clicking on info icon \"Enter the name that is displayed to the learner.\" \nFree text field.\nRequired field.\nSupports special characters.\nName is not required to be unique.\nSupports 155 characters.\nCharacter counter is displayed.\nDescription \nFree text field.\nPlaceholder text displayed: 'Enter the activity description.'\nCharacter limit of 1024.\nCharacter counter displayed.\nRich text editor displayed.",
       "reviewEdits": "",
       "promptOverrides": {
         "intake": "",
         "impact": "",
         "design": "",
-        "code": "Dont use If  conditions you can change the entity_id to user_id for the fix",
+        "code": "",
         "unitTests": "",
         "compliance": "",
         "verify": ""
@@ -222,7 +231,7 @@
       "targetRepoPath": "/Users/vn105957/Desktop/lpDev/journey-builder-js/",
       "workItemType": "feature",
       "jira": {
-        "ticketId": "",
+        "ticketId": "ODT-DEMO-STORY-101",
         "url": ""
       },
       "scope": {
@@ -232,14 +241,12 @@
       },
       "requirements": {
         "acceptanceCriteria": [
-          "User can filter activities by keyword without leaving the page",
-          "Filtering updates are announced clearly for assistive technology users",
-          "Keyboard users can open, clear, and navigate filter controls"
+          "JOURNEY-25271 Create Assessment The option 'Assessment' displays in the activity dropdown list."
         ],
         "nonFunctional": [
           "a11y",
           "performance",
-          "analytics"
+          "unit-tests"
         ],
         "outOfScope": [
           "No backend API changes",
@@ -247,7 +254,10 @@
         ]
       },
       "designInputs": {
-        "mockupImages": [],
+        "mockupImages": [
+          "reports/odt/uploads/1778763461275-1-Screenshot_2026-05-14_at_2.49.57_PM.png",
+          "reports/odt/uploads/1778763541461-1-Screenshot_2026-05-14_at_6.28.44_PM.png"
+        ],
         "referenceDocs": [],
         "jiraLinks": []
       },
@@ -257,9 +267,17 @@
         "approvedLibrariesOnly": true
       },
       "developerHints": {
-        "suspectedAreas": [],
-        "relatedComponents": [],
-        "notes": "Optional only. ODT should infer impact areas from the repo when hints are not provided."
+        "suspectedAreas": [
+          "src/App.jsx",
+          "src/components/FilterBar.jsx",
+          "src/components/ActivityList.jsx"
+        ],
+        "relatedComponents": [
+          "Employee list",
+          "Filter controls",
+          "Home page hero and content layout"
+        ],
+        "notes": "Use the attached mockup as visual direction for the finder section and keep accessibility behavior explicit in labels, status text, keyboard flow, and clear actions."
       },
       "defectContext": {
         "defectId": "",
@@ -272,20 +290,20 @@
       "automationCoverage": 100,
       "impact": {
         "blastRadius": 18,
-        "modules": 6,
+        "modules": 3,
         "sourceFiles": 18,
         "testFiles": 0,
         "inferenceMode": "repo_inferred_manifest",
         "candidateFiles": 12,
         "keywords": [
-          "attempting",
           "journey",
-          "note",
-          "after",
-          "entering",
-          "clicking",
-          "screen",
-          "will"
+          "25271",
+          "create",
+          "assessment",
+          "option",
+          "displays",
+          "activity",
+          "dropdown"
         ]
       },
       "tests": {
@@ -294,7 +312,7 @@
       },
       "compliance": {
         "status": "completed",
-        "blockers": 501,
+        "blockers": 505,
         "verifyStatus": "action_required"
       },
       "design": {
@@ -309,7 +327,7 @@
       },
       "trend": {
         "totalRunsStored": 60,
-        "lastRunAt": "2026-04-24T12:04:20.114Z",
+        "lastRunAt": "2026-05-14T13:04:55.504Z",
         "blockerDelta": 0,
         "averageAutomationCoverage5Runs": 100,
         "runSuccessRate10Runs": 100,
@@ -413,17 +431,17 @@
     }
   },
   "devTwin": {
-    "generatedAt": "2026-04-24T12:04:18.920Z",
+    "generatedAt": "2026-05-14T13:04:53.185Z",
     "intake": {
-      "title": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc...",
-      "featureName": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc...",
-      "summary": "when attempting to add a Journey Note, after entering the note and clicking Add, the screen will go white and a 404 Page Not Found error displays. See attachments.\n\n \n\nI am able to replicate this in our demo environment and also tested adding a note to an activity and an event and experienced the same issue.",
+      "title": "JOURNEY-25271 Create Assessment",
+      "featureName": "JOURNEY-25271 Create Assessment",
+      "summary": "JOURNEY-25271 Create Assessment\nThe option 'Assessment' displays in the activity dropdown list.\nSelection displays the following:\nBreadcrumb updated to display 'Activities >> New Assessment'.\nInfo icon displays the message: 'Assessments are graded evaluations of the user's proficiency.'\nTitle 'Activity Details - Assessment'\nThe activity contains the following elements:\nActivity Name\nRequired field.\nUnique Name amongst Assessments in organization.\nFree text field.\nField alert message displayed when not unique: 'The Assessment name must be unique.'\nSupports 155 characters.\nCharacter counter is displayed.\nSpecial characters are accepted.\nPlaceholder text 'Enter the activity name.'\nWhen no characters are present in the field, the message is displayed: 'This field is required.'\nDisplay Name\n\"Display Name” header is displayed with info icon.\nMessage is displayed as a tool tip upon clicking on info icon \"Enter the name that is displayed to the learner.\" \nFree text field.\nRequired field.\nSupports special characters.\nName is not required to be unique.\nSupports 155 characters.\nCharacter counter is displayed.\nDescription \nFree text field.\nPlaceholder text displayed: 'Enter the activity description.'\nCharacter limit of 1024.\nCharacter counter displayed.\nRich text editor displayed.",
       "reviewEdits": "",
       "promptOverrides": {
         "intake": "",
         "impact": "",
         "design": "",
-        "code": "Dont use If  conditions you can change the entity_id to user_id for the fix",
+        "code": "",
         "unitTests": "",
         "compliance": "",
         "verify": ""
@@ -431,7 +449,7 @@
       "targetRepoPath": "/Users/vn105957/Desktop/lpDev/journey-builder-js/",
       "workItemType": "feature",
       "jira": {
-        "ticketId": "",
+        "ticketId": "ODT-DEMO-STORY-101",
         "url": ""
       },
       "scope": {
@@ -441,14 +459,12 @@
       },
       "requirements": {
         "acceptanceCriteria": [
-          "User can filter activities by keyword without leaving the page",
-          "Filtering updates are announced clearly for assistive technology users",
-          "Keyboard users can open, clear, and navigate filter controls"
+          "JOURNEY-25271 Create Assessment The option 'Assessment' displays in the activity dropdown list."
         ],
         "nonFunctional": [
           "a11y",
           "performance",
-          "analytics"
+          "unit-tests"
         ],
         "outOfScope": [
           "No backend API changes",
@@ -456,7 +472,10 @@
         ]
       },
       "designInputs": {
-        "mockupImages": [],
+        "mockupImages": [
+          "reports/odt/uploads/1778763461275-1-Screenshot_2026-05-14_at_2.49.57_PM.png",
+          "reports/odt/uploads/1778763541461-1-Screenshot_2026-05-14_at_6.28.44_PM.png"
+        ],
         "referenceDocs": [],
         "jiraLinks": []
       },
@@ -466,9 +485,17 @@
         "approvedLibrariesOnly": true
       },
       "developerHints": {
-        "suspectedAreas": [],
-        "relatedComponents": [],
-        "notes": "Optional only. ODT should infer impact areas from the repo when hints are not provided."
+        "suspectedAreas": [
+          "src/App.jsx",
+          "src/components/FilterBar.jsx",
+          "src/components/ActivityList.jsx"
+        ],
+        "relatedComponents": [
+          "Employee list",
+          "Filter controls",
+          "Home page hero and content layout"
+        ],
+        "notes": "Use the attached mockup as visual direction for the finder section and keep accessibility behavior explicit in labels, status text, keyboard flow, and clear actions."
       },
       "defectContext": {
         "defectId": "",
@@ -482,7 +509,7 @@
     "estimate": {
       "assumptions": {
         "complexity": "medium",
-        "criteriaCount": 3,
+        "criteriaCount": 1,
         "modulesTouched": 1,
         "codingReductionPercent": 35,
         "testingReductionPercent": 45,
@@ -492,237 +519,107 @@
         "errorHandlingBufferPercent": 10
       },
       "baseline": {
-        "manualTotalHours": 21,
-        "humanCodingHours": 12,
-        "humanTestingHours": 6,
-        "humanTriageHours": 3
+        "manualTotalHours": 15,
+        "humanCodingHours": 8,
+        "humanTestingHours": 5,
+        "humanTriageHours": 2
       },
       "aiPlan": {
-        "aiBaseHours": 12,
-        "aiCodingHours": 8,
+        "aiBaseHours": 8,
+        "aiCodingHours": 5,
         "aiTestingHours": 3,
-        "aiTriageHours": 1,
-        "bufferHours": 4,
+        "aiTriageHours": 0,
+        "bufferHours": 3,
         "bufferPercent": 33,
-        "aiTotalHoursWithBuffer": 16
+        "aiTotalHoursWithBuffer": 11
       },
       "impact": {
-        "netSavedHours": 5,
-        "netReductionPercent": 24
+        "netSavedHours": 4,
+        "netReductionPercent": 27
       }
     },
     "impact": {
       "inference": {
         "mode": "repo_inferred_manifest",
         "keywords": [
-          "attempting",
           "journey",
-          "note",
-          "after",
-          "entering",
-          "clicking",
-          "screen",
-          "will",
-          "white",
-          "page",
-          "found",
-          "error",
+          "25271",
+          "create",
+          "assessment",
+          "option",
           "displays",
-          "attachments",
-          "able",
-          "replicate",
-          "demo",
-          "environment",
-          "also",
-          "tested",
-          "adding",
           "activity",
-          "event",
-          "experienced"
+          "dropdown",
+          "list",
+          "selection",
+          "following",
+          "breadcrumb",
+          "updated",
+          "display",
+          "activities",
+          "info",
+          "icon",
+          "message",
+          "assessments",
+          "graded",
+          "evaluations",
+          "proficiency",
+          "title",
+          "details"
         ],
-        "hintedAreas": [],
+        "hintedAreas": [
+          "src/App.jsx",
+          "src/components/FilterBar.jsx",
+          "src/components/ActivityList.jsx"
+        ],
         "candidateFiles": [
-          "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/journey_table.jsx",
-          "src/journey-builder-app/modules/journey-user/roster/modal/EventTable.jsx",
-          "src/journey-builder-app/utils/error_page.jsx",
+          "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/SearchHistoryList.jsx",
+          "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/edit/components/activity_details.jsx",
+          "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/activity_list.jsx",
+          "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/display_activity.jsx",
+          "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/upload/components/activity_details.jsx",
+          "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/associate_activity/activity_library_list.jsx",
+          "src/journey-builder-app/modules/journey-builder/activities/container-components/activity_application.jsx",
           "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_found.jsx",
-          "src/journey-builder-app/modules/journey-builder/events/container-components/home/no_table_content.jsx",
-          "src/journey-builder-app/modules/journey-reports/container-components/home/ReportGroupJourneySummaryTable.jsx",
-          "src/journey-builder-app/modules/journey-builder/journeys/container-components/resuable/no_activities_found.jsx",
-          "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/dnd_table/activity_reorder_component.jsx",
-          "src/journey-builder-app/modules/journey-builder/activities/container-components/reusable-components/modals/delete_activity_failure_modal.jsx",
-          "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/dnd_table/stage_activity_table.jsx",
-          "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/associate_activity/journey_resource_activity_library.jsx",
-          "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/activity_list.jsx"
+          "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_to_import.jsx",
+          "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/modals/activity_details_modal_container.jsx",
+          "src/journey-builder-app/modules/journey-builder/activities/container-components/activity_view.jsx",
+          "src/journey-builder-app/modules/admin-notifications/pages/create_edit/notification_details.jsx"
         ],
         "candidateDetails": [
           {
-            "file": "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/journey_table.jsx",
-            "score": 77,
+            "file": "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/SearchHistoryList.jsx",
+            "score": 69,
             "exportNames": [
-              "JourneyTable"
+              "ActivitySearchHistoryList"
             ],
-            "preview": "import ReactTable from 'react-table-6'; import 'react-table-6/react-table.css'; import React, { useMemo, useState, useEffect } from 'react' import moment from 'moment';",
+            "preview": "import React from 'react'; import PropTypes from 'prop-types'; import { MdHistory } from \"react-icons/md\"; import { FaTimes } from \"react-icons/fa\";",
             "reasons": [
               "path:journey",
-              "path:page",
-              "path:able",
               "path:activity",
-              "export:JourneyTable",
-              "preview:able"
+              "path:list",
+              "path:activities",
+              "export:ActivitySearchHistoryList",
+              "preview:icon"
             ]
           },
           {
-            "file": "src/journey-builder-app/modules/journey-user/roster/modal/EventTable.jsx",
-            "score": 66,
-            "exportNames": [
-              "EventTable"
-            ],
-            "preview": "import React, { useEffect, useState } from 'react' import IconChevronDown from 'terra-icon/lib/icon/IconChevronDown'; import ReactTable from 'react-table-6'; import 'react-table-6/react-table.css';",
-            "reasons": [
-              "path:journey",
-              "path:able",
-              "path:event",
-              "export:EventTable",
-              "preview:able"
-            ]
-          },
-          {
-            "file": "src/journey-builder-app/utils/error_page.jsx",
-            "score": 63,
-            "exportNames": [
-              "ErrorPage"
-            ],
-            "preview": "import React from 'react'; import PropTypes from 'prop-types'; import { useEffect } from 'react'; import { redirectToLogin } from './util';",
-            "reasons": [
-              "path:journey",
-              "path:page",
-              "path:error",
-              "export:ErrorPage"
-            ]
-          },
-          {
-            "file": "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_found.jsx",
-            "score": 59,
-            "exportNames": [
-              "NoActivitiesFound"
-            ],
-            "preview": "import React from 'react'; import { FaFileAlt } from 'react-icons/fa'; import 'react-table-6/react-table.css'; import '../../../assets/styles/base/media-home.scss';",
-            "reasons": [
-              "path:journey",
-              "path:page",
-              "path:found",
-              "path:activity",
-              "export:NoActivitiesFound",
-              "preview:able"
-            ]
-          },
-          {
-            "file": "src/journey-builder-app/modules/journey-builder/events/container-components/home/no_table_content.jsx",
-            "score": 58,
-            "exportNames": [
-              "NoTableContent"
-            ],
-            "preview": "import React from 'react'; import { noSessionsMsg, CLICK_ADD_RUBRIC_ACTIVITY_MSG, clickAddSessionMsg } from '../utils/event_constants'; import { TABLE_DISPLAY_TEXT } from '../../../journeys/container-components/Utils/Con",
-            "reasons": [
-              "path:journey",
-              "path:able",
-              "path:event",
-              "export:NoTableContent",
-              "preview:journey",
-              "preview:able"
-            ]
-          },
-          {
-            "file": "src/journey-builder-app/modules/journey-reports/container-components/home/ReportGroupJourneySummaryTable.jsx",
-            "score": 58,
-            "exportNames": [
-              "ReportGroupJourneySummaryTable"
-            ],
-            "preview": "import React, { useMemo, useState, useEffect } from 'react'; import PropTypes from 'prop-types'; import ReactTable from 'react-table-6'; import withFixedColumns from 'react-table-hoc-fixed-columns';",
-            "reasons": [
-              "path:journey",
-              "path:able",
-              "export:ReportGroupJourneySummaryTable",
-              "preview:able"
-            ]
-          },
-          {
-            "file": "src/journey-builder-app/modules/journey-builder/journeys/container-components/resuable/no_activities_found.jsx",
-            "score": 55,
-            "exportNames": [
-              "NoActivitiesFound"
-            ],
-            "preview": "import React from 'react'; import {addActivityText, noActivitiesToDisplayText} from \"../Utils/Constants\"; const NoActivitiesFound = () => ( <div className=\"react-table-no-data\">",
-            "reasons": [
-              "path:journey",
-              "path:found",
-              "path:able",
-              "export:NoActivitiesFound",
-              "preview:found",
-              "preview:able"
-            ]
-          },
-          {
-            "file": "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/dnd_table/activity_reorder_component.jsx",
-            "score": 52,
-            "exportNames": [
-              "ActivityReorderComponent"
-            ],
-            "preview": "import React from 'react'; import { FaArrowDown, FaArrowUp } from 'react-icons/fa'; import 'react-table-6/react-table.css'; import { MOVE_ACTIVITY_DOWN, MOVE_ACTIVITY_UP } from '../../Utils/Constants';",
-            "reasons": [
-              "path:journey",
-              "path:able",
-              "path:activity",
-              "export:ActivityReorderComponent",
-              "preview:able",
-              "preview:activity"
-            ]
-          },
-          {
-            "file": "src/journey-builder-app/modules/journey-builder/activities/container-components/reusable-components/modals/delete_activity_failure_modal.jsx",
-            "score": 46,
-            "exportNames": [
-              "DeleteActivityFailureModal"
-            ],
-            "preview": "import React from 'react'; import DialogModal from 'terra-dialog-modal'; import ActionHeader from 'terra-action-header'; import Button from 'terra-button';",
-            "reasons": [
-              "path:journey",
-              "path:able",
-              "path:activity",
-              "export:DeleteActivityFailureModal"
-            ]
-          },
-          {
-            "file": "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/dnd_table/stage_activity_table.jsx",
-            "score": 44,
-            "exportNames": [
-              "withDisclosureManager"
-            ],
-            "preview": "import React, { useState, useEffect } from 'react'; import { withRouter } from 'react-router-dom'; import { useSelector } from 'react-redux'; import ModalManager from 'terra-modal-manager';",
-            "reasons": [
-              "path:journey",
-              "path:able",
-              "path:activity"
-            ]
-          },
-          {
-            "file": "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/associate_activity/journey_resource_activity_library.jsx",
-            "score": 41,
+            "file": "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/edit/components/activity_details.jsx",
+            "score": 54,
             "exportNames": [
               "connect"
             ],
-            "preview": "import React, {useEffect, useState} from \"react\"; import PropTypes from \"prop-types\"; import {connect} from \"react-redux\"; const JourneyResourceActivityLibrary = (props) => {",
+            "preview": "import React from 'react'; import PropTypes from 'prop-types'; import Field from 'terra-form-field'; import { connect } from 'react-redux';",
             "reasons": [
               "path:journey",
               "path:activity",
-              "preview:journey",
-              "preview:activity"
+              "path:activities",
+              "path:details"
             ]
           },
           {
             "file": "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/activity_list.jsx",
-            "score": 40,
+            "score": 54,
             "exportNames": [
               "withRouter",
               "sortDatesDescending"
@@ -730,9 +627,142 @@
             "preview": "import React, { useState, useEffect } from 'react'; import ReactTable from 'react-table-6'; import { Link, withRouter } from 'react-router-dom'; import PropTypes from 'prop-types';",
             "reasons": [
               "path:journey",
-              "path:page",
               "path:activity",
-              "preview:able"
+              "path:list",
+              "path:activities"
+            ]
+          },
+          {
+            "file": "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/display_activity.jsx",
+            "score": 54,
+            "exportNames": [
+              "withDisclosureManager"
+            ],
+            "preview": "import PropTypes, { func } from 'prop-types'; import ReactTable from 'react-table-6'; import { Link } from 'react-router-dom'; import React from 'react';",
+            "reasons": [
+              "path:journey",
+              "path:activity",
+              "path:display",
+              "path:activities"
+            ]
+          },
+          {
+            "file": "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/upload/components/activity_details.jsx",
+            "score": 54,
+            "exportNames": [
+              "connect"
+            ],
+            "preview": "import React from 'react'; import PropTypes from 'prop-types'; import Field from 'terra-form-field'; import Textarea from 'terra-form-textarea';",
+            "reasons": [
+              "path:journey",
+              "path:activity",
+              "path:activities",
+              "path:details"
+            ]
+          },
+          {
+            "file": "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/associate_activity/activity_library_list.jsx",
+            "score": 54,
+            "exportNames": [
+              "ActivityLibraryTable"
+            ],
+            "preview": "import PropTypes from 'prop-types'; import ReactTable from 'react-table-6'; import React from 'react'; import 'react-table-6/react-table.css';",
+            "reasons": [
+              "path:journey",
+              "path:activity",
+              "path:list",
+              "export:ActivityLibraryTable"
+            ]
+          },
+          {
+            "file": "src/journey-builder-app/modules/journey-builder/activities/container-components/activity_application.jsx",
+            "score": 52,
+            "exportNames": [
+              "ActivityApplication"
+            ],
+            "preview": "import React from 'react'; import PropTypes from 'prop-types'; import ApplicationWrapper from 'terra-base'; import ActivityContainer from './activities_container';",
+            "reasons": [
+              "path:journey",
+              "path:activity",
+              "path:activities",
+              "export:ActivityApplication",
+              "preview:activity",
+              "preview:activities"
+            ]
+          },
+          {
+            "file": "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_found.jsx",
+            "score": 50,
+            "exportNames": [
+              "NoActivitiesFound"
+            ],
+            "preview": "import React from 'react'; import { FaFileAlt } from 'react-icons/fa'; import 'react-table-6/react-table.css'; import '../../../assets/styles/base/media-home.scss';",
+            "reasons": [
+              "path:journey",
+              "path:activity",
+              "path:activities",
+              "export:NoActivitiesFound",
+              "preview:icon"
+            ]
+          },
+          {
+            "file": "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_to_import.jsx",
+            "score": 50,
+            "exportNames": [
+              "NoActivitiesToImport"
+            ],
+            "preview": "import React from 'react'; import { FaFileAlt } from 'react-icons/fa'; import 'react-table-6/react-table.css'; import PropTypes from 'prop-types';",
+            "reasons": [
+              "path:journey",
+              "path:activity",
+              "path:activities",
+              "export:NoActivitiesToImport",
+              "preview:icon"
+            ]
+          },
+          {
+            "file": "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/modals/activity_details_modal_container.jsx",
+            "score": 50,
+            "exportNames": [
+              "withDisclosureManager"
+            ],
+            "preview": "import React from 'react'; import PropTypes from 'prop-types'; import { withDisclosureManager, disclosureManagerShape } from 'terra-disclosure-manager'; import ActivityDetailsModal from './activity_details_modal';",
+            "reasons": [
+              "path:journey",
+              "path:activity",
+              "path:details",
+              "preview:activity",
+              "preview:details"
+            ]
+          },
+          {
+            "file": "src/journey-builder-app/modules/journey-builder/activities/container-components/activity_view.jsx",
+            "score": 49,
+            "exportNames": [
+              "ActivityView"
+            ],
+            "preview": "import React from 'react'; import './assets/styles/main-css.scss'; import ActivityRouteProvider from './util/activity_route_provider'; // Wrapping the main React code in 'HashRouter' to keep the URL in sync with the UI.",
+            "reasons": [
+              "path:journey",
+              "path:activity",
+              "path:activities",
+              "export:ActivityView",
+              "preview:activity"
+            ]
+          },
+          {
+            "file": "src/journey-builder-app/modules/admin-notifications/pages/create_edit/notification_details.jsx",
+            "score": 48,
+            "exportNames": [
+              "NotificationDetails"
+            ],
+            "preview": "import React, { useState, useEffect, useCallback } from 'react'; import Grid from 'terra-grid'; import IconAdd from 'terra-icon/lib/icon/IconAdd'; import Button from 'terra-button';",
+            "reasons": [
+              "path:journey",
+              "path:create",
+              "path:details",
+              "export:NotificationDetails",
+              "preview:icon"
             ]
           }
         ]
@@ -741,64 +771,40 @@
         {
           "modulePath": "src/journey-builder-app/modules/journey-builder/activities",
           "sourceFiles": [
-            "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/journey_table.jsx",
-            "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_found.jsx",
-            "src/journey-builder-app/modules/journey-builder/activities/container-components/reusable-components/modals/delete_activity_failure_modal.jsx",
+            "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/SearchHistoryList.jsx",
+            "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/edit/components/activity_details.jsx",
             "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/activity_list.jsx",
             "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/display_activity.jsx",
-            "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/SearchHistoryList.jsx",
-            "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/upload/upload_new_activity.jsx"
+            "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/upload/components/activity_details.jsx",
+            "src/journey-builder-app/modules/journey-builder/activities/container-components/activity_application.jsx",
+            "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_found.jsx",
+            "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_to_import.jsx",
+            "src/journey-builder-app/modules/journey-builder/activities/container-components/activity_view.jsx",
+            "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/journey_table.jsx",
+            "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/edit/components/link_details.jsx",
+            "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/upload/components/link_details.jsx",
+            "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/upload/components/rubric_details.jsx",
+            "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/upload/components/survey_details.jsx",
+            "src/journey-builder-app/modules/journey-builder/activities/container-components/reusable-components/modals/delete_activity_failure_modal.jsx"
           ],
           "testFiles": [],
-          "sourceFileCount": 7,
+          "sourceFileCount": 15,
           "testFileCount": 0
         },
         {
           "modulePath": "src/journey-builder-app/modules/journey-builder/journeys",
           "sourceFiles": [
-            "src/journey-builder-app/modules/journey-builder/journeys/container-components/resuable/no_activities_found.jsx",
-            "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/dnd_table/activity_reorder_component.jsx",
-            "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/dnd_table/stage_activity_table.jsx",
-            "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/associate_activity/journey_resource_activity_library.jsx",
-            "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/associate_activity/no_activities_found.jsx"
+            "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/associate_activity/activity_library_list.jsx",
+            "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/modals/activity_details_modal_container.jsx"
           ],
           "testFiles": [],
-          "sourceFileCount": 5,
+          "sourceFileCount": 2,
           "testFileCount": 0
         },
         {
-          "modulePath": "src/journey-builder-app/modules/journey-builder/events",
+          "modulePath": "src/journey-builder-app/modules/admin-notifications/pages",
           "sourceFiles": [
-            "src/journey-builder-app/modules/journey-builder/events/container-components/home/no_table_content.jsx",
-            "src/journey-builder-app/modules/journey-builder/events/presentational-components/add_rubric_activity.jsx",
-            "src/journey-builder-app/modules/journey-builder/events/presentational-components/roaster_table.jsx"
-          ],
-          "testFiles": [],
-          "sourceFileCount": 3,
-          "testFileCount": 0
-        },
-        {
-          "modulePath": "src/journey-builder-app/modules/journey-user/roster",
-          "sourceFiles": [
-            "src/journey-builder-app/modules/journey-user/roster/modal/EventTable.jsx"
-          ],
-          "testFiles": [],
-          "sourceFileCount": 1,
-          "testFileCount": 0
-        },
-        {
-          "modulePath": "src/journey-builder-app/utils",
-          "sourceFiles": [
-            "src/journey-builder-app/utils/error_page.jsx"
-          ],
-          "testFiles": [],
-          "sourceFileCount": 1,
-          "testFileCount": 0
-        },
-        {
-          "modulePath": "src/journey-builder-app/modules/journey-reports/container-components",
-          "sourceFiles": [
-            "src/journey-builder-app/modules/journey-reports/container-components/home/ReportGroupJourneySummaryTable.jsx"
+            "src/journey-builder-app/modules/admin-notifications/pages/create_edit/notification_details.jsx"
           ],
           "testFiles": [],
           "sourceFileCount": 1,
@@ -806,7 +812,7 @@
         }
       ],
       "totals": {
-        "modules": 6,
+        "modules": 3,
         "totalSourceFiles": 18,
         "totalTestFiles": 0,
         "blastRadius": 18
@@ -814,26 +820,14 @@
       "hotspots": [
         {
           "modulePath": "src/journey-builder-app/modules/journey-builder/activities",
-          "blastRadius": 7
+          "blastRadius": 15
         },
         {
           "modulePath": "src/journey-builder-app/modules/journey-builder/journeys",
-          "blastRadius": 5
+          "blastRadius": 2
         },
         {
-          "modulePath": "src/journey-builder-app/modules/journey-builder/events",
-          "blastRadius": 3
-        },
-        {
-          "modulePath": "src/journey-builder-app/modules/journey-user/roster",
-          "blastRadius": 1
-        },
-        {
-          "modulePath": "src/journey-builder-app/utils",
-          "blastRadius": 1
-        },
-        {
-          "modulePath": "src/journey-builder-app/modules/journey-reports/container-components",
+          "modulePath": "src/journey-builder-app/modules/admin-notifications/pages",
           "blastRadius": 1
         }
       ]
@@ -843,12 +837,12 @@
     ]
   },
   "a11ySummary": {
-    "generatedAt": "2026-04-24T12:04:20.026Z",
+    "generatedAt": "2026-05-14T13:04:55.414Z",
     "metadata": {
-      "generatedAt": "2026-04-24T12:04:20.018Z",
+      "generatedAt": "2026-05-14T13:04:55.407Z",
       "mode": "ci",
       "scanRoot": "/Users/vn105957/Desktop/lpDev/journey-builder-js/",
-      "filesScanned": 458,
+      "filesScanned": 459,
       "standardPrimary": "Oracle VPAT guidance (internal Confluence source of truth)",
       "standardFallback": "WCAG 2.1 AA",
       "policySource": {
@@ -858,15 +852,15 @@
       }
     },
     "summary": {
-      "blockers": 501,
+      "blockers": 505,
       "warnings": 0,
       "infos": 0,
-      "total": 501
+      "total": 505
     },
     "ruleSummary": [
       {
         "ruleId": "custom/icon-a11y-label",
-        "count": 309,
+        "count": 311,
         "playbook": {
           "title": "Add icon accessibility labels",
           "whyItMatters": "Unlabeled functional icons are silent for assistive technology users.",
@@ -876,7 +870,7 @@
       },
       {
         "ruleId": "custom/click-keyboard-parity",
-        "count": 162,
+        "count": 164,
         "playbook": {
           "title": "Restore keyboard parity for click handlers",
           "whyItMatters": "Mouse-only interactions block keyboard and switch-device users.",
@@ -1458,7 +1452,7 @@
       {
         "rank": 1,
         "ruleId": "custom/icon-a11y-label",
-        "count": 309,
+        "count": 311,
         "action": "Add icon accessibility labels",
         "whyItMatters": "Unlabeled functional icons are silent for assistive technology users.",
         "implementationHint": "Add a11yLabel to functional Terra icons. Hide decorative icons with aria-hidden."
@@ -1466,7 +1460,7 @@
       {
         "rank": 2,
         "ruleId": "custom/click-keyboard-parity",
-        "count": 162,
+        "count": 164,
         "action": "Restore keyboard parity for click handlers",
         "whyItMatters": "Mouse-only interactions block keyboard and switch-device users.",
         "implementationHint": "Use semantic button/link elements or add role, tabIndex, Enter/Space key handlers."
@@ -1488,7 +1482,7 @@
       "triageReductionPercent": 83
     }
   },
-  "techDesignMarkdown": "# ODT Tech Design\n\n- Feature: when attempting to add a Journey Note, after entering the note and clicking Add, the sc...\n- Target repo: /Users/vn105957/Desktop/lpDev/journey-builder-js/\n- UI: React/Terra minimal-blast-radius update\n- API strategy: reuse current contracts unless explicitly approved\n- State strategy: incremental updates in existing store/actions\n- Error handling: loading/empty/error states with deterministic behavior\n- Testing: Jest/RTL unit coverage for happy/edge/error paths\n- Accessibility: VPAT/WCAG and keyboard parity validation\n- Governance: human-reviewed approvals before merge\n\n## Prompt Override (Design Stage)\n- No design-stage prompt override supplied.\n\n## Quality Gates\n- No unauthorized dependencies\n- Backward compatibility preserved\n- Keyboard and ARIA behavior validated\n- Deterministic unit tests updated\n",
-  "codeWorkpack": "# Codex Workpack: ODT Code Implementation\n\nWork Item: when attempting to add a Journey Note, after entering the note and clicking Add, the sc...\n\nYou are a senior frontend developer assistant.\nUse the intake, inferred repo impact, and compliance guidance below to implement a reviewable patch.\n\nExecution steps:\n1) Ask clarifying questions only for safety-critical ambiguities.\n2) Review existing patterns in the inferred source files before editing.\n3) Implement code changes with backward compatibility.\n4) Include keyboard accessibility and semantic HTML by default.\n5) Summarize edge cases and regression risk after patching.\n\nScope summary:\n- src/journey-builder-app/modules/journey-builder/activities (source: 7, tests: 0)\n- src/journey-builder-app/modules/journey-builder/journeys (source: 5, tests: 0)\n- src/journey-builder-app/modules/journey-builder/events (source: 3, tests: 0)\n- src/journey-builder-app/modules/journey-user/roster (source: 1, tests: 0)\n- src/journey-builder-app/utils (source: 1, tests: 0)\n- src/journey-builder-app/modules/journey-reports/container-components (source: 1, tests: 0)\n\nRepo-analysis evidence:\n- Target repo path: /Users/vn105957/Desktop/lpDev/journey-builder-js/\n- Analysis mode: repo_inferred_manifest\n- Keywords: attempting, journey, note, after, entering, clicking, screen, will, white, page, found, error, displays, attachments, able, replicate, demo, environment, also, tested, adding, activity, event, experienced\n- Mockup image: none supplied\n- Reference doc: none supplied\n- Candidate file: src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/journey_table.jsx [score=77] exports=JourneyTable signals=path:journey, path:page, path:able, path:activity, export:JourneyTable, preview:able\n- Candidate file: src/journey-builder-app/modules/journey-user/roster/modal/EventTable.jsx [score=66] exports=EventTable signals=path:journey, path:able, path:event, export:EventTable, preview:able\n- Candidate file: src/journey-builder-app/utils/error_page.jsx [score=63] exports=ErrorPage signals=path:journey, path:page, path:error, export:ErrorPage\n- Candidate file: src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_found.jsx [score=59] exports=NoActivitiesFound signals=path:journey, path:page, path:found, path:activity, export:NoActivitiesFound, preview:able\n- Candidate file: src/journey-builder-app/modules/journey-builder/events/container-components/home/no_table_content.jsx [score=58] exports=NoTableContent signals=path:journey, path:able, path:event, export:NoTableContent, preview:journey, preview:able\n- Candidate file: src/journey-builder-app/modules/journey-reports/container-components/home/ReportGroupJourneySummaryTable.jsx [score=58] exports=ReportGroupJourneySummaryTable signals=path:journey, path:able, export:ReportGroupJourneySummaryTable, preview:able\n- Candidate file: src/journey-builder-app/modules/journey-builder/journeys/container-components/resuable/no_activities_found.jsx [score=55] exports=NoActivitiesFound signals=path:journey, path:found, path:able, export:NoActivitiesFound, preview:found, preview:able\n- Candidate file: src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/dnd_table/activity_reorder_component.jsx [score=52] exports=ActivityReorderComponent signals=path:journey, path:able, path:activity, export:ActivityReorderComponent, preview:able, preview:activity\n\nReviewer refinements:\n- None supplied\n\nPrompt override (code stage):\nDont use If  conditions you can change the entity_id to user_id for the fix\n\nQuality gates to run after implementation:\n- npm run a11y:scan:ci || true\n- npm run a11y:twin:verify\n\nFeature payload:\n```json\n{\n  \"title\": \"when attempting to add a Journey Note, after entering the note and clicking Add, the sc...\",\n  \"featureName\": \"when attempting to add a Journey Note, after entering the note and clicking Add, the sc...\",\n  \"summary\": \"when attempting to add a Journey Note, after entering the note and clicking Add, the screen will go white and a 404 Page Not Found error displays. See attachments.\\n\\n \\n\\nI am able to replicate this in our demo environment and also tested adding a note to an activity and an event and experienced the same issue.\",\n  \"reviewEdits\": \"\",\n  \"promptOverrides\": {\n    \"intake\": \"\",\n    \"impact\": \"\",\n    \"design\": \"\",\n    \"code\": \"Dont use If  conditions you can change the entity_id to user_id for the fix\",\n    \"unitTests\": \"\",\n    \"compliance\": \"\",\n    \"verify\": \"\"\n  },\n  \"targetRepoPath\": \"/Users/vn105957/Desktop/lpDev/journey-builder-js/\",\n  \"workItemType\": \"feature\",\n  \"jira\": {\n    \"ticketId\": \"\",\n    \"url\": \"\"\n  },\n  \"scope\": {\n    \"uiSurface\": \"web\",\n    \"complexity\": \"medium\",\n    \"repoScan\": \"full\"\n  },\n  \"requirements\": {\n    \"acceptanceCriteria\": [\n      \"User can filter activities by keyword without leaving the page\",\n      \"Filtering updates are announced clearly for assistive technology users\",\n      \"Keyboard users can open, clear, and navigate filter controls\"\n    ],\n    \"nonFunctional\": [\n      \"a11y\",\n      \"performance\",\n      \"analytics\"\n    ],\n    \"outOfScope\": [\n      \"No backend API changes\",\n      \"Do not alter existing permissions behavior\"\n    ]\n  },\n  \"designInputs\": {\n    \"mockupImages\": [],\n    \"referenceDocs\": [],\n    \"jiraLinks\": []\n  },\n  \"constraints\": {\n    \"noNewDependencies\": true,\n    \"releaseWindowDays\": 10,\n    \"approvedLibrariesOnly\": true\n  },\n  \"developerHints\": {\n    \"suspectedAreas\": [],\n    \"relatedComponents\": [],\n    \"notes\": \"Optional only. ODT should infer impact areas from the repo when hints are not provided.\"\n  },\n  \"defectContext\": {\n    \"defectId\": \"\",\n    \"observedBehavior\": \"\",\n    \"expectedBehavior\": \"\",\n    \"severity\": \"medium\"\n  }\n}\n```\n\n",
-  "testWorkpack": "# Codex Workpack: ODT Unit Test Generation\n\nWork Item: when attempting to add a Journey Note, after entering the note and clicking Add, the sc...\n\nGenerate or update Jest/RTL tests for impacted behavior.\nCover:\n- Happy path\n- Error path\n- Empty/loading states\n- Keyboard accessibility interactions where applicable\n\nKnown related test files:\n- No direct tests matched; create nearest-module tests.\n\nPrompt override (unit test stage):\n- None supplied\n\nRules:\n- Keep tests deterministic and isolated.\n- Avoid snapshot-only validation for behavior-heavy flows.\n- Assert accessibility roles/labels when adding interactive UI.\n\nVerification command:\n- npm test -- --watch=false --runInBand\n\n"
+  "techDesignMarkdown": "# ODT Tech Design\n\n- Feature: JOURNEY-25271 Create Assessment\n- Target repo: /Users/vn105957/Desktop/lpDev/journey-builder-js/\n- UI: React/Terra minimal-blast-radius update\n- API strategy: reuse current contracts unless explicitly approved\n- State strategy: incremental updates in existing store/actions\n- Error handling: loading/empty/error states with deterministic behavior\n- Testing: Jest/RTL unit coverage for happy/edge/error paths\n- Accessibility: VPAT/WCAG and keyboard parity validation\n- Governance: human-reviewed approvals before merge\n\n## Prompt Override (Design Stage)\n- No design-stage prompt override supplied.\n\n## Quality Gates\n- No unauthorized dependencies\n- Backward compatibility preserved\n- Keyboard and ARIA behavior validated\n- Deterministic unit tests updated\n",
+  "codeWorkpack": "# Codex Workpack: ODT Code Implementation\n\nWork Item: JOURNEY-25271 Create Assessment\n\nYou are a senior frontend developer assistant.\nUse the intake, inferred repo impact, and compliance guidance below to implement a reviewable patch.\n\nExecution steps:\n1) Ask clarifying questions only for safety-critical ambiguities.\n2) Review existing patterns in the inferred source files before editing.\n3) Implement code changes with backward compatibility.\n4) Include keyboard accessibility and semantic HTML by default.\n5) Summarize edge cases and regression risk after patching.\n\nScope summary:\n- src/journey-builder-app/modules/journey-builder/activities (source: 15, tests: 0)\n- src/journey-builder-app/modules/journey-builder/journeys (source: 2, tests: 0)\n- src/journey-builder-app/modules/admin-notifications/pages (source: 1, tests: 0)\n\nRepo-analysis evidence:\n- Target repo path: /Users/vn105957/Desktop/lpDev/journey-builder-js/\n- Analysis mode: repo_inferred_manifest\n- Keywords: journey, 25271, create, assessment, option, displays, activity, dropdown, list, selection, following, breadcrumb, updated, display, activities, info, icon, message, assessments, graded, evaluations, proficiency, title, details\n- Mockup image: reports/odt/uploads/1778763461275-1-Screenshot_2026-05-14_at_2.49.57_PM.png\n- Mockup image: reports/odt/uploads/1778763541461-1-Screenshot_2026-05-14_at_6.28.44_PM.png\n- Reference doc: none supplied\n- Candidate file: src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/SearchHistoryList.jsx [score=69] exports=ActivitySearchHistoryList signals=path:journey, path:activity, path:list, path:activities, export:ActivitySearchHistoryList, preview:icon\n- Candidate file: src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/edit/components/activity_details.jsx [score=54] exports=connect signals=path:journey, path:activity, path:activities, path:details\n- Candidate file: src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/activity_list.jsx [score=54] exports=withRouter, sortDatesDescending signals=path:journey, path:activity, path:list, path:activities\n- Candidate file: src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/display_activity.jsx [score=54] exports=withDisclosureManager signals=path:journey, path:activity, path:display, path:activities\n- Candidate file: src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/upload/components/activity_details.jsx [score=54] exports=connect signals=path:journey, path:activity, path:activities, path:details\n- Candidate file: src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/associate_activity/activity_library_list.jsx [score=54] exports=ActivityLibraryTable signals=path:journey, path:activity, path:list, export:ActivityLibraryTable\n- Candidate file: src/journey-builder-app/modules/journey-builder/activities/container-components/activity_application.jsx [score=52] exports=ActivityApplication signals=path:journey, path:activity, path:activities, export:ActivityApplication, preview:activity, preview:activities\n- Candidate file: src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/no_activities_found.jsx [score=50] exports=NoActivitiesFound signals=path:journey, path:activity, path:activities, export:NoActivitiesFound, preview:icon\n\nReviewer refinements:\n- None supplied\n\nPrompt override (code stage):\n- None supplied\n\nQuality gates to run after implementation:\n- npm run a11y:scan:ci || true\n- npm run a11y:twin:verify\n\nFeature payload:\n```json\n{\n  \"title\": \"JOURNEY-25271 Create Assessment\",\n  \"featureName\": \"JOURNEY-25271 Create Assessment\",\n  \"summary\": \"JOURNEY-25271 Create Assessment\\nThe option 'Assessment' displays in the activity dropdown list.\\nSelection displays the following:\\nBreadcrumb updated to display 'Activities >> New Assessment'.\\nInfo icon displays the message: 'Assessments are graded evaluations of the user's proficiency.'\\nTitle 'Activity Details - Assessment'\\nThe activity contains the following elements:\\nActivity Name\\nRequired field.\\nUnique Name amongst Assessments in organization.\\nFree text field.\\nField alert message displayed when not unique: 'The Assessment name must be unique.'\\nSupports 155 characters.\\nCharacter counter is displayed.\\nSpecial characters are accepted.\\nPlaceholder text 'Enter the activity name.'\\nWhen no characters are present in the field, the message is displayed: 'This field is required.'\\nDisplay Name\\n\\\"Display Name” header is displayed with info icon.\\nMessage is displayed as a tool tip upon clicking on info icon \\\"Enter the name that is displayed to the learner.\\\" \\nFree text field.\\nRequired field.\\nSupports special characters.\\nName is not required to be unique.\\nSupports 155 characters.\\nCharacter counter is displayed.\\nDescription \\nFree text field.\\nPlaceholder text displayed: 'Enter the activity description.'\\nCharacter limit of 1024.\\nCharacter counter displayed.\\nRich text editor displayed.\",\n  \"reviewEdits\": \"\",\n  \"promptOverrides\": {\n    \"intake\": \"\",\n    \"impact\": \"\",\n    \"design\": \"\",\n    \"code\": \"\",\n    \"unitTests\": \"\",\n    \"compliance\": \"\",\n    \"verify\": \"\"\n  },\n  \"targetRepoPath\": \"/Users/vn105957/Desktop/lpDev/journey-builder-js/\",\n  \"workItemType\": \"feature\",\n  \"jira\": {\n    \"ticketId\": \"ODT-DEMO-STORY-101\",\n    \"url\": \"\"\n  },\n  \"scope\": {\n    \"uiSurface\": \"web\",\n    \"complexity\": \"medium\",\n    \"repoScan\": \"full\"\n  },\n  \"requirements\": {\n    \"acceptanceCriteria\": [\n      \"JOURNEY-25271 Create Assessment The option 'Assessment' displays in the activity dropdown list.\"\n    ],\n    \"nonFunctional\": [\n      \"a11y\",\n      \"performance\",\n      \"unit-tests\"\n    ],\n    \"outOfScope\": [\n      \"No backend API changes\",\n      \"Do not alter existing permissions behavior\"\n    ]\n  },\n  \"designInputs\": {\n    \"mockupImages\": [\n      \"reports/odt/uploads/1778763461275-1-Screenshot_2026-05-14_at_2.49.57_PM.png\",\n      \"reports/odt/uploads/1778763541461-1-Screenshot_2026-05-14_at_6.28.44_PM.png\"\n    ],\n    \"referenceDocs\": [],\n    \"jiraLinks\": []\n  },\n  \"constraints\": {\n    \"noNewDependencies\": true,\n    \"releaseWindowDays\": 10,\n    \"approvedLibrariesOnly\": true\n  },\n  \"developerHints\": {\n    \"suspectedAreas\": [\n      \"src/App.jsx\",\n      \"src/components/FilterBar.jsx\",\n      \"src/components/ActivityList.jsx\"\n    ],\n    \"relatedComponents\": [\n      \"Employee list\",\n      \"Filter controls\",\n      \"Home page hero and content layout\"\n    ],\n    \"notes\": \"Use the attached mockup as visual direction for the finder section and keep accessibility behavior explicit in labels, status text, keyboard flow, and clear actions.\"\n  },\n  \"defectContext\": {\n    \"defectId\": \"\",\n    \"observedBehavior\": \"\",\n    \"expectedBehavior\": \"\",\n    \"severity\": \"medium\"\n  }\n}\n```\n\n",
+  "testWorkpack": "# Codex Workpack: ODT Unit Test Generation\n\nWork Item: JOURNEY-25271 Create Assessment\n\nGenerate or update Jest/RTL tests for impacted behavior.\nCover:\n- Happy path\n- Error path\n- Empty/loading states\n- Keyboard accessibility interactions where applicable\n\nKnown related test files:\n- No direct tests matched; create nearest-module tests.\n\nPrompt override (unit test stage):\n- None supplied\n\nRules:\n- Keep tests deterministic and isolated.\n- Avoid snapshot-only validation for behavior-heavy flows.\n- Assert accessibility roles/labels when adding interactive UI.\n\nVerification command:\n- npm test -- --watch=false --runInBand\n\n"
 }

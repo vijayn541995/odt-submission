@@ -1,0 +1,315 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - generic "ODT Workbench" [ref=e6]:
+        - img [ref=e7]:
+          - generic [ref=e9]: ODT
+      - generic [ref=e13]:
+        - strong [ref=e14]: ODT Workbench
+        - generic [ref=e15]: Engineering control plane
+    - navigation "ODT Workbench" [ref=e16]:
+      - button "Overview" [ref=e17] [cursor=pointer]:
+        - img [ref=e19]
+        - generic [ref=e24]: Overview
+      - button "Intake" [ref=e25] [cursor=pointer]:
+        - img [ref=e27]
+        - generic [ref=e31]: Intake
+      - button "Planner" [ref=e32] [cursor=pointer]:
+        - img [ref=e34]
+        - generic [ref=e38]: Planner
+      - button "Standards" [ref=e39] [cursor=pointer]:
+        - img [ref=e41]
+        - generic [ref=e44]: Standards
+      - button "Agent Team" [active] [ref=e45] [cursor=pointer]:
+        - img [ref=e47]
+        - generic [ref=e52]: Agent Team
+      - button "Review" [ref=e53] [cursor=pointer]:
+        - img [ref=e55]
+        - generic [ref=e59]: Review
+      - button "PR Ready" [ref=e60] [cursor=pointer]:
+        - img [ref=e62]
+        - generic [ref=e66]: PR Ready
+      - button "Artifacts" [ref=e67] [cursor=pointer]:
+        - img [ref=e69]
+        - generic [ref=e71]: Artifacts
+      - button "ODT Guide" [ref=e72] [cursor=pointer]:
+        - img [ref=e74]
+        - generic [ref=e77]: ODT Guide
+      - button "Runs" [ref=e78] [cursor=pointer]:
+        - img [ref=e80]
+        - generic [ref=e85]: Runs
+      - button "Monitoring" [ref=e86] [cursor=pointer]:
+        - img [ref=e88]
+        - generic [ref=e90]: Monitoring
+      - button "Settings" [ref=e91] [cursor=pointer]:
+        - img [ref=e93]
+        - generic [ref=e96]: Settings
+    - generic [ref=e97]:
+      - img [ref=e99]
+      - generic [ref=e103]:
+        - strong [ref=e104]: Governance Mode
+        - generic [ref=e105]: Human-gated. Writes require approval.
+  - main [ref=e106]:
+    - generic [ref=e107]:
+      - generic [ref=e108]:
+        - generic [ref=e109]: Oracle Developer Twin
+        - heading "ODT Workbench" [level=1] [ref=e110]
+      - generic [ref=e111]:
+        - generic "Backend API reachability" [ref=e112]: Backend Online
+        - generic "Current workbench environment" [ref=e113]: "Environment: Local Dev"
+        - generic "AI provider selected by the backend" [ref=e114]: "Provider: local"
+        - generic "ODT API context status" [ref=e115]: "ODT API: Offline"
+        - button "Refresh workbench status" [ref=e116] [cursor=pointer]:
+          - img [ref=e117]
+    - generic [ref=e437]:
+      - generic [ref=e438]:
+        - generic [ref=e439]:
+          - text: Agent Team
+          - heading "Supervised multi-agent delivery" [level=2] [ref=e440]
+          - paragraph [ref=e441]: Team mode is for larger work with natural parallelism. Every role has a clear scope and quality gate.
+        - generic "BLOCKED" [ref=e443]
+      - region "Current workflow decision" [ref=e444]:
+        - generic [ref=e445]:
+          - text: Current State
+          - strong [ref=e446]: Blocked
+          - paragraph [ref=e447]: "Critical blocker: Implementation blocked until standards findings are resolved."
+        - generic [ref=e448]:
+          - generic "BLOCKED" [ref=e449]
+          - button "Review Blocking Items" [ref=e450] [cursor=pointer]
+      - generic [ref=e451]:
+        - generic [ref=e453]:
+          - text: Specialist Reviews
+          - heading "Agent Foundry" [level=3] [ref=e454]
+        - generic [ref=e455]:
+          - generic [ref=e456]:
+            - strong [ref=e457]: Governed specialist review
+            - paragraph [ref=e458]: Run Full SDLC or focused domain reviews from current assignment evidence. Outputs are saved as Artifacts and remain review-only.
+          - generic "AI-generated suggestion" [ref=e459]
+        - generic [ref=e460]:
+          - generic [ref=e461]:
+            - generic [ref=e462]:
+              - generic [ref=e463]: Review mode
+              - combobox "Review mode" [ref=e464]:
+                - option "Full SDLC"
+                - option "Focused Domain" [selected]
+            - generic [ref=e465]:
+              - generic [ref=e466]: Specialist domain
+              - combobox "Specialist domain" [ref=e467]:
+                - option "Requirements - Requirement Scout" [selected]
+                - option "UX - Redwood UX Sentinel"
+                - option "Product - Product Value Strategist"
+                - option "Architecture - Architecture Cartographer"
+                - option "Development - Delivery Engineer"
+                - option "Code Review - Code Quality Advocate"
+                - option "Compliance - Compliance Guardian"
+                - option "CI/CD - Pipeline Steward"
+                - option "QA - Quality Strategist"
+                - option "Operations - Operations Readiness Lead"
+          - group "Input sources" [ref=e469]:
+            - generic [ref=e470]: Input sources
+            - generic [ref=e471]:
+              - checkbox "Requirement/Jira" [checked] [ref=e472]
+              - generic [ref=e473]: Requirement/Jira
+            - generic [ref=e474]:
+              - checkbox "Repo Analysis" [checked] [ref=e475]
+              - generic [ref=e476]: Repo Analysis
+            - generic [ref=e477]:
+              - checkbox "Technical Design" [checked] [ref=e478]
+              - generic [ref=e479]: Technical Design
+            - generic [ref=e480]:
+              - checkbox "Implementation Plan" [checked] [ref=e481]
+              - generic [ref=e482]: Implementation Plan
+            - generic [ref=e483]:
+              - checkbox "Standards Evidence" [checked] [ref=e484]
+              - generic [ref=e485]: Standards Evidence
+            - generic [ref=e486]:
+              - checkbox "Artifacts" [checked] [ref=e487]
+              - generic [ref=e488]: Artifacts
+        - generic [ref=e489]:
+          - generic [ref=e490]:
+            - generic [ref=e491]: Domains
+            - strong [ref=e492]: 10 specialist review areas
+          - generic [ref=e493]:
+            - generic [ref=e494]: Latest Foundry status
+            - strong [ref=e495]: NEEDS_REVIEW
+          - generic [ref=e496]:
+            - generic [ref=e497]: Human review
+            - strong [ref=e498]: Required before write/delegate decisions
+          - generic [ref=e499]:
+            - generic [ref=e500]: AutoGPT/AutoGen
+            - strong [ref=e501]: Not in core for this slice
+        - generic [ref=e502]:
+          - button "Run Specialist Review" [ref=e690] [cursor=pointer]
+          - button "Open Foundry Evidence" [ref=e504] [cursor=pointer]
+        - table [ref=e506]:
+          - rowgroup [ref=e507]:
+            - row "Specialist Status Summary" [ref=e508]:
+              - columnheader "Specialist" [ref=e509]
+              - columnheader "Status" [ref=e510]
+              - columnheader "Summary" [ref=e511]
+          - rowgroup [ref=e512]:
+            - 'row "Requirement Scout NEEDS_REVIEW Requirement Scout reviewed Local Workbench MVP for requirements readiness. Status: NEEDS_REVIEW." [ref=e513]':
+              - cell "Requirement Scout" [ref=e514]
+              - cell "NEEDS_REVIEW" [ref=e515]:
+                - generic "NEEDS_REVIEW" [ref=e516]
+              - 'cell "Requirement Scout reviewed Local Workbench MVP for requirements readiness. Status: NEEDS_REVIEW." [ref=e517]'
+            - 'row "Redwood UX Sentinel NEEDS_REVIEW Redwood UX Sentinel reviewed Local Workbench MVP for ux readiness. Status: NEEDS_REVIEW." [ref=e518]':
+              - cell "Redwood UX Sentinel" [ref=e519]
+              - cell "NEEDS_REVIEW" [ref=e520]:
+                - generic "NEEDS_REVIEW" [ref=e521]
+              - 'cell "Redwood UX Sentinel reviewed Local Workbench MVP for ux readiness. Status: NEEDS_REVIEW." [ref=e522]'
+            - 'row "Product Value Strategist NEEDS_REVIEW Product Value Strategist reviewed Local Workbench MVP for product readiness. Status: NEEDS_REVIEW." [ref=e523]':
+              - cell "Product Value Strategist" [ref=e524]
+              - cell "NEEDS_REVIEW" [ref=e525]:
+                - generic "NEEDS_REVIEW" [ref=e526]
+              - 'cell "Product Value Strategist reviewed Local Workbench MVP for product readiness. Status: NEEDS_REVIEW." [ref=e527]'
+            - 'row "Architecture Cartographer NEEDS_REVIEW Architecture Cartographer reviewed Local Workbench MVP for architecture readiness. Status: NEEDS_REVIEW." [ref=e528]':
+              - cell "Architecture Cartographer" [ref=e529]
+              - cell "NEEDS_REVIEW" [ref=e530]:
+                - generic "NEEDS_REVIEW" [ref=e531]
+              - 'cell "Architecture Cartographer reviewed Local Workbench MVP for architecture readiness. Status: NEEDS_REVIEW." [ref=e532]'
+            - 'row "Delivery Engineer NEEDS_REVIEW Delivery Engineer reviewed Local Workbench MVP for development readiness. Status: NEEDS_REVIEW." [ref=e533]':
+              - cell "Delivery Engineer" [ref=e534]
+              - cell "NEEDS_REVIEW" [ref=e535]:
+                - generic "NEEDS_REVIEW" [ref=e536]
+              - 'cell "Delivery Engineer reviewed Local Workbench MVP for development readiness. Status: NEEDS_REVIEW." [ref=e537]'
+      - generic [ref=e538]:
+        - generic [ref=e540]:
+          - text: Handoff Target
+          - heading "Execution Agent" [level=3] [ref=e541]
+        - radiogroup "Select execution agent" [ref=e542]:
+          - radio "Codex Codex implementation agent" [checked] [ref=e543] [cursor=pointer]:
+            - strong [ref=e544]: Codex
+            - generic [ref=e545]: Codex implementation agent
+          - radio "Cline Cline IDE agent" [ref=e546] [cursor=pointer]:
+            - strong [ref=e547]: Cline
+            - generic [ref=e548]: Cline IDE agent
+          - radio "Manual Manual handoff" [ref=e549] [cursor=pointer]:
+            - strong [ref=e550]: Manual
+            - generic [ref=e551]: Manual handoff
+        - generic [ref=e552]:
+          - generic [ref=e553]:
+            - strong [ref=e554]: Codex implementation agent
+            - paragraph [ref=e555]: Best for repo-aware code changes, tests, verification, and PR-ready engineering summaries.
+          - generic "Read-only until approved" [ref=e556]
+        - generic [ref=e557]:
+          - generic [ref=e558]:
+            - generic [ref=e559]:
+              - generic [ref=e560]: Write approval
+              - strong [ref=e561]: Required
+            - generic [ref=e562]:
+              - generic [ref=e563]: Review decision
+              - strong [ref=e564]: No active block
+            - generic [ref=e565]:
+              - generic [ref=e566]: Critical blockers
+              - strong [ref=e567]: None
+            - generic [ref=e568]:
+              - generic [ref=e569]: Dependency installs
+              - strong [ref=e570]: Blocked
+            - generic [ref=e571]:
+              - generic [ref=e572]: Allowed mode
+              - strong [ref=e573]: read-only
+          - generic [ref=e574]:
+            - button "Delegate to Codex" [disabled] [ref=e575]
+            - button "Copy Read-only Handoff" [ref=e576] [cursor=pointer]
+      - generic [ref=e577]:
+        - generic [ref=e578]:
+          - generic [ref=e579]: LE
+          - heading "Lead Planner" [level=3] [ref=e580]
+          - generic "Ready" [ref=e581]
+          - paragraph [ref=e582]: Draft plan, risks, task split
+          - generic [ref=e583]: Read + plan
+        - generic [ref=e584]:
+          - generic [ref=e585]: BA
+          - heading "Backend Dev" [level=3] [ref=e586]
+          - generic "Waiting" [ref=e587]
+          - paragraph [ref=e588]: APIs, SQLite, OpenAPI
+          - generic [ref=e589]: Approved writes only
+        - generic [ref=e590]:
+          - generic [ref=e591]: FR
+          - heading "Frontend Dev" [level=3] [ref=e592]
+          - generic "Waiting" [ref=e593]
+          - paragraph [ref=e594]: React workbench surfaces
+          - generic [ref=e595]: Approved writes only
+        - generic [ref=e596]:
+          - generic [ref=e597]: RE
+          - heading "Reviewer" [level=3] [ref=e598]
+          - generic "Waiting" [ref=e599]
+          - paragraph [ref=e600]: Risk, tests, security, UX
+          - generic [ref=e601]: Read-only
+        - generic [ref=e602]:
+          - generic [ref=e603]: BU
+          - heading "Build Verifier" [level=3] [ref=e604]
+          - generic "Waiting" [ref=e605]
+          - paragraph [ref=e606]: Build, smoke checks, evidence
+          - generic [ref=e607]: Read-only commands
+      - generic [ref=e608]:
+        - generic [ref=e609]:
+          - generic [ref=e611]:
+            - text: Execution
+            - heading "Shared Task List" [level=3] [ref=e612]
+          - generic [ref=e613]:
+            - generic [ref=e614]:
+              - checkbox "Define API contract" [checked] [ref=e615]
+              - generic [ref=e616]: Define API contract
+            - generic [ref=e617]:
+              - checkbox "Implement endpoint" [checked] [ref=e618]
+              - generic [ref=e619]: Implement endpoint
+            - generic [ref=e620]:
+              - checkbox "Add UI" [ref=e621]
+              - generic [ref=e622]: Add UI
+            - generic [ref=e623]:
+              - checkbox "Add tests" [ref=e624]
+              - generic [ref=e625]: Add tests
+            - generic [ref=e626]:
+              - checkbox "Capture evidence" [ref=e627]
+              - generic [ref=e628]: Capture evidence
+        - generic [ref=e629]:
+          - generic [ref=e631]:
+            - text: Latest
+            - heading "Run Timeline" [level=3] [ref=e632]
+          - generic [ref=e633]:
+            - generic [ref=e636]:
+              - strong [ref=e637]: Agent Foundry Done
+              - paragraph [ref=e638]: foundryrun_1780575389647_4lb9ceq
+              - generic [ref=e639]: 05:46:29 PM
+            - generic [ref=e642]:
+              - strong [ref=e643]: Agent Foundry Done
+              - paragraph [ref=e644]: foundryrun_1780575389625_yn08utd
+              - generic [ref=e645]: 05:46:29 PM
+            - generic [ref=e648]:
+              - strong [ref=e649]: Chat Done
+              - paragraph [ref=e650]: run_1779396778135_8omm57t
+              - generic [ref=e651]: 02:22:58 AM
+            - generic [ref=e654]:
+              - strong [ref=e655]: Workflow Done
+              - paragraph [ref=e656]: run_1779197068294_tog2dtd
+              - generic [ref=e657]: 06:54:28 PM
+            - generic [ref=e660]:
+              - strong [ref=e661]: Workflow Done
+              - paragraph [ref=e662]: run_1779196142065_ev0w8ga
+              - generic [ref=e663]: 06:39:02 PM
+            - generic [ref=e666]:
+              - strong [ref=e667]: Workflow Done
+              - paragraph [ref=e668]: run_1779196142050_woh3qf5
+              - generic [ref=e669]: 06:39:02 PM
+      - generic [ref=e670]:
+        - generic [ref=e672]:
+          - text: Control
+          - heading "Quality Gates" [level=3] [ref=e673]
+        - generic [ref=e674]:
+          - generic [ref=e675]:
+            - checkbox "Plan approved" [checked] [ref=e676]
+            - generic [ref=e677]: Plan approved
+          - generic [ref=e678]:
+            - checkbox "Write scope approved" [checked] [ref=e679]
+            - generic [ref=e680]: Write scope approved
+          - generic [ref=e681]:
+            - checkbox "Usage logged" [ref=e682]
+            - generic [ref=e683]: Usage logged
+          - generic [ref=e684]:
+            - checkbox "Tests passed" [ref=e685]
+            - generic [ref=e686]: Tests passed
+          - generic [ref=e687]:
+            - checkbox "Human review complete" [ref=e688]
+            - generic [ref=e689]: Human review complete

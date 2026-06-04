@@ -1,6 +1,6 @@
 # Codex Workpack: ODT Unit Test Generation
 
-Work Item: when attempting to add a Journey Note, after entering the note and clicking Add, the sc...
+Work Item: JOURNEY-25271 Create Assessment
 
 Generate or update Jest/RTL tests for impacted behavior.
 Cover:
@@ -11,11 +11,8 @@ Cover:
 
 Known related test files:
 - tests/jest/reducers/journey-builder-reducers/activities_reducer.test.js
+- tests/jest/reducers/journey-builder-reducers/activities_type_reducer.test.js
 - tests/jest/reducers/journeys_reducer.test.js
-- tests/jest/reducers/journey-builder-reducers/events_reducers.test.js
-- tests/jest/modules/journey-builder/events/actions/events_actions.test.js
-- tests/jest/modals/roster_competency_modal.test.js
-- tests/jest/modules/journey-builder/events/presentational-components/roster_competency_details.test.js
 
 Prompt override (unit test stage):
 - None supplied

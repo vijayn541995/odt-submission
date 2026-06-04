@@ -1,0 +1,20 @@
+{
+  "generatedAt": "2026-05-14T10:02:57.528Z",
+  "status": "rework_required",
+  "decision": "rework_required",
+  "readinessScore": 9,
+  "highFindings": 1,
+  "mediumFindings": 0,
+  "reviewerCount": 5,
+  "changedFiles": [
+    "src/App.jsx",
+    "src/components/EmployeeForm.jsx",
+    "src/components/FilterBar.jsx",
+    "tests/activity-filter.spec.md",
+    "tests/employee-form.test.mjs",
+    ".nvmrc",
+    "src/components/employeeFilterUtils.js"
+  ],
+  "reason": "High-severity reviewer findings require rework before final review.",
+  "nextAction": "Send focused rework instructions to the Main Developer."
+}

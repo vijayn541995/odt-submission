@@ -4,7 +4,7 @@
 - Provider: template
 - Model: n/a
 - LatencyMs: 0
-- Generated At: 2026-04-24T13:22:04.931Z
+- Generated At: 2026-05-15T00:02:32.946Z
 
 # ODT Stage Prompt - 06-compliance
 
@@ -21,7 +21,7 @@ Stage: VPAT/WCAG Compliance
 ## Runtime Context
 ```json
 {
-  "generatedAt": "2026-04-24T13:22:04.931Z",
+  "generatedAt": "2026-05-15T00:02:32.946Z",
   "stage": "compliance",
   "stageStatus": "completed",
   "stageDetail": {
@@ -42,25 +42,23 @@ Stage: VPAT/WCAG Compliance
 ## Sanitized Intake Context
 ```json
 {
-  "title": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc...",
-  "featureName": "when attempting to add a Journey Note, after entering the note and clicking Add, the sc...",
-  "summary": "when attempting to add a Journey Note, after entering the note and clicking Add, the screen will go white and a 404 Page Not Found error displays. See attachments.\n\n \n\nI am able to replicate this in our demo environment and also tested adding a note to an activity and an event and experienced the same issue.",
+  "title": "JOURNEY-25271 Create Assessment",
+  "featureName": "JOURNEY-25271 Create Assessment",
+  "summary": "JOURNEY-25271 Create Assessment\nThe option 'Assessment' displays in the activity dropdown list.\nSelection displays the following:\nBreadcrumb updated to display 'Activities >> New Assessment'.\nInfo icon displays the message: 'Assessments are graded evaluations of the user's proficiency.'\nTitle 'Activity Details - Assessment'\nThe activity contains the following elements:\nActivity Name\nRequired field.\nUnique Name amongst Assessments in organization.\nFree text field.\nField alert message displayed when not unique: 'The Assessment name must be unique.'\nSupports 155 characters.\nCharacter counter is displayed.\nSpecial characters are accepted.\nPlaceholder text 'Enter the activity name.'\nWhen no characters are present in the field, the message is displayed: 'This field is required.'\nDisplay Name\n\"Display Name” header is displayed with info icon.\nMessage is displayed as a tool tip upon clicking on info icon \"Enter the name that is displayed to the learner.\" \nFree text field.\nRequired field.\nSupports special characters.\nName is not required to be unique.\nSupports 155 characters.\nCharacter counter is displayed.\nDescription \nFree text field.\nPlaceholder text displayed: 'Enter the activity description.'\nCharacter limit of 1024.\nCharacter counter displayed.\nRich text editor displayed.",
   "reviewEdits": "",
   "workItemType": "feature",
   "jira": {
-    "ticketId": "",
+    "ticketId": "ODT-DEMO-STORY-101",
     "url": ""
   },
   "requirements": {
     "acceptanceCriteria": [
-      "User can filter activities by keyword without leaving the page",
-      "Filtering updates are announced clearly for assistive technology users",
-      "Keyboard users can open, clear, and navigate filter controls"
+      "JOURNEY-25271 Create Assessment The option 'Assessment' displays in the activity dropdown list."
     ],
     "nonFunctional": [
       "a11y",
       "performance",
-      "analytics"
+      "unit-tests"
     ]
   },
   "defectContext": {
@@ -70,7 +68,10 @@ Stage: VPAT/WCAG Compliance
     "severity": "medium"
   },
   "designInputs": {
-    "mockupImages": [],
+    "mockupImages": [
+      "reports/odt/uploads/1778763461275-1-Screenshot_2026-05-14_at_2.49.57_PM.png",
+      "reports/odt/uploads/1778763541461-1-Screenshot_2026-05-14_at_6.28.44_PM.png"
+    ],
     "referenceDocs": [],
     "jiraLinks": []
   },
@@ -78,7 +79,7 @@ Stage: VPAT/WCAG Compliance
     "intake": "",
     "impact": "",
     "design": "",
-    "code": "Dont use If  conditions you can change the entity_id to user_id for the fix",
+    "code": "",
     "unitTests": "",
     "compliance": "",
     "verify": ""

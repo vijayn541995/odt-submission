@@ -1,0 +1,227 @@
+{
+  "generatedAt": "2026-05-14T12:37:48.293Z",
+  "status": "ready",
+  "summary": {
+    "total": 7,
+    "latestCycleId": "cycle-007",
+    "latestDecision": "ready_for_human_review",
+    "latestReadinessScore": 9,
+    "latestVerificationStatus": "passed",
+    "readinessDelta": 0,
+    "bestReadinessScore": 9,
+    "cyclesWithHighFindings": 1,
+    "cyclesWithFailedVerification": 2
+  },
+  "cycles": [
+    {
+      "id": "cycle-001",
+      "number": 1,
+      "label": "Review Cycle 1",
+      "generatedAt": "2026-05-14T08:53:11.149Z",
+      "updatedAt": "2026-05-14T09:12:11.396Z",
+      "status": "ready_for_human_review",
+      "decision": "ready_for_human_review",
+      "readinessScore": 9,
+      "highFindings": 0,
+      "mediumFindings": 1,
+      "lowFindings": 4,
+      "verificationStatus": "blocked_environment",
+      "verificationSummary": {
+        "total": 2,
+        "passed": 1,
+        "failed": 1,
+        "skipped": 0,
+        "environmentFailures": 1
+      },
+      "changedFileCount": 6,
+      "artifacts": {
+        "reviewerFindings": "reports/odt/agentic/cycles/cycle-001/reviewer-findings.json",
+        "arbitratorDecision": "reports/odt/agentic/cycles/cycle-001/arbitrator-decision.json",
+        "reworkPlan": "reports/odt/agentic/cycles/cycle-001/rework-plan.md",
+        "reworkPrompt": "reports/odt/agentic/cycles/cycle-001/rework-prompt.md",
+        "verifyResults": "reports/odt/agentic/cycles/cycle-001/verify-results.json",
+        "cycle": "reports/odt/agentic/cycles/cycle-001/cycle.json"
+      }
+    },
+    {
+      "id": "cycle-002",
+      "number": 2,
+      "label": "Review Cycle 2",
+      "generatedAt": "2026-05-14T09:12:32.569Z",
+      "updatedAt": "2026-05-14T09:14:36.501Z",
+      "status": "ready_for_human_review",
+      "decision": "ready_for_human_review",
+      "readinessScore": 9,
+      "highFindings": 0,
+      "mediumFindings": 1,
+      "lowFindings": 4,
+      "verificationStatus": "blocked_environment",
+      "verificationSummary": {
+        "total": 2,
+        "passed": 1,
+        "failed": 1,
+        "skipped": 0,
+        "environmentFailures": 1
+      },
+      "changedFileCount": 6,
+      "artifacts": {
+        "reviewerFindings": "reports/odt/agentic/cycles/cycle-002/reviewer-findings.json",
+        "arbitratorDecision": "reports/odt/agentic/cycles/cycle-002/arbitrator-decision.json",
+        "reworkPlan": "reports/odt/agentic/cycles/cycle-002/rework-plan.md",
+        "reworkPrompt": "reports/odt/agentic/cycles/cycle-002/rework-prompt.md",
+        "verifyResults": "reports/odt/agentic/cycles/cycle-002/verify-results.json",
+        "cycle": "reports/odt/agentic/cycles/cycle-002/cycle.json"
+      }
+    },
+    {
+      "id": "cycle-003",
+      "number": 3,
+      "label": "Review Cycle 3",
+      "generatedAt": "2026-05-14T09:14:55.166Z",
+      "updatedAt": "2026-05-14T10:02:40.175Z",
+      "status": "ready_for_human_review",
+      "decision": "ready_for_human_review",
+      "readinessScore": 9,
+      "highFindings": 0,
+      "mediumFindings": 1,
+      "lowFindings": 4,
+      "verificationStatus": "passed",
+      "verificationSummary": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "environmentFailures": 0
+      },
+      "changedFileCount": 6,
+      "artifacts": {
+        "reviewerFindings": "reports/odt/agentic/cycles/cycle-003/reviewer-findings.json",
+        "arbitratorDecision": "reports/odt/agentic/cycles/cycle-003/arbitrator-decision.json",
+        "reworkPlan": "reports/odt/agentic/cycles/cycle-003/rework-plan.md",
+        "reworkPrompt": "reports/odt/agentic/cycles/cycle-003/rework-prompt.md",
+        "verifyResults": "reports/odt/agentic/cycles/cycle-003/verify-results.json",
+        "cycle": "reports/odt/agentic/cycles/cycle-003/cycle.json"
+      }
+    },
+    {
+      "id": "cycle-004",
+      "number": 4,
+      "label": "Review Cycle 4",
+      "generatedAt": "2026-05-14T10:02:57.570Z",
+      "updatedAt": "2026-05-14T10:02:40.175Z",
+      "status": "rework_required",
+      "decision": "rework_required",
+      "readinessScore": 9,
+      "highFindings": 1,
+      "mediumFindings": 0,
+      "lowFindings": 4,
+      "verificationStatus": "passed",
+      "verificationSummary": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "environmentFailures": 0
+      },
+      "changedFileCount": 7,
+      "artifacts": {
+        "reviewerFindings": "reports/odt/agentic/cycles/cycle-004/reviewer-findings.json",
+        "arbitratorDecision": "reports/odt/agentic/cycles/cycle-004/arbitrator-decision.json",
+        "reworkPlan": "reports/odt/agentic/cycles/cycle-004/rework-plan.md",
+        "reworkPrompt": "reports/odt/agentic/cycles/cycle-004/rework-prompt.md",
+        "verifyResults": "reports/odt/agentic/cycles/cycle-004/verify-results.json",
+        "cycle": "reports/odt/agentic/cycles/cycle-004/cycle.json"
+      }
+    },
+    {
+      "id": "cycle-005",
+      "number": 5,
+      "label": "Review Cycle 5",
+      "generatedAt": "2026-05-14T10:04:03.180Z",
+      "updatedAt": "2026-05-14T10:04:46.743Z",
+      "status": "ready_for_human_review",
+      "decision": "ready_for_human_review",
+      "readinessScore": 9,
+      "highFindings": 0,
+      "mediumFindings": 0,
+      "lowFindings": 5,
+      "verificationStatus": "passed",
+      "verificationSummary": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "environmentFailures": 0
+      },
+      "changedFileCount": 7,
+      "artifacts": {
+        "reviewerFindings": "reports/odt/agentic/cycles/cycle-005/reviewer-findings.json",
+        "arbitratorDecision": "reports/odt/agentic/cycles/cycle-005/arbitrator-decision.json",
+        "reworkPlan": "reports/odt/agentic/cycles/cycle-005/rework-plan.md",
+        "reworkPrompt": "reports/odt/agentic/cycles/cycle-005/rework-prompt.md",
+        "verifyResults": "reports/odt/agentic/cycles/cycle-005/verify-results.json",
+        "cycle": "reports/odt/agentic/cycles/cycle-005/cycle.json"
+      }
+    },
+    {
+      "id": "cycle-006",
+      "number": 6,
+      "label": "Review Cycle 6",
+      "generatedAt": "2026-05-14T10:05:02.566Z",
+      "updatedAt": "2026-05-14T12:37:39.353Z",
+      "status": "ready_for_human_review",
+      "decision": "ready_for_human_review",
+      "readinessScore": 9,
+      "highFindings": 0,
+      "mediumFindings": 0,
+      "lowFindings": 5,
+      "verificationStatus": "passed",
+      "verificationSummary": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "environmentFailures": 0
+      },
+      "changedFileCount": 6,
+      "artifacts": {
+        "reviewerFindings": "reports/odt/agentic/cycles/cycle-006/reviewer-findings.json",
+        "arbitratorDecision": "reports/odt/agentic/cycles/cycle-006/arbitrator-decision.json",
+        "reworkPlan": "reports/odt/agentic/cycles/cycle-006/rework-plan.md",
+        "reworkPrompt": "reports/odt/agentic/cycles/cycle-006/rework-prompt.md",
+        "verifyResults": "reports/odt/agentic/cycles/cycle-006/verify-results.json",
+        "cycle": "reports/odt/agentic/cycles/cycle-006/cycle.json"
+      }
+    },
+    {
+      "id": "cycle-007",
+      "number": 7,
+      "label": "Review Cycle 7",
+      "generatedAt": "2026-05-14T12:37:48.288Z",
+      "updatedAt": "2026-05-14T12:37:39.353Z",
+      "status": "ready_for_human_review",
+      "decision": "ready_for_human_review",
+      "readinessScore": 9,
+      "highFindings": 0,
+      "mediumFindings": 0,
+      "lowFindings": 5,
+      "verificationStatus": "passed",
+      "verificationSummary": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "environmentFailures": 0
+      },
+      "changedFileCount": 6,
+      "artifacts": {
+        "reviewerFindings": "reports/odt/agentic/cycles/cycle-007/reviewer-findings.json",
+        "arbitratorDecision": "reports/odt/agentic/cycles/cycle-007/arbitrator-decision.json",
+        "reworkPlan": "reports/odt/agentic/cycles/cycle-007/rework-plan.md",
+        "reworkPrompt": "reports/odt/agentic/cycles/cycle-007/rework-prompt.md",
+        "verifyResults": "reports/odt/agentic/cycles/cycle-007/verify-results.json",
+        "cycle": "reports/odt/agentic/cycles/cycle-007/cycle.json"
+      }
+    }
+  ]
+}

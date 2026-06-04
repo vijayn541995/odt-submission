@@ -1,6 +1,6 @@
 # ODT Tech Design
 
-- Feature: when attempting to add a Journey Note, after entering the note and clicking Add, the sc...
+- Feature: JOURNEY-25271 Create Assessment
 - Target repo: /Users/vn105957/Desktop/lpDev/journey-builder-js/
 - UI: React/Terra minimal-blast-radius update
 - API strategy: reuse current contracts unless explicitly approved

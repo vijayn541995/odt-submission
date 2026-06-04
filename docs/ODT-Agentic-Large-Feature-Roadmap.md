@@ -1,0 +1,489 @@
+# Oracle Developer Twin Agentic Large Feature Roadmap
+
+Update, 2026-05-15: the current implementation direction is anchored in `/Users/vn105957/Desktop/odt-submission/odt-workbench-next`. Treat the Standards & Governance Layer as mandatory before any large-feature agent loop begins. The old dashboard language in this roadmap should be read as historical context; new UI work should surface the Standards Command Center, Evidence Trail, controlled approval gates, dependency decisions, and PR Readiness Pack.
+
+Follow-up, 2026-05-15: large-feature intake should include repo/folder path selection by local path, base branch, scope, and a governed Context Vault for mockups, docs, spreadsheets, API samples, and notes. Context files are copied into the ODT workspace and remain evidence for planning, standards review, Q&A, and PR readiness. The local MVP can use lightweight retrieval over that evidence while Oracle DB 23ai/26ai vector/RAG remains the enterprise path.
+
+## Purpose
+
+This note captures how Oracle Developer Twin can evolve from a governed seven-stage planning worker into a more advanced agentic delivery studio for large feature implementation, defect remediation, and multi-repo tasks.
+
+The reference Swarm IDE demo is useful because it focuses on the same developer pain ODT is already trying to solve: the developer should not spend the first 30 to 90 minutes babysitting an AI coding session. The stronger product direction is to let ODT plan, monitor, critique, and loop in the background until the output is ready for serious human review.
+
+## What The Swarm IDE Adds
+
+The Swarm IDE pattern has four important ideas:
+
+1. A supervisor controls the workflow instead of the developer manually prompting each step.
+2. Agents have narrow roles and durable artifacts instead of one long shared context.
+3. Work happens in review cycles: code, critique, arbitrate, improve, score, repeat.
+4. The UI shows progress, timeline, scores, and explainable diffs so the human can review on their own schedule.
+
+ODT already has strong governance, repo impact analysis, accessibility/compliance visibility, and execution handoff. The missing upgrade is a clear multi-agent control loop for large implementation work.
+
+## Current ODT Strengths
+
+- Seven-stage flow: intake, impact, design, code workpack, unit tests, compliance, verify.
+- Repo-aware planning and ranked impacted files.
+- Dashboard evidence for human review.
+- Oracle-aligned accessibility and VPAT/WCAG guidance.
+- Prompt provider fallback between template and OCI.
+- Governed execution bridge for Codex or Cline.
+- Runtime artifacts written to `reports/` for auditability.
+
+## Current ODT Gaps For Large Tasks
+
+- The workflow is stage-based, but not yet an autonomous review-cycle loop.
+- Agent roles are implied by workpacks, not represented as first-class workers.
+- Delegated execution is mostly one agent session, not a monitored agent graph.
+- The UI shows generated evidence, but not a live multi-agent timeline.
+- There is no formal task graph for decomposing a large feature into parallel workstreams.
+- Returned diffs are reviewed by Git tools, but ODT does not yet explain each major change back to the originating agent recommendation.
+- There is no score-based stop condition such as "PR readiness is high enough, stop and ask the developer."
+
+## Target Product Direction
+
+Position ODT V3 as:
+
+> Oracle Developer Twin is an agentic delivery control plane that turns a vague work item into a monitored, review-ready implementation path using specialist AI workers, durable evidence, and human approval gates.
+
+The important shift:
+
+- ODT V1/V2: "Plan and govern before delegation."
+- ODT V3: "Plan, delegate, monitor, critique, improve, and explain until human review is worth the developer's attention."
+
+## Recommended Agent Roster
+
+Keep the roster small at first. Too many agents create noise.
+
+| Agent | Responsibility | Output |
+| --- | --- | --- |
+| Supervisor | Owns workflow state, review cycles, stop conditions, and handoffs. | `run-state.json`, cycle decisions |
+| Requirement Clarifier | Converts vague tickets into decision-ready questions. | `clarifications/questions.json` |
+| Repo Cartographer | Maps modules, ownership, dependencies, and risky files. | `impact-ranked-files.json`, `repo-map.json` |
+| Architect | Designs implementation strategy and boundaries. | `tech-design.md` |
+| Planner / Scheduler | Chooses task order, parallel lanes, blockers, and next best action. | `execution-plan.json`, `scheduler-decision.json` |
+| Task Decomposer | Splits large work into a task graph with dependencies. | `task-graph.json` |
+| Main Developer | Applies core implementation changes. | patch or direct repo edits |
+| Test Engineer | Adds or updates unit, integration, and regression tests. | `test-plan.md`, test patch |
+| Accessibility Reviewer | Checks keyboard, semantics, focus, ARIA, and VPAT mapping. | `a11y-review.md` |
+| Security/Compliance Reviewer | Checks dependency, data handling, and policy risks. | `compliance-review.md` |
+| Build Verifier | Runs install, lint, tests, build, and app smoke checks. | `verify-results.json` |
+| Diff Explainer | Explains why each important file changed. | `diff-explain.md` |
+| Merge Arbitrator | Decides if another review cycle is needed or human review should start. | `arbitrator-decision.json` |
+| Memory Curator | Compresses useful lessons into durable memory. | `memory/*.md` |
+
+For the first real implementation, use one Main Developer. Let other agents critique in parallel. Only allow multiple code-writing agents when the task graph has disjoint write scopes.
+
+## Large Feature Workflow
+
+```mermaid
+flowchart LR
+  A["Ticket, Jira, docs, mockups"] --> B["Prompt hardening"]
+  B --> C["Repo cartography"]
+  C --> D["Task graph"]
+  D --> E["Human approval gate"]
+  E --> F["Main developer implementation"]
+  F --> G["Parallel reviewer agents"]
+  G --> H["Merge arbitrator"]
+  H --> I{"PR ready?"}
+  I -- "No" --> J["Next review-cycle workpack"]
+  J --> F
+  I -- "Yes" --> K["Explainable diff and review dashboard"]
+  K --> L["Human diff review"]
+```
+
+## Review Cycle Model
+
+A review cycle is one complete loop:
+
+1. Supervisor prepares the cycle objective.
+2. Main Developer implements the next slice.
+3. Reviewer agents inspect the result in parallel.
+4. Build Verifier runs checks.
+5. Diff Explainer records why important files changed.
+6. Merge Arbitrator scores readiness and decides whether to continue.
+7. Memory Curator writes durable lessons for the next cycle.
+
+Suggested stop conditions:
+
+- PR readiness score >= 8/10.
+- No high-severity reviewer objections.
+- Tests and build pass or failures are documented as environmental.
+- No scope-policy violations.
+- No unresolved high-severity clarifications.
+- No protected files changed without approval.
+
+## Scoring Model
+
+Avoid one generic score. Use role scores and show them in the dashboard.
+
+| Score | Meaning |
+| --- | --- |
+| Requirement readiness | Does the implementation satisfy acceptance criteria? |
+| Architecture fit | Does it match existing repo patterns? |
+| Test confidence | Are happy, edge, and regression paths covered? |
+| Accessibility confidence | Are keyboard, labels, semantics, and focus safe? |
+| Security/compliance confidence | Are dependency and policy risks controlled? |
+| Scope discipline | Did the agent stay within allowed files and blast radius? |
+| PR readiness | Can a developer reasonably start final review now? |
+
+The dashboard should show both the current score and the trend across review cycles. A flat or falling trend is a signal to stop and ask the human.
+
+## Dashboard Improvements
+
+The current FEDIT/ODT dashboard should grow into a mission-control view.
+
+Recommended panels:
+
+1. Command Center
+   - work item, repo, branch, status, current review cycle, next decision
+   - clear buttons: Run Analysis, Approve Delegation, Pause, Resume, Stop, Reset
+
+2. Clarifications Needed
+   - open questions, severity, owner, answer box, unresolved blocker count
+   - delegation blocked until critical questions are resolved
+
+3. Task Graph
+   - feature split into tasks, dependencies, owners, status, write scope
+   - useful for large work where one prompt is too broad
+
+4. Agent Timeline
+   - every agent run as a row
+   - status, duration, retries, timeout recovery, artifact links
+   - similar to the Swarm IDE timeline
+
+5. Review Cycle Scoreboard
+   - role scores per cycle
+   - trend line showing improvement or regression
+   - arbitrator reason for continue/stop
+
+6. Scope and Risk
+   - allowed write paths, forbidden paths, max file count
+   - changed file risk heatmap
+   - dependency and protected file warnings
+
+7. Explainable Diff
+   - changed file list
+   - why the file changed
+   - which agent suggested it
+   - acceptance criteria linked to the change
+
+8. Verification Console
+   - install, lint, unit tests, build, a11y checks, smoke checks
+   - pass/fail logs with short summaries
+
+9. Human Review Gate
+   - approve for delegation
+   - request rework
+   - accept final diff
+   - export PR description and evidence bundle
+
+## Artifact Model
+
+Add these artifacts over time:
+
+```text
+reports/odt/agentic/
+  run-state.json
+  agent-roster.json
+  task-graph.json
+  cycles/
+    cycle-001/
+      objective.md
+      developer-output.md
+      reviewer-findings.json
+      scores.json
+      arbitrator-decision.json
+      diff-explain.md
+      verify-results.json
+  memory/
+    repo-patterns.md
+    task-lessons.md
+    agent-quality-notes.md
+```
+
+The key principle is that every important decision should survive outside model context. Context can rot; artifacts can be inspected.
+
+## Implementation Roadmap
+
+### Phase 1: Agentic State Model
+
+Add first-class run states:
+
+- `draft`
+- `needs_input`
+- `ready_for_review`
+- `approved_for_delegate`
+- `delegated`
+- `cycle_running`
+- `diff_review_required`
+- `rework_required`
+- `accepted`
+
+Generate `reports/odt/agentic/run-state.json` and render it in FEDIT.
+
+### Phase 2: Clarification Gate
+
+Implement the existing V2 clarification idea first. This gives immediate value and prevents large tasks from drifting.
+
+Minimum behavior:
+
+- generate structured questions
+- save answers
+- block delegation when high-severity questions are open
+- include answers in the execution bundle
+
+### Phase 3: Task Graph For Large Work
+
+Create `task-graph.json` from intake plus repo impact.
+
+Each task should include:
+
+- title
+- acceptance criteria mapping
+- impacted files
+- allowed write paths
+- dependencies
+- suggested agent role
+- verification expectations
+
+### Phase 4: Monitored Agent Timeline
+
+Extend `agent-launcher.js` and `local-context.js` to record each agent run, not just the latest launch.
+
+Track:
+
+- agent role
+- status
+- started/finished time
+- duration
+- command/provider
+- retry count
+- artifacts produced
+- final summary
+
+Render this as a timeline in FEDIT.
+
+### Phase 5: Reviewer Swarm Without Multi-writer Risk
+
+Start with one code writer and parallel reviewers.
+
+Flow:
+
+1. Main Developer creates patch.
+2. Architect, Test, A11y, Security, and Build reviewers inspect patch.
+3. Arbitrator creates rework prompt if needed.
+4. Main Developer applies the next review cycle.
+
+This is safer than letting many agents edit the same files.
+
+### Phase 6: Explainable Diff
+
+After each delegated run, generate `diff-explain.md`.
+
+For each changed file:
+
+- what changed
+- why it changed
+- which requirement it supports
+- which reviewer requested it
+- what risk remains
+
+This makes PR review easier and gives leadership a clear audit trail.
+
+### Phase 7: Worktree Isolation
+
+For advanced runs, create an isolated branch or worktree per run.
+
+Benefits:
+
+- safer experimentation
+- cleaner rollback
+- easier run-to-run comparison
+- no accidental overwrite of developer work
+
+### Phase 8: Learning Loop From Good PRs
+
+Use merged PRs as training examples for better local rules:
+
+1. Take a successful merged PR.
+2. Reset a copy of the repo to the previous commit.
+3. Run ODT agentic workflow.
+4. Compare ODT output to the human PR.
+5. Ask a rule-improvement agent what instructions would have improved the result.
+6. Update agent role files and prompt contracts.
+
+This should update local rules, not silently change production behavior.
+
+## UI Experience Principles
+
+- The first screen should be a workbench, not a marketing page.
+- Large features need a task graph, timeline, and risk map before they need decorative visuals.
+- Every agent output should link to a file the developer can inspect.
+- The human should see decisions, not raw logs first.
+- The UI should make blocked, risky, and ready states unmistakable.
+- Do not hide cost and time. Show duration, retries, and low-value review cycles.
+- Keep the final approval human-controlled.
+
+## Recommended Next Build
+
+Build an "Agentic Control Plane MVP" in this order:
+
+1. Add `reports/odt/agentic/run-state.json`.
+2. Add `reports/odt/agentic/agent-roster.json`.
+3. Add a FEDIT `Agent Timeline` panel.
+4. Add a FEDIT `Review Cycle Scoreboard` panel.
+5. Add `Clarifications Needed` with delegation blocking.
+6. Add `task-graph.json` and display the task graph.
+7. Extend execution status so each delegated run becomes a timeline event.
+8. Add a simple arbitrator that outputs `continue`, `ask_human`, or `ready_for_review`.
+
+This creates the visible agentic experience without requiring the hardest multi-agent execution engine on day one.
+
+## Multi-Agent Feasibility
+
+ODT should use multi-agent workflow, but it should not start with many agents editing files at the same time.
+
+The safest useful pattern is:
+
+```text
+Supervisor
+  -> Design / Impact Agent reads repo and artifacts
+  -> Planner / Scheduler decides task order and parallel lanes
+  -> Main Developer Agent writes code
+  -> Review agents run in parallel
+       -> Architect Reviewer
+       -> Unit Test Reviewer
+       -> Accessibility Reviewer
+       -> Security / Compliance Reviewer
+       -> Build Verifier
+  -> Optimizer Agent creates rework instructions
+  -> Main Developer Agent applies next review cycle
+  -> Arbitrator decides ready / rework / ask human
+```
+
+### Why One Main Coder First
+
+For large enterprise codebases, the main risk is not that AI cannot produce code. The main risk is conflicting edits, hidden scope drift, and unclear ownership of the final patch.
+
+One main coder keeps the actual patch coherent. Parallel reviewer agents still give the benefit of multi-agent reasoning without multiplying merge conflicts.
+
+### Planner / Scheduler Agent
+
+The Planner / Scheduler agent is important for large tasks because not every step should run immediately.
+
+It should decide:
+
+- which task should be implemented first
+- which tasks can run in parallel
+- which tasks are blocked by missing answers or backend contracts
+- which files each worker may touch
+- when a test agent can start
+- when an accessibility reviewer can start
+- when to stop because the current review cycle is taking too long
+- when to ask the developer instead of guessing
+
+Example output:
+
+```json
+{
+  "currentCycle": 1,
+  "currentCycleLabel": "Review Cycle 1",
+  "nextAction": "implement_foundation",
+  "parallelLanes": [
+    {
+      "lane": "developer",
+      "task": "Add Assessment activity route and form shell",
+      "allowedFiles": ["src/journey-builder-app/modules/journey-builder/activities/**"]
+    },
+    {
+      "lane": "test-planner",
+      "task": "Prepare unit test matrix from acceptance criteria",
+      "allowedFiles": ["reports/odt/agentic/cycles/cycle-001/**"]
+    }
+  ],
+  "blockedTasks": [
+    {
+      "task": "Save/publish integration",
+      "reason": "Backend contract is not ready; use fixture boundary only."
+    }
+  ],
+  "humanQuestion": null
+}
+```
+
+This makes ODT behave more like a development lead coordinating parallel developers, not just a prompt generator.
+
+### When To Allow Multiple Coding Agents
+
+Use multiple code-writing agents only when the task graph proves write scopes are disjoint.
+
+Good example:
+
+- Agent A owns frontend component files.
+- Agent B owns unit tests only.
+- Agent C owns docs or migration notes only.
+
+Bad example:
+
+- three agents all edit the same component tree
+- one agent refactors while another adds behavior
+- one agent changes package dependencies while another updates lockfiles
+
+### Expected Usefulness
+
+High usefulness:
+
+- large feature implementation
+- codebase impact discovery
+- accessibility-heavy UI work
+- dependency/security remediation
+- test creation and gap review
+- PR explanation and reviewer prep
+
+Medium usefulness:
+
+- small one-file bug fixes
+- simple copy changes
+- mechanical refactors that already have strong codemods
+
+Low usefulness:
+
+- tasks with no clear acceptance criteria
+- tasks where product decisions are still missing
+- tasks requiring live backend contracts that do not exist yet
+
+### Plugin / Codex Integration Direction
+
+ODT should expose itself in three ways:
+
+1. ODT Studio desktop app for humans.
+2. ODT CLI commands for automation.
+3. ODT Codex skill/plugin wrapper for developers already working inside Codex.
+
+The plugin should not contain the whole product. It should be a thin launcher that lets Codex call ODT commands, read ODT artifacts, and continue/rework the current assignment.
+
+Recommended plugin commands:
+
+```text
+odt.newTask
+odt.askClarifications
+odt.answerClarification
+odt.continue
+odt.runImpact
+odt.delegate
+odt.status
+odt.explainDiff
+odt.cleanStaleState
+```
+
+This keeps ODT independent from any one agent tool while still making it easy for Codex to use.
+
+## Product Pitch
+
+For large tasks, ODT should not promise "AI writes all the code." The stronger promise is:
+
+> ODT gives developers a monitored AI delivery team that clarifies the requirement, splits the work, controls scope, executes safely, reviews itself, and brings the human back only when there is reviewable evidence.
+
+That is the advanced agentic version of Oracle Developer Twin.

@@ -1,0 +1,375 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - generic "ODT Workbench" [ref=e6]:
+        - img [ref=e7]:
+          - generic [ref=e9]: ODT
+      - generic [ref=e13]:
+        - strong [ref=e14]: ODT Workbench
+        - generic [ref=e15]: Engineering control plane
+    - navigation "ODT Workbench" [ref=e16]:
+      - button "Overview" [ref=e17] [cursor=pointer]:
+        - img [ref=e19]
+        - generic [ref=e24]: Overview
+      - button "Intake" [ref=e25] [cursor=pointer]:
+        - img [ref=e27]
+        - generic [ref=e31]: Intake
+      - button "Planner" [ref=e32] [cursor=pointer]:
+        - img [ref=e34]
+        - generic [ref=e38]: Planner
+      - button "Standards" [ref=e39] [cursor=pointer]:
+        - img [ref=e41]
+        - generic [ref=e44]: Standards
+      - button "Agent Team" [ref=e45] [cursor=pointer]:
+        - img [ref=e47]
+        - generic [ref=e52]: Agent Team
+      - button "Review" [ref=e53] [cursor=pointer]:
+        - img [ref=e55]
+        - generic [ref=e59]: Review
+      - button "PR Ready" [ref=e60] [cursor=pointer]:
+        - img [ref=e62]
+        - generic [ref=e66]: PR Ready
+      - button "Artifacts" [ref=e67] [cursor=pointer]:
+        - img [ref=e69]
+        - generic [ref=e71]: Artifacts
+      - button "ODT Guide" [ref=e72] [cursor=pointer]:
+        - img [ref=e74]
+        - generic [ref=e77]: ODT Guide
+      - button "Runs" [ref=e78] [cursor=pointer]:
+        - img [ref=e80]
+        - generic [ref=e85]: Runs
+      - button "Monitoring" [ref=e86] [cursor=pointer]:
+        - img [ref=e88]
+        - generic [ref=e90]: Monitoring
+      - button "Settings" [ref=e91] [cursor=pointer]:
+        - img [ref=e93]
+        - generic [ref=e96]: Settings
+    - generic [ref=e97]:
+      - img [ref=e99]
+      - generic [ref=e103]:
+        - strong [ref=e104]: Governance Mode
+        - generic [ref=e105]: Human-gated. Writes require approval.
+  - main [ref=e106]:
+    - generic [ref=e107]:
+      - generic [ref=e108]:
+        - generic [ref=e109]: Oracle Developer Twin
+        - heading "ODT Workbench" [level=1] [ref=e110]
+      - generic [ref=e111]:
+        - generic "Backend API reachability" [ref=e112]: Backend Online
+        - generic "Current workbench environment" [ref=e113]: "Environment: Local Dev"
+        - generic "AI provider selected by the backend" [ref=e114]: "Provider: local"
+        - generic "ODT API context status" [ref=e115]: "ODT API: Offline"
+        - button "Refresh workbench status" [ref=e116] [cursor=pointer]:
+          - img [ref=e117]
+    - generic [ref=e120]:
+      - generic [ref=e121]:
+        - generic [ref=e122]:
+          - text: Overview
+          - heading "Requirement to PR-ready workbench" [level=2] [ref=e123]
+          - paragraph [ref=e124]: Guide a real engineering change from requirement and repo intake through codebase analysis, gap discovery, technical design, compliance planning, implementation review, testing, and PR readiness.
+        - generic [ref=e125]:
+          - button "New Intake" [ref=e126] [cursor=pointer]
+          - button "Open ODT Guide" [ref=e127] [cursor=pointer]
+          - button "View Standards" [ref=e128] [cursor=pointer]
+      - region "Workflow progress" [ref=e129]:
+        - generic [ref=e130]:
+          - text: Workflow
+          - strong [ref=e131]: Requirement to PR readiness
+        - list [ref=e132]:
+          - listitem [ref=e133]:
+            - generic [ref=e134]: "1"
+            - text: Intake
+          - listitem [ref=e135]:
+            - generic [ref=e136]: "2"
+            - text: Analyze
+          - listitem [ref=e137]:
+            - generic [ref=e138]: "3"
+            - text: Design
+          - listitem [ref=e139]:
+            - generic [ref=e140]: "4"
+            - text: Standards
+          - listitem [ref=e141]:
+            - generic [ref=e142]: "5"
+            - text: Implement
+          - listitem [ref=e143]:
+            - generic [ref=e144]: "6"
+            - text: Test
+          - listitem [ref=e145]:
+            - generic [ref=e146]: "7"
+            - text: PR Ready
+      - generic [ref=e147]:
+        - generic [ref=e148]:
+          - generic [ref=e149]: Workflow State
+          - strong [ref=e150]: Blocked
+          - paragraph [ref=e151]: Review Blocking Items
+        - generic [ref=e152]:
+          - generic [ref=e153]: Assignments
+          - strong [ref=e154]: "1"
+          - paragraph [ref=e155]: Local work items
+        - generic [ref=e156]:
+          - generic [ref=e157]: Active Runs
+          - strong [ref=e158]: "0"
+          - paragraph [ref=e159]: 50 recent runs
+        - generic [ref=e160]:
+          - generic [ref=e161]: AI Requests
+          - strong [ref=e162]: "0"
+          - paragraph [ref=e163]: 0 tokens today
+        - generic [ref=e164]:
+          - generic [ref=e165]: Blocked Items
+          - strong [ref=e166]: "1"
+          - paragraph [ref=e167]: Derived from evidence
+      - generic [ref=e168]:
+        - generic [ref=e169]:
+          - generic [ref=e171]:
+            - text: Active Work
+            - heading "Continue Work" [level=3] [ref=e172]
+          - generic [ref=e174]:
+            - generic [ref=e175]:
+              - strong [ref=e176]: Local Workbench MVP
+              - generic [ref=e177]: Build the governed ODT Workbench control plane with backend-owned AI, usage logging, OpenAPI, and human approval gates.
+              - generic [ref=e178]:
+                - 'generic "Stage: Blocked" [ref=e179]'
+                - 'generic "Owner: Vijay" [ref=e180]'
+                - 'generic "Updated: 06:37:09 AM" [ref=e181]'
+              - generic [ref=e182]:
+                - button "Continue" [ref=e183] [cursor=pointer]
+                - button "Review Plan" [ref=e184] [cursor=pointer]
+                - button "View Evidence" [ref=e185] [cursor=pointer]
+            - generic "Needs Review" [ref=e186]
+        - generic [ref=e187]:
+          - generic [ref=e189]:
+            - text: Guidance
+            - heading "Next Best Action" [level=3] [ref=e190]
+          - generic [ref=e191]:
+            - strong [ref=e192]: Review Blocking Items
+            - paragraph [ref=e193]: Review Standards or approve a newer write decision.
+            - button "Review Blocking Items" [ref=e194] [cursor=pointer]
+      - generic [ref=e195]:
+        - generic [ref=e197]:
+          - text: Governed State
+          - heading "Workflow State Engine" [level=3] [ref=e198]
+        - generic [ref=e199]:
+          - generic [ref=e200]:
+            - generic "BLOCKED" [ref=e201]
+            - strong [ref=e202]: Blocked
+            - paragraph [ref=e203]: Review Standards or approve a newer write decision.
+            - button "Review Blocking Items" [ref=e204] [cursor=pointer]
+          - generic "Workflow milestones" [ref=e205]:
+            - generic [ref=e206]: "Done: Requirement"
+            - generic [ref=e207]: "Done: Repo"
+            - generic [ref=e208]: "Done: Design"
+            - generic [ref=e209]: "Done: Plan"
+            - generic [ref=e210]: "Done: Standards"
+            - generic [ref=e211]: "Pending: Write Approval"
+            - generic [ref=e212]: "Done: Handoff"
+            - generic [ref=e213]: "Done: Implementation Evidence"
+            - generic [ref=e214]: "Done: Post Check"
+            - generic [ref=e215]: "Done: PR Pack"
+          - generic [ref=e217]:
+            - generic [ref=e218]:
+              - generic [ref=e219]: Run standards
+              - strong [ref=e220]: Available
+            - generic [ref=e221]:
+              - generic [ref=e222]: Approve write
+              - strong [ref=e223]: Available
+            - generic [ref=e224]:
+              - generic [ref=e225]: Delegate write
+              - strong [ref=e226]: Locked
+            - generic [ref=e227]:
+              - generic [ref=e228]: Record evidence
+              - strong [ref=e229]: Waiting
+            - generic [ref=e230]:
+              - generic [ref=e231]: Prepare PR
+              - strong [ref=e232]: Waiting
+            - generic [ref=e233]:
+              - generic [ref=e234]: Dependency installs
+              - strong [ref=e235]: Separate approval
+        - table [ref=e237]:
+          - rowgroup [ref=e238]:
+            - row "Blocked Area Reason Required Action" [ref=e239]:
+              - columnheader "Blocked Area" [ref=e240]
+              - columnheader "Reason" [ref=e241]
+              - columnheader "Required Action" [ref=e242]
+          - rowgroup [ref=e243]:
+            - row "Approval Implementation blocked until standards findings are resolved. Review Standards or approve a newer write decision." [ref=e244]:
+              - cell "Approval" [ref=e245]
+              - cell "Implementation blocked until standards findings are resolved." [ref=e246]
+              - cell "Review Standards or approve a newer write decision." [ref=e247]:
+                - button "Review Standards or approve a newer write decision." [ref=e248] [cursor=pointer]
+        - generic [ref=e249]:
+          - generic [ref=e250]:
+            - generic [ref=e251]: Decision Trail
+            - strong [ref=e252]: Why the workflow is here
+          - table [ref=e254]:
+            - rowgroup [ref=e255]:
+              - row "When Event Status Evidence Action" [ref=e256]:
+                - columnheader "When" [ref=e257]
+                - columnheader "Event" [ref=e258]
+                - columnheader "Status" [ref=e259]
+                - columnheader "Evidence" [ref=e260]
+                - columnheader "Action" [ref=e261]
+            - rowgroup [ref=e262]:
+              - row "05:46:29 PM Foundry Review Completed Needs Review Review Agent Foundry evidence in Artifacts, then update the plan, standards review, or approval notes as needed. Open Team" [ref=e263]:
+                - cell "05:46:29 PM" [ref=e264]
+                - cell "Foundry Review Completed" [ref=e265]
+                - cell "Needs Review" [ref=e266]:
+                  - generic "Needs Review" [ref=e267]
+                - cell "Review Agent Foundry evidence in Artifacts, then update the plan, standards review, or approval notes as needed." [ref=e268]
+                - cell "Open Team" [ref=e269]:
+                  - button "Open Team" [ref=e270] [cursor=pointer]
+              - 'row "05:46:29 PM Requirement Scout review NEEDS REVIEW Requirement Scout reviewed Local Workbench MVP for requirements readiness. Status: NEEDS_REVIEW. Open Team" [ref=e271]':
+                - cell "05:46:29 PM" [ref=e272]
+                - cell "Requirement Scout review" [ref=e273]
+                - cell "NEEDS REVIEW" [ref=e274]:
+                  - generic "NEEDS REVIEW" [ref=e275]
+                - 'cell "Requirement Scout reviewed Local Workbench MVP for requirements readiness. Status: NEEDS_REVIEW." [ref=e276]'
+                - cell "Open Team" [ref=e277]:
+                  - button "Open Team" [ref=e278] [cursor=pointer]
+              - 'row "05:46:29 PM Redwood UX Sentinel review NEEDS REVIEW Redwood UX Sentinel reviewed Local Workbench MVP for ux readiness. Status: NEEDS_REVIEW. Open Team" [ref=e279]':
+                - cell "05:46:29 PM" [ref=e280]
+                - cell "Redwood UX Sentinel review" [ref=e281]
+                - cell "NEEDS REVIEW" [ref=e282]:
+                  - generic "NEEDS REVIEW" [ref=e283]
+                - 'cell "Redwood UX Sentinel reviewed Local Workbench MVP for ux readiness. Status: NEEDS_REVIEW." [ref=e284]'
+                - cell "Open Team" [ref=e285]:
+                  - button "Open Team" [ref=e286] [cursor=pointer]
+              - 'row "05:46:29 PM Product Value Strategist review NEEDS REVIEW Product Value Strategist reviewed Local Workbench MVP for product readiness. Status: NEEDS_REVIEW. Open Team" [ref=e287]':
+                - cell "05:46:29 PM" [ref=e288]
+                - cell "Product Value Strategist review" [ref=e289]
+                - cell "NEEDS REVIEW" [ref=e290]:
+                  - generic "NEEDS REVIEW" [ref=e291]
+                - 'cell "Product Value Strategist reviewed Local Workbench MVP for product readiness. Status: NEEDS_REVIEW." [ref=e292]'
+                - cell "Open Team" [ref=e293]:
+                  - button "Open Team" [ref=e294] [cursor=pointer]
+              - 'row "05:46:29 PM Architecture Cartographer review NEEDS REVIEW Architecture Cartographer reviewed Local Workbench MVP for architecture readiness. Status: NEEDS_REVIEW. Open Team" [ref=e295]':
+                - cell "05:46:29 PM" [ref=e296]
+                - cell "Architecture Cartographer review" [ref=e297]
+                - cell "NEEDS REVIEW" [ref=e298]:
+                  - generic "NEEDS REVIEW" [ref=e299]
+                - 'cell "Architecture Cartographer reviewed Local Workbench MVP for architecture readiness. Status: NEEDS_REVIEW." [ref=e300]'
+                - cell "Open Team" [ref=e301]:
+                  - button "Open Team" [ref=e302] [cursor=pointer]
+              - 'row "05:46:29 PM Delivery Engineer review NEEDS REVIEW Delivery Engineer reviewed Local Workbench MVP for development readiness. Status: NEEDS_REVIEW. Open Team" [ref=e303]':
+                - cell "05:46:29 PM" [ref=e304]
+                - cell "Delivery Engineer review" [ref=e305]
+                - cell "NEEDS REVIEW" [ref=e306]:
+                  - generic "NEEDS REVIEW" [ref=e307]
+                - 'cell "Delivery Engineer reviewed Local Workbench MVP for development readiness. Status: NEEDS_REVIEW." [ref=e308]'
+                - cell "Open Team" [ref=e309]:
+                  - button "Open Team" [ref=e310] [cursor=pointer]
+              - 'row "05:46:29 PM Code Quality Advocate review NEEDS REVIEW Code Quality Advocate reviewed Local Workbench MVP for code review readiness. Status: NEEDS_REVIEW. Open Team" [ref=e311]':
+                - cell "05:46:29 PM" [ref=e312]
+                - cell "Code Quality Advocate review" [ref=e313]
+                - cell "NEEDS REVIEW" [ref=e314]:
+                  - generic "NEEDS REVIEW" [ref=e315]
+                - 'cell "Code Quality Advocate reviewed Local Workbench MVP for code review readiness. Status: NEEDS_REVIEW." [ref=e316]'
+                - cell "Open Team" [ref=e317]:
+                  - button "Open Team" [ref=e318] [cursor=pointer]
+              - 'row "05:46:29 PM Compliance Guardian review NEEDS REVIEW Compliance Guardian reviewed Local Workbench MVP for compliance readiness. Status: NEEDS_REVIEW. Open Team" [ref=e319]':
+                - cell "05:46:29 PM" [ref=e320]
+                - cell "Compliance Guardian review" [ref=e321]
+                - cell "NEEDS REVIEW" [ref=e322]:
+                  - generic "NEEDS REVIEW" [ref=e323]
+                - 'cell "Compliance Guardian reviewed Local Workbench MVP for compliance readiness. Status: NEEDS_REVIEW." [ref=e324]'
+                - cell "Open Team" [ref=e325]:
+                  - button "Open Team" [ref=e326] [cursor=pointer]
+              - 'row "05:46:29 PM Pipeline Steward review NEEDS REVIEW Pipeline Steward reviewed Local Workbench MVP for ci/cd readiness. Status: NEEDS_REVIEW. Open Team" [ref=e327]':
+                - cell "05:46:29 PM" [ref=e328]
+                - cell "Pipeline Steward review" [ref=e329]
+                - cell "NEEDS REVIEW" [ref=e330]:
+                  - generic "NEEDS REVIEW" [ref=e331]
+                - 'cell "Pipeline Steward reviewed Local Workbench MVP for ci/cd readiness. Status: NEEDS_REVIEW." [ref=e332]'
+                - cell "Open Team" [ref=e333]:
+                  - button "Open Team" [ref=e334] [cursor=pointer]
+              - 'row "05:46:29 PM Quality Strategist review NEEDS REVIEW Quality Strategist reviewed Local Workbench MVP for qa readiness. Status: NEEDS_REVIEW. Open Team" [ref=e335]':
+                - cell "05:46:29 PM" [ref=e336]
+                - cell "Quality Strategist review" [ref=e337]
+                - cell "NEEDS REVIEW" [ref=e338]:
+                  - generic "NEEDS REVIEW" [ref=e339]
+                - 'cell "Quality Strategist reviewed Local Workbench MVP for qa readiness. Status: NEEDS_REVIEW." [ref=e340]'
+                - cell "Open Team" [ref=e341]:
+                  - button "Open Team" [ref=e342] [cursor=pointer]
+      - generic [ref=e343]:
+        - generic [ref=e344]:
+          - generic [ref=e346]:
+            - text: Quality
+            - heading "Standards Gate" [level=3] [ref=e347]
+          - generic [ref=e348]:
+            - generic [ref=e349]:
+              - generic "WARNING" [ref=e350]
+              - generic [ref=e351]: Latest standards evidence is available.
+            - generic [ref=e352]:
+              - generic [ref=e353]: Accessibility
+              - generic "PASS" [ref=e354]
+            - generic [ref=e355]:
+              - generic [ref=e356]: Security
+              - generic "PASS" [ref=e357]
+            - generic [ref=e358]:
+              - generic [ref=e359]: Dependency
+              - generic "PASS" [ref=e360]
+            - generic [ref=e361]:
+              - generic [ref=e362]: Testing
+              - generic "PASS" [ref=e363]
+            - generic [ref=e364]:
+              - generic [ref=e365]: PR Readiness
+              - generic "PASS" [ref=e366]
+        - generic [ref=e367]:
+          - generic [ref=e369]:
+            - text: Workflow
+            - heading "Governed Delivery Flow" [level=3] [ref=e370]
+          - list [ref=e371]:
+            - listitem [ref=e372]:
+              - generic [ref=e373]: "1"
+              - generic [ref=e374]:
+                - strong [ref=e375]: Intake requirement and repo
+                - paragraph [ref=e376]: Capture Jira, branch, scope, acceptance criteria, and target module.
+            - listitem [ref=e377]:
+              - generic [ref=e378]: "2"
+              - generic [ref=e379]:
+                - strong [ref=e380]: Analyze requirement and codebase
+                - paragraph [ref=e381]: Identify architecture, patterns, impacted files, and requirement gaps.
+            - listitem [ref=e382]:
+              - generic [ref=e383]: "3"
+              - generic [ref=e384]:
+                - strong [ref=e385]: Draft design and test plan
+                - paragraph [ref=e386]: Include accessibility, VPAT/WCAG/Section 508, security, performance, and dependency checks.
+            - listitem [ref=e387]:
+              - generic [ref=e388]: "4"
+              - generic [ref=e389]:
+                - strong [ref=e390]: Review standards gate
+                - paragraph [ref=e391]: Resolve blockers or capture controlled approval notes for warnings.
+            - listitem [ref=e392]:
+              - generic [ref=e393]: "5"
+              - generic [ref=e394]:
+                - strong [ref=e395]: Approve, implement, verify
+                - paragraph [ref=e396]: Codex/Cline writes only after approval; ODT records evidence.
+            - listitem [ref=e397]:
+              - generic [ref=e398]: "6"
+              - generic [ref=e399]:
+                - strong [ref=e400]: Prepare PR-ready summary
+                - paragraph [ref=e401]: Map acceptance criteria, tests, accessibility, security, risks, and rollback.
+      - generic [ref=e402]:
+        - generic [ref=e404]:
+          - text: Timeline
+          - heading "Recent Activity" [level=3] [ref=e405]
+        - generic [ref=e406]:
+          - generic [ref=e409]:
+            - strong [ref=e410]: Agent Foundry run Done
+            - paragraph [ref=e411]: local provider, 12 event(s)
+            - generic [ref=e412]: 05:46:29 PM
+          - generic [ref=e415]:
+            - strong [ref=e416]: Agent Foundry run Done
+            - paragraph [ref=e417]: local provider, 3 event(s)
+            - generic [ref=e418]: 05:46:29 PM
+          - generic [ref=e421]:
+            - strong [ref=e422]: Chat run Done
+            - paragraph [ref=e423]: local provider, 4 event(s)
+            - generic [ref=e424]: 02:22:58 AM
+          - generic [ref=e427]:
+            - strong [ref=e428]: Workflow run Done
+            - paragraph [ref=e429]: local provider, 1 event(s)
+            - generic [ref=e430]: 06:54:28 PM
+          - generic [ref=e433]:
+            - strong [ref=e434]: Workflow run Done
+            - paragraph [ref=e435]: local provider, 1 event(s)
+            - generic [ref=e436]: 06:39:02 PM

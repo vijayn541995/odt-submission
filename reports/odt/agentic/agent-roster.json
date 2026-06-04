@@ -1,0 +1,74 @@
+{
+  "generatedAt": "2026-05-14T14:30:01.026Z",
+  "status": "ready",
+  "strategy": "single_writer_parallel_reviewers",
+  "rules": [
+    "Only Main Developer writes code by default.",
+    "Reviewer agents stay read-only until a patch exists.",
+    "Multiple code-writing agents require disjoint write scopes in the task graph.",
+    "High-severity clarification questions block delegation."
+  ],
+  "agents": [
+    {
+      "id": "planner-scheduler",
+      "name": "Planner / Scheduler",
+      "mode": "plan_only",
+      "responsibility": "Choose task order, parallel lanes, blockers, and next action.",
+      "currentTaskId": "task-001",
+      "output": "reports/odt/agentic/scheduler-decision.json"
+    },
+    {
+      "id": "main-developer",
+      "name": "Main Developer",
+      "mode": "write",
+      "responsibility": "Implement the first approved slice while respecting allowed write scope.",
+      "currentTaskId": "task-001",
+      "allowedFiles": [
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/SearchHistoryList.jsx",
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/upload/components/assessment_details.jsx",
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/edit/components/activity_details.jsx",
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/activity_list.jsx",
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/home/components/display_activity.jsx",
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity-pages/upload/components/activity_details.jsx",
+        "src/journey-builder-app/modules/journey-builder/journeys/container-components/stages/associate_activity/activity_library_list.jsx",
+        "src/journey-builder-app/modules/journey-builder/activities/container-components/activity_application.jsx"
+      ],
+      "output": "reports/odt/execute/agent-response.md"
+    },
+    {
+      "id": "architecture-reviewer",
+      "name": "Architecture Reviewer",
+      "mode": "read_only",
+      "responsibility": "Check repo fit, boundaries, reuse, naming, and dependency discipline.",
+      "output": "reports/odt/agentic/reviews/architecture-review.json"
+    },
+    {
+      "id": "unit-test-reviewer",
+      "name": "Unit Test Reviewer",
+      "mode": "read_only",
+      "responsibility": "Check unit, integration, regression, and edge-case coverage.",
+      "output": "reports/odt/agentic/reviews/unit-test-review.json"
+    },
+    {
+      "id": "accessibility-reviewer",
+      "name": "Accessibility Reviewer",
+      "mode": "read_only",
+      "responsibility": "Check keyboard flow, labels, focus, semantic structure, and result announcements.",
+      "output": "reports/odt/agentic/reviews/accessibility-review.json"
+    },
+    {
+      "id": "security-compliance-reviewer",
+      "name": "Security / Compliance Reviewer",
+      "mode": "read_only",
+      "responsibility": "Check dependency, data handling, policy, and enterprise compliance risks.",
+      "output": "reports/odt/agentic/reviews/security-compliance-review.json"
+    },
+    {
+      "id": "build-verifier",
+      "name": "Build Verifier",
+      "mode": "verify_only",
+      "responsibility": "Run or recommend install, lint, tests, build, and smoke checks.",
+      "output": "reports/odt/agentic/reviews/build-verify.json"
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "generatedAt": "2026-05-14T14:30:01.026Z",
+  "status": "waiting_for_main_developer_patch",
+  "trigger": "main_developer_patch_completed",
+  "canRunInParallel": true,
+  "waitsFor": [
+    "task-001"
+  ],
+  "reviewers": [
+    {
+      "id": "architecture-reviewer",
+      "name": "Architecture Reviewer",
+      "mode": "read_only",
+      "responsibility": "Check repo fit, boundaries, reuse, naming, and dependency discipline.",
+      "status": "waiting",
+      "output": "reports/odt/agentic/reviews/architecture-review.json"
+    },
+    {
+      "id": "unit-test-reviewer",
+      "name": "Unit Test Reviewer",
+      "mode": "read_only",
+      "responsibility": "Check unit, integration, regression, and edge-case coverage.",
+      "status": "waiting",
+      "output": "reports/odt/agentic/reviews/unit-test-review.json"
+    },
+    {
+      "id": "accessibility-reviewer",
+      "name": "Accessibility Reviewer",
+      "mode": "read_only",
+      "responsibility": "Check keyboard flow, labels, focus, semantic structure, and result announcements.",
+      "status": "waiting",
+      "output": "reports/odt/agentic/reviews/accessibility-review.json"
+    },
+    {
+      "id": "security-compliance-reviewer",
+      "name": "Security / Compliance Reviewer",
+      "mode": "read_only",
+      "responsibility": "Check dependency, data handling, policy, and enterprise compliance risks.",
+      "status": "waiting",
+      "output": "reports/odt/agentic/reviews/security-compliance-review.json"
+    },
+    {
+      "id": "build-verifier",
+      "name": "Build Verifier",
+      "mode": "verify_only",
+      "responsibility": "Run or recommend install, lint, tests, build, and smoke checks.",
+      "status": "waiting",
+      "output": "reports/odt/agentic/reviews/build-verify.json"
+    }
+  ],
+  "aggregator": {
+    "id": "merge-arbitrator",
+    "name": "Merge Arbitrator",
+    "status": "waiting_for_reviewer_findings",
+    "responsibility": "Combine reviewer findings and decide continue, ask human, rework, or ready for review.",
+    "output": "reports/odt/agentic/arbitrator-decision.json"
+  }
+}

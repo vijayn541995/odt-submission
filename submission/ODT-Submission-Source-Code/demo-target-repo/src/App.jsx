@@ -1,6 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import ActivityList from "./components/ActivityList";
 import EmployeeForm from "./components/EmployeeForm";
+import FilterBar from "./components/FilterBar";
+import {
+  DEFAULT_FINDER_FILTERS,
+  applyEmployeeFilters,
+  getDepartmentOptions,
+} from "./components/employeeFinderUtils";
 import OracleLogo from "./components/OracleLogo.js";
 import { fetchEmployees } from "./api/fetchEmployees";
 
@@ -12,6 +18,8 @@ export default function App() {
   const [error, setError] = useState("");
   const [dataSource, setDataSource] = useState("loading");
   const [lastSubmission, setLastSubmission] = useState(null);
+  const [finderDraft, setFinderDraft] = useState(DEFAULT_FINDER_FILTERS);
+  const [finderApplied, setFinderApplied] = useState(DEFAULT_FINDER_FILTERS);
 
   useEffect(() => {
     let active = true;
@@ -33,13 +41,22 @@ export default function App() {
     };
   }, []);
 
-  const totalPages = Math.max(1, Math.ceil(employees.length / PAGE_SIZE));
+  const filteredEmployees = useMemo(
+    () => applyEmployeeFilters(employees, finderApplied),
+    [employees, finderApplied]
+  );
+  const departmentOptions = useMemo(
+    () => getDepartmentOptions(employees),
+    [employees]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
   const startIndex = (safePage - 1) * PAGE_SIZE;
   const endIndex = startIndex + PAGE_SIZE;
   const paginatedEmployees = useMemo(
-    () => employees.slice(startIndex, endIndex),
-    [employees, startIndex, endIndex]
+    () => filteredEmployees.slice(startIndex, endIndex),
+    [filteredEmployees, startIndex, endIndex]
   );
 
   useEffect(() => {
@@ -53,6 +70,17 @@ export default function App() {
     // Required by ticket: log filled form data on successful submit.
     // eslint-disable-next-line no-console
     console.log("[ODT Demo] Employee request submitted:", payload);
+  };
+
+  const handleApplyFilters = () => {
+    setFinderApplied(finderDraft);
+    setCurrentPage(1);
+  };
+
+  const handleClearFilters = () => {
+    setFinderDraft(DEFAULT_FINDER_FILTERS);
+    setFinderApplied(DEFAULT_FINDER_FILTERS);
+    setCurrentPage(1);
   };
 
   return (
@@ -78,15 +106,37 @@ export default function App() {
 
       <main className="layout-grid">
         <div className="left-column">
+          <FilterBar
+            query={finderDraft.query}
+            selectedDepartment={finderDraft.department}
+            departments={departmentOptions}
+            visibleCount={paginatedEmployees.length}
+            filteredCount={filteredEmployees.length}
+            totalCount={employees.length}
+            onQueryChange={(query) =>
+              setFinderDraft((current) => ({
+                ...current,
+                query,
+              }))
+            }
+            onDepartmentChange={(department) =>
+              setFinderDraft((current) => ({
+                ...current,
+                department,
+              }))
+            }
+            onApply={handleApplyFilters}
+            onClear={handleClearFilters}
+          />
           <ActivityList
             employees={paginatedEmployees}
             loading={loading}
             error={error}
             currentPage={safePage}
             totalPages={totalPages}
-            startIndex={employees.length ? startIndex + 1 : 0}
-            endIndex={Math.min(endIndex, employees.length)}
-            totalFilteredItems={employees.length}
+            startIndex={filteredEmployees.length ? startIndex + 1 : 0}
+            endIndex={Math.min(endIndex, filteredEmployees.length)}
+            totalFilteredItems={filteredEmployees.length}
             onNextPage={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
             onPreviousPage={() => setCurrentPage((page) => Math.max(page - 1, 1))}
           />

@@ -1,0 +1,196 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - generic "ODT Workbench" [ref=e6]:
+        - img [ref=e7]:
+          - generic [ref=e9]: ODT
+      - generic [ref=e13]:
+        - strong [ref=e14]: ODT Workbench
+        - generic [ref=e15]: Engineering control plane
+    - navigation "ODT Workbench" [ref=e16]:
+      - button "Overview" [ref=e17] [cursor=pointer]:
+        - img [ref=e19]
+        - generic [ref=e24]: Overview
+      - button "Intake" [ref=e25] [cursor=pointer]:
+        - img [ref=e27]
+        - generic [ref=e31]: Intake
+      - button "Planner" [ref=e32] [cursor=pointer]:
+        - img [ref=e34]
+        - generic [ref=e38]: Planner
+      - button "Standards" [ref=e39] [cursor=pointer]:
+        - img [ref=e41]
+        - generic [ref=e44]: Standards
+      - button "Agent Team" [ref=e45] [cursor=pointer]:
+        - img [ref=e47]
+        - generic [ref=e52]: Agent Team
+      - button "Review" [ref=e53] [cursor=pointer]:
+        - img [ref=e55]
+        - generic [ref=e59]: Review
+      - button "PR Ready" [ref=e60] [cursor=pointer]:
+        - img [ref=e62]
+        - generic [ref=e66]: PR Ready
+      - button "Artifacts" [ref=e67] [cursor=pointer]:
+        - img [ref=e69]
+        - generic [ref=e71]: Artifacts
+      - button "ODT Guide" [ref=e72] [cursor=pointer]:
+        - img [ref=e74]
+        - generic [ref=e77]: ODT Guide
+      - button "Runs" [ref=e78] [cursor=pointer]:
+        - img [ref=e80]
+        - generic [ref=e85]: Runs
+      - button "Monitoring" [ref=e86] [cursor=pointer]:
+        - img [ref=e88]
+        - generic [ref=e90]: Monitoring
+      - button "Settings" [ref=e91] [cursor=pointer]:
+        - img [ref=e93]
+        - generic [ref=e96]: Settings
+    - generic [ref=e97]:
+      - img [ref=e99]
+      - generic [ref=e103]:
+        - strong [ref=e104]: Governance Mode
+        - generic [ref=e105]: Human-gated. Writes require approval.
+  - main [ref=e106]:
+    - generic [ref=e107]:
+      - generic [ref=e108]:
+        - generic [ref=e109]: Oracle Developer Twin
+        - heading "ODT Workbench" [level=1] [ref=e110]
+      - generic [ref=e111]:
+        - generic "Backend API reachability" [ref=e112]: Checking
+        - generic "Current workbench environment" [ref=e113]: "Environment: Local Dev"
+        - generic "AI provider selected by the backend" [ref=e114]: "Provider: local"
+        - generic "ODT API context status" [ref=e115]: "ODT API: Offline"
+        - button "Refresh workbench status" [ref=e116] [cursor=pointer]:
+          - img [ref=e117]
+    - generic [ref=e120]:
+      - generic [ref=e121]:
+        - generic [ref=e122]:
+          - text: Overview
+          - heading "Requirement to PR-ready workbench" [level=2] [ref=e123]
+          - paragraph [ref=e124]: Guide a real engineering change from requirement and repo intake through codebase analysis, gap discovery, technical design, compliance planning, implementation review, testing, and PR readiness.
+        - generic [ref=e125]:
+          - button "New Intake" [ref=e126] [cursor=pointer]
+          - button "Open ODT Guide" [ref=e127] [cursor=pointer]
+          - button "View Standards" [ref=e128] [cursor=pointer]
+      - region "Workflow progress" [ref=e129]:
+        - generic [ref=e130]:
+          - text: Workflow
+          - strong [ref=e131]: Requirement to PR readiness
+        - list [ref=e132]:
+          - listitem [ref=e133]:
+            - generic [ref=e134]: "1"
+            - text: Intake
+          - listitem [ref=e135]:
+            - generic [ref=e136]: "2"
+            - text: Analyze
+          - listitem [ref=e137]:
+            - generic [ref=e138]: "3"
+            - text: Design
+          - listitem [ref=e139]:
+            - generic [ref=e140]: "4"
+            - text: Standards
+          - listitem [ref=e141]:
+            - generic [ref=e142]: "5"
+            - text: Implement
+          - listitem [ref=e143]:
+            - generic [ref=e144]: "6"
+            - text: Test
+          - listitem [ref=e145]:
+            - generic [ref=e146]: "7"
+            - text: PR Ready
+      - generic [ref=e147]:
+        - generic [ref=e148]:
+          - generic [ref=e149]: Workflow State
+          - strong [ref=e150]: Intake Started
+          - paragraph [ref=e151]: Run standards review
+        - generic [ref=e152]:
+          - generic [ref=e153]: Assignments
+          - strong [ref=e154]: "0"
+          - paragraph [ref=e155]: Local work items
+        - generic [ref=e156]:
+          - generic [ref=e157]: Active Runs
+          - strong [ref=e158]: "0"
+          - paragraph [ref=e159]: 0 recent runs
+        - generic [ref=e160]:
+          - generic [ref=e161]: AI Requests
+          - strong [ref=e162]: "0"
+          - paragraph [ref=e163]: 0 tokens today
+        - generic [ref=e164]:
+          - generic [ref=e165]: Blocked Items
+          - strong [ref=e166]: "0"
+          - paragraph [ref=e167]: Derived from evidence
+      - generic [ref=e168]:
+        - generic [ref=e171]:
+          - text: Active Work
+          - heading "Continue Work" [level=3] [ref=e172]
+        - generic [ref=e173]:
+          - generic [ref=e175]:
+            - text: Guidance
+            - heading "Next Best Action" [level=3] [ref=e176]
+          - generic [ref=e177]:
+            - strong [ref=e178]: Run standards review
+            - paragraph [ref=e179]: Create standards evidence before any implementation or PR readiness step.
+            - button "Run standards review" [ref=e180] [cursor=pointer]
+      - generic [ref=e181]:
+        - generic [ref=e182]:
+          - generic [ref=e184]:
+            - text: Quality
+            - heading "Standards Gate" [level=3] [ref=e185]
+          - generic [ref=e186]:
+            - generic [ref=e187]:
+              - generic "Not Run" [ref=e188]
+              - generic [ref=e189]: Run Standards Check before write approval.
+            - generic [ref=e190]:
+              - generic [ref=e191]: Accessibility
+              - generic "NOT_RUN" [ref=e192]
+            - generic [ref=e193]:
+              - generic [ref=e194]: Security
+              - generic "NOT_RUN" [ref=e195]
+            - generic [ref=e196]:
+              - generic [ref=e197]: Dependency
+              - generic "NOT_RUN" [ref=e198]
+            - generic [ref=e199]:
+              - generic [ref=e200]: Testing
+              - generic "NOT_RUN" [ref=e201]
+            - generic [ref=e202]:
+              - generic [ref=e203]: PR Readiness
+              - generic "NOT_RUN" [ref=e204]
+        - generic [ref=e205]:
+          - generic [ref=e207]:
+            - text: Workflow
+            - heading "Governed Delivery Flow" [level=3] [ref=e208]
+          - list [ref=e209]:
+            - listitem [ref=e210]:
+              - generic [ref=e211]: "1"
+              - generic [ref=e212]:
+                - strong [ref=e213]: Intake requirement and repo
+                - paragraph [ref=e214]: Capture Jira, branch, scope, acceptance criteria, and target module.
+            - listitem [ref=e215]:
+              - generic [ref=e216]: "2"
+              - generic [ref=e217]:
+                - strong [ref=e218]: Analyze requirement and codebase
+                - paragraph [ref=e219]: Identify architecture, patterns, impacted files, and requirement gaps.
+            - listitem [ref=e220]:
+              - generic [ref=e221]: "3"
+              - generic [ref=e222]:
+                - strong [ref=e223]: Draft design and test plan
+                - paragraph [ref=e224]: Include accessibility, VPAT/WCAG/Section 508, security, performance, and dependency checks.
+            - listitem [ref=e225]:
+              - generic [ref=e226]: "4"
+              - generic [ref=e227]:
+                - strong [ref=e228]: Review standards gate
+                - paragraph [ref=e229]: Resolve blockers or capture controlled approval notes for warnings.
+            - listitem [ref=e230]:
+              - generic [ref=e231]: "5"
+              - generic [ref=e232]:
+                - strong [ref=e233]: Approve, implement, verify
+                - paragraph [ref=e234]: Codex/Cline writes only after approval; ODT records evidence.
+            - listitem [ref=e235]:
+              - generic [ref=e236]: "6"
+              - generic [ref=e237]:
+                - strong [ref=e238]: Prepare PR-ready summary
+                - paragraph [ref=e239]: Map acceptance criteria, tests, accessibility, security, risks, and rollback.
+      - generic [ref=e240]:
+        - generic [ref=e242]:
+          - text: Timeline
+          - heading "Recent Activity" [level=3] [ref=e243]
+        - generic [ref=e244]: No run activity yet. Ask ODT Guide a question to create the first event.

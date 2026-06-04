@@ -1,0 +1,281 @@
+{
+  "title": "Lead Planner Codex Worker Handoff",
+  "assignmentId": "assignment-local-mvp",
+  "executionAgent": "codex",
+  "mode": "read-only",
+  "latestStandardsCheckId": "stdcheck_1780579696481_ae878cl",
+  "allowedActions": {
+    "readFiles": true,
+    "writeFiles": false,
+    "runTests": false,
+    "installDependencies": false,
+    "createBranch": false,
+    "raisePr": false,
+    "updateExternalSystems": false,
+    "destructiveActions": false
+  },
+  "dependencyInstallPolicy": "Dependency installs are blocked until a package-specific approval is captured.",
+  "blockers": [],
+  "blockedReasons": [],
+  "warnings": [],
+  "nextStep": "Run this read-only worker for planning/review evidence. Do not edit files.",
+  "notes": "Smoke test bundle-only read-only lane.",
+  "generatedAt": "2026-06-04T14:31:44.889Z",
+  "contract": {
+    "assignmentId": "assignment-local-mvp",
+    "executionAgent": "codex",
+    "mode": "read-only",
+    "repoPath": "/Users/vn105957/Desktop/lpdev/journey-builder-js",
+    "baseBranch": "",
+    "requirement": {
+      "title": "Assessment Preview Enablement - journey-builder-js",
+      "content": "Feature / defect requirement: Assessment Preview Enablement for Assessment activity edit workflow and update API integration. Target repository: /Users/vn105957/Desktop/lpdev/journey-builder-js Summary: Implement Assessment Preview so it only opens the last saved DB version, never unsaved edits. Preview stays disabled for create until saved and disables imme"
+    },
+    "repoAnalysis": {
+      "assignmentId": "assignment-local-mvp",
+      "repoPath": "/Users/vn105957/Desktop/lpdev/journey-builder-js",
+      "exists": true,
+      "packageManager": "npm",
+      "frameworks": [
+        "React"
+      ],
+      "testFrameworks": [
+        "Jest",
+        "Testing Library",
+        "test script: jest"
+      ],
+      "scripts": {
+        "build": "webpack --mode production --config webpack.prod.config.js",
+        "analyze": "webpack --profile --json > stats.jsons",
+        "coverage": "jest --collect-coverage",
+        "start": "webpack-dev-server --mode development --config ./webpack.config.js",
+        "test": "jest",
+        "watch": "jest --watch",
+        "lint": "eslint --fix --ext .js,.jsx ."
+      },
+      "topLevelEntries": [
+        ".DS_Store",
+        ".babelrc",
+        ".dockerignore",
+        ".eslintignore",
+        ".eslintrc",
+        ".git",
+        ".gitattributes",
+        ".gitignore",
+        ".npmignore",
+        ".npmrc",
+        ".nvmrc",
+        ".secret-cleaner",
+        ".stylelintrc",
+        ".vscode",
+        "Dockerfile",
+        "Jenkinsfile",
+        "New Folder With Items",
+        "README.md",
+        "aggregated-translations",
+        "builder",
+        "coverage",
+        "deploy",
+        "docs",
+        "jest.config.js",
+        "jestsetup.js",
+        "modules",
+        "node_modules",
+        "outputs",
+        "package-lock.json",
+        "package.json",
+        "postcss.config.js",
+        "reports",
+        "simulation",
+        "src",
+        "tests",
+        "translations",
+        "webpack.config.js",
+        "webpack.entries.json",
+        "webpack.prod.config.js"
+      ],
+      "likelyFolders": [
+        "docs",
+        "src",
+        "tests"
+      ],
+      "dependencyCount": 157,
+      "architecturePattern": "React feature pages with backend API service boundary",
+      "validationPattern": "Use existing backend validation and safe frontend form validation before adding dependencies.",
+      "errorHandlingPattern": "Prefer user-safe errors, retry/fallback messages, and audit events.",
+      "namingConvention": "Follow repository file and component naming before introducing new patterns.",
+      "likelyImpactedFiles": [
+        "server/index.js",
+        "server/governance/*",
+        "server/standards/odt-standards.json",
+        "src/main.jsx",
+        "src/styles.css",
+        "docs/*"
+      ],
+      "filesToReviewOnly": [
+        "package.json",
+        "vite.config.js",
+        "README.md"
+      ],
+      "status": "REPO_ANALYZED"
+    },
+    "technicalDesign": {
+      "title": "Assessment Preview Enablement Technical Design",
+      "assignmentId": "assignment-local-mvp",
+      "requirementSummary": "Assessment Preview Enablement",
+      "targetRepo": "/Users/vn105957/Desktop/lpdev/journey-builder-js",
+      "scope": [
+        "Implement persisted-data preview gating for Assessment activity create/edit workflows.",
+        "Align Preview validation with reusable Assessment question validation helpers.",
+        "Preserve privilege behavior and update API payload semantics."
+      ],
+      "outOfScope": [
+        "Changing support-admin privilege restrictions",
+        "Changing non-Assessment preview behavior unless shared code requires it",
+        "Installing new dependencies without explicit approval"
+      ],
+      "existingArchitectureObserved": [
+        "React"
+      ],
+      "proposedArchitecture": "Keep Preview enablement derived from saved/submitted Assessment question data. Mark preview dirty on any Assessment edit, and recompute previewability only after successful Save Draft or Publish.",
+      "apiChanges": [],
+      "impactedAreas": [
+        "Assessment activity utility validation",
+        "Assessment create/edit publish panel Preview state",
+        "Question, answer, and correct-answer change handlers",
+        "Save Draft and Publish success/failure handling"
+      ],
+      "candidateFiles": [
+        "activity_util.jsx",
+        "Assessment edit/create publish panel components"
+      ],
+      "accessibility": "Accessibility review required. UI work should be reviewed against WCAG 2.2, VPAT impact, Section 508 where applicable, keyboard navigation, visible focus, labels, contrast, loading/empty/error states, and Redwood-like clarity.",
+      "security": "Do not expose secrets or alter authorization behavior. Preserve VIEW_FOR_SUPPORT_ADMIN restrictions and existing UPDATE_ACTIVITY edit behavior.",
+      "testing": [
+        "Add utility tests and edit/publish Preview state tests."
+      ],
+      "flexibility": "Draft save rules may remain looser than Preview. Preview remains stricter because it reflects persisted/renderable DB question data.",
+      "rollback": "Limit changes to Assessment preview gating and update-payload serialization paths so the patch can be reverted without broad activity workflow impact."
+    },
+    "implementationPlan": {
+      "title": "Assessment Preview Enablement Implementation Plan",
+      "assignmentId": "assignment-local-mvp",
+      "scope": [
+        "Implement persisted-data preview gating for Assessment activity create/edit workflows.",
+        "Align Preview validation with reusable Assessment question validation helpers.",
+        "Preserve privilege behavior and update API payload semantics."
+      ],
+      "filesToChange": [
+        "activity_util.jsx",
+        "Assessment edit/create publish panel components",
+        "tests/jest/modules/activity/edit_publish.test.js",
+        "tests/jest/modules/activity/edit_activity.test.js",
+        "tests/jest/modules/activity/assessment_details.test.js",
+        "tests/jest/modules/activity/Publish.test.js",
+        "tests/jest/modules/journey-builder/activities/container-components/util/activity_util.test.js"
+      ],
+      "filesToReview": [
+        "AssessmentQuestions shared component path",
+        "Activity update payload serialization path",
+        "Utility tests for no questions, fewer than two answers, no correct answer, one complete question, and multiple questions requiring all previewable.",
+        "Edit/publish panel tests for valid saved Assessment enabling Preview, no questions disabling Preview, changing Assessment details disabling Preview, changing question/answer/correct-answer disabling Preview, successful Save Draft re-enabling only for previewable submitted questions, and failed Save Draft/Publish keeping Preview disabled.",
+        "Run targeted tests:",
+        "tests/jest/modules/activity/edit_publish.test.js",
+        "tests/jest/modules/activity/edit_activity.test.js",
+        "tests/jest/modules/activity/assessment_details.test.js",
+        "tests/jest/modules/activity/Publish.test.js",
+        "tests/jest/modules/journey-builder/activities/container-components/util/activity_util.test.js"
+      ],
+      "backendTasks": [
+        "Method: post",
+        "https://staginglearningportal.cerner.com/activity/256?org_id=CERN_LRN",
+        "While editing assessment activity",
+        "Deleting the Question: dont send that deleted question block",
+        "Removing/Deleting  the answer: Dont send the removed answer block",
+        "Adding new question: Dont send the Id send rest of the key values (both qestion id and answer id not needed to be sent)",
+        "Adding New answer in the existing question dont send the ID (answer id ) in the answer block, send the question ID.",
+        "Adding NEW question and answer : Dont send ID in both question and anser block. (both answer and question id no no need to send)"
+      ],
+      "frontendTasks": [
+        "Add or reuse isAssessmentPreviewable(questions).",
+        "Disable Preview for new Assessment create until a successful Save Draft or Publish redirects to edit.",
+        "Initialize edit Preview state from saved GET Assessment questions.",
+        "Disable Preview immediately after any Assessment field, question, answer, or correct-answer change.",
+        "Re-enable Preview only after successful Save Draft or Publish when submitted/saved questions are previewable.",
+        "Keep failed Save Draft or Publish attempts from enabling Preview."
+      ],
+      "validationTasks": [
+        "Require at least one Assessment question for Preview.",
+        "Require each previewable question to have question text.",
+        "Require at least two answer options with text.",
+        "Require at least one selected correct answer per question.",
+        "Reuse existing Assessment validation helpers where possible."
+      ],
+      "accessibilityTasks": [
+        "Preserve keyboard access and visible disabled state for Preview.",
+        "Do not rely on color only to communicate disabled Preview.",
+        "Keep existing Assessment question tooltip behavior through the shared component path."
+      ],
+      "securityTasks": [
+        "Preserve support-admin restrictions.",
+        "Do not introduce new secrets or client-side credentials.",
+        "Keep dependency installs blocked unless separately approved."
+      ],
+      "testTasks": [
+        "Utility tests for no questions, fewer than two answers, no correct answer, one complete question, and multiple questions requiring all previewable.",
+        "Edit/publish panel tests for valid saved Assessment enabling Preview, no questions disabling Preview, changing Assessment details disabling Preview, changing question/answer/correct-answer disabling Preview, successful Save Draft re-enabling only for previewable submitted questions, and failed Save Draft/Publish keeping Preview disabled.",
+        "Run targeted tests:",
+        "tests/jest/modules/activity/edit_publish.test.js",
+        "tests/jest/modules/activity/edit_activity.test.js",
+        "tests/jest/modules/activity/assessment_details.test.js",
+        "tests/jest/modules/activity/Publish.test.js",
+        "tests/jest/modules/journey-builder/activities/container-components/util/activity_util.test.js"
+      ],
+      "approvalRequired": [
+        "Approve with warnings for non-critical standards exceptions.",
+        "Approve for write before implementation agent execution.",
+        "Approve dependency requests before any install."
+      ],
+      "flexibility": "Policy exceptions can be documented through approval events. Hard safety blockers stay blocked.",
+      "risks": [
+        "Preview may accidentally expose unsaved edits if dirty-state handling misses a question/answer change path.",
+        "Save Draft may allow incomplete data while Preview must remain stricter.",
+        "Update payload serialization can regress existing questions or answers if id omission/removal rules are not tested."
+      ]
+    },
+    "standards": {
+      "standardsVersion": "odt-baseline-1.0",
+      "accessibilityRequired": true,
+      "securityRequired": true,
+      "dependencyApprovalRequired": true,
+      "testingRequired": true,
+      "latestStandardsCheckId": "stdcheck_1780579696481_ae878cl",
+      "blockerOverrideCaptured": false,
+      "unresolvedBlockers": [],
+      "openReviewBlockers": [],
+      "approvedDependencies": [],
+      "pendingDependencies": [],
+      "dependencyInstallPolicy": "Dependency installs are blocked until a package-specific approval is captured."
+    },
+    "allowedActions": {
+      "readFiles": true,
+      "writeFiles": false,
+      "runTests": false,
+      "installDependencies": false,
+      "createBranch": false,
+      "raisePr": false,
+      "updateExternalSystems": false,
+      "destructiveActions": false
+    },
+    "requiredReturnEvidence": {
+      "changedFiles": true,
+      "commandsRun": true,
+      "testOutcomes": true,
+      "implementationSummary": true,
+      "skippedChecksOrKnownRisks": true,
+      "recordInWorkbenchEndpoint": "/api/implementation/evidence"
+    }
+  },
+  "workerRole": "lead-planner",
+  "workerRoleLabel": "Lead Planner"
+}

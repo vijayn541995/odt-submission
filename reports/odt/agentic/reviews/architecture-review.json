@@ -1,0 +1,20 @@
+{
+  "generatedAt": "2026-05-14T12:37:48.220Z",
+  "id": "architecture-reviewer",
+  "name": "Architecture Reviewer",
+  "mode": "read_only",
+  "status": "completed",
+  "score": 9,
+  "summary": "0 high, 0 medium, 1 low finding(s).",
+  "findings": [
+    {
+      "severity": "low",
+      "title": "Architecture review passed initial scope checks",
+      "detail": "Changed files are within the planned footprint and no large-blast-radius concern was detected.",
+      "recommendation": "Proceed to test, accessibility, and compliance review.",
+      "files": []
+    }
+  ],
+  "prompt": "reports/odt/agentic/review-prompts/architecture-reviewer.md",
+  "output": "reports/odt/agentic/reviews/architecture-review.json"
+}

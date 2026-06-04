@@ -1,8 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import ActivityList from "./components/ActivityList";
 import EmployeeForm from "./components/EmployeeForm";
+import FilterBar from "./components/FilterBar";
 import OracleLogo from "./components/OracleLogo.js";
 import { fetchEmployees } from "./api/fetchEmployees";
+import {
+  filterEmployees,
+  getEmployeeDepartments,
+} from "./components/employeeFilterUtils";
 
 export default function App() {
   const PAGE_SIZE = 10;
@@ -12,6 +17,12 @@ export default function App() {
   const [error, setError] = useState("");
   const [dataSource, setDataSource] = useState("loading");
   const [lastSubmission, setLastSubmission] = useState(null);
+  const [queryInput, setQueryInput] = useState("");
+  const [selectedDepartmentInput, setSelectedDepartmentInput] = useState("");
+  const [appliedFilters, setAppliedFilters] = useState({
+    query: "",
+    department: "",
+  });
 
   useEffect(() => {
     let active = true;
@@ -33,13 +44,19 @@ export default function App() {
     };
   }, []);
 
-  const totalPages = Math.max(1, Math.ceil(employees.length / PAGE_SIZE));
+  const departments = useMemo(() => getEmployeeDepartments(employees), [employees]);
+  const filteredEmployees = useMemo(
+    () => filterEmployees(employees, appliedFilters),
+    [employees, appliedFilters]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
   const startIndex = (safePage - 1) * PAGE_SIZE;
   const endIndex = startIndex + PAGE_SIZE;
   const paginatedEmployees = useMemo(
-    () => employees.slice(startIndex, endIndex),
-    [employees, startIndex, endIndex]
+    () => filteredEmployees.slice(startIndex, endIndex),
+    [filteredEmployees, startIndex, endIndex]
   );
 
   useEffect(() => {
@@ -47,6 +64,21 @@ export default function App() {
       setCurrentPage(totalPages);
     }
   }, [currentPage, totalPages]);
+
+  const handleApplyFilters = () => {
+    setAppliedFilters({
+      query: queryInput,
+      department: selectedDepartmentInput,
+    });
+    setCurrentPage(1);
+  };
+
+  const handleClearFilters = () => {
+    setQueryInput("");
+    setSelectedDepartmentInput("");
+    setAppliedFilters({ query: "", department: "" });
+    setCurrentPage(1);
+  };
 
   const handleSubmit = (payload) => {
     setLastSubmission(payload);
@@ -78,15 +110,28 @@ export default function App() {
 
       <main className="layout-grid">
         <div className="left-column">
+          <FilterBar
+            query={queryInput}
+            selectedDepartment={selectedDepartmentInput}
+            departments={departments}
+            visibleCount={paginatedEmployees.length}
+            filteredCount={filteredEmployees.length}
+            totalCount={employees.length}
+            onQueryChange={setQueryInput}
+            onDepartmentChange={setSelectedDepartmentInput}
+            onApply={handleApplyFilters}
+            onClear={handleClearFilters}
+          />
+
           <ActivityList
             employees={paginatedEmployees}
             loading={loading}
             error={error}
             currentPage={safePage}
             totalPages={totalPages}
-            startIndex={employees.length ? startIndex + 1 : 0}
-            endIndex={Math.min(endIndex, employees.length)}
-            totalFilteredItems={employees.length}
+            startIndex={filteredEmployees.length ? startIndex + 1 : 0}
+            endIndex={Math.min(endIndex, filteredEmployees.length)}
+            totalFilteredItems={filteredEmployees.length}
             onNextPage={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
             onPreviousPage={() => setCurrentPage((page) => Math.max(page - 1, 1))}
           />

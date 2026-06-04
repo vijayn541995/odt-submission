@@ -1,0 +1,20 @@
+{
+  "generatedAt": "2026-05-14T12:37:48.223Z",
+  "id": "security-compliance-reviewer",
+  "name": "Security / Compliance Reviewer",
+  "mode": "read_only",
+  "status": "completed",
+  "score": 9,
+  "summary": "0 high, 0 medium, 1 low finding(s).",
+  "findings": [
+    {
+      "severity": "low",
+      "title": "No dependency or secret risk detected",
+      "detail": "No dependency, obvious secret, or browser-storage risk was detected from the diff preview.",
+      "recommendation": "Continue normal compliance review.",
+      "files": []
+    }
+  ],
+  "prompt": "reports/odt/agentic/review-prompts/security-compliance-reviewer.md",
+  "output": "reports/odt/agentic/reviews/security-compliance-review.json"
+}

@@ -1,0 +1,88 @@
+{
+  "generatedAt": "2026-05-14T15:04:10.796Z",
+  "status": "needs_review",
+  "targetRepoPath": "/Users/vn105957/Desktop/odt-submission/demo-target-repo",
+  "summary": {
+    "changedFiles": 6,
+    "staged": 0,
+    "unstaged": 5,
+    "untracked": 1,
+    "outOfScope": 4,
+    "dependency": 0,
+    "data": 0
+  },
+  "files": [
+    {
+      "path": "src/App.jsx",
+      "status": "modified",
+      "code": " M",
+      "staged": false,
+      "unstaged": true,
+      "untracked": false,
+      "kind": "ui",
+      "inPlannedScope": false,
+      "reviewRisk": "out_of_scope"
+    },
+    {
+      "path": "src/components/EmployeeForm.jsx",
+      "status": "modified",
+      "code": " M",
+      "staged": false,
+      "unstaged": true,
+      "untracked": false,
+      "kind": "ui",
+      "inPlannedScope": false,
+      "reviewRisk": "out_of_scope"
+    },
+    {
+      "path": "src/components/FilterBar.jsx",
+      "status": "modified",
+      "code": " M",
+      "staged": false,
+      "unstaged": true,
+      "untracked": false,
+      "kind": "ui",
+      "inPlannedScope": false,
+      "reviewRisk": "out_of_scope"
+    },
+    {
+      "path": "tests/activity-filter.spec.md",
+      "status": "modified",
+      "code": " M",
+      "staged": false,
+      "unstaged": true,
+      "untracked": false,
+      "kind": "test",
+      "inPlannedScope": true,
+      "reviewRisk": "normal"
+    },
+    {
+      "path": "tests/employee-form.test.mjs",
+      "status": "modified",
+      "code": " M",
+      "staged": false,
+      "unstaged": true,
+      "untracked": false,
+      "kind": "test",
+      "inPlannedScope": true,
+      "reviewRisk": "normal"
+    },
+    {
+      "path": "src/components/employeeFilterUtils.js",
+      "status": "untracked",
+      "code": "??",
+      "staged": false,
+      "unstaged": false,
+      "untracked": true,
+      "kind": "ui",
+      "inPlannedScope": false,
+      "reviewRisk": "out_of_scope"
+    }
+  ],
+  "diffStat": {
+    "staged": "",
+    "unstaged": "src/App.jsx                     |  57 ++++++++++++++--\n src/components/EmployeeForm.jsx |   2 +-\n src/components/FilterBar.jsx    |  77 ++++++++++++----------\n tests/activity-filter.spec.md   |  11 ++--\n tests/employee-form.test.mjs    | 142 +++++++++++++++++++++++++++++++++++++++-\n 5 files changed, 240 insertions(+), 49 deletions(-)"
+  },
+  "diffPreview": "# Unstaged diff\ndiff --git a/src/App.jsx b/src/App.jsx\nindex 9a72652..471b3a3 100644\n--- a/src/App.jsx\n+++ b/src/App.jsx\n@@ -1,8 +1,13 @@\n import React, { useEffect, useMemo, useState } from \"react\";\n import ActivityList from \"./components/ActivityList\";\n import EmployeeForm from \"./components/EmployeeForm\";\n+import FilterBar from \"./components/FilterBar\";\n import OracleLogo from \"./components/OracleLogo.js\";\n import { fetchEmployees } from \"./api/fetchEmployees\";\n+import {\n+  filterEmployees,\n+  getEmployeeDepartments,\n+} from \"./components/employeeFilterUtils\";\n \n export default function App() {\n   const PAGE_SIZE = 10;\n@@ -12,6 +17,12 @@ export default function App() {\n   const [error, setError] = useState(\"\");\n   const [dataSource, setDataSource] = useState(\"loading\");\n   const [lastSubmission, setLastSubmission] = useState(null);\n+  const [queryInput, setQueryInput] = useState(\"\");\n+  const [selectedDepartmentInput, setSelectedDepartmentInput] = useState(\"\");\n+  const [appliedFilters, setAppliedFilters] = useState({\n+    query: \"\",\n+    department: \"\",\n+  });\n \n   useEffect(() => {\n     let active = true;\n@@ -33,13 +44,19 @@ export default function App() {\n     };\n   }, []);\n \n-  const totalPages = Math.max(1, Math.ceil(employees.length / PAGE_SIZE));\n+  const departments = useMemo(() => getEmployeeDepartments(employees), [employees]);\n+  const filteredEmployees = useMemo(\n+    () => filterEmployees(employees, appliedFilters),\n+    [employees, appliedFilters]\n+  );\n+\n+  const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / PAGE_SIZE));\n   const safePage = Math.min(currentPage, totalPages);\n   const startIndex = (safePage - 1) * PAGE_SIZE;\n   const endIndex = startIndex + PAGE_SIZE;\n   const paginatedEmployees = useMemo(\n-    () => employees.slice(startIndex, endIndex),\n-    [employees, startIndex, endIndex]\n+    () => filteredEmployees.slice(startIndex, endIndex),\n+    [filteredEmployees, startIndex, endIndex]\n   );\n \n   useEffect(() => {\n@@ -48,6 +65,21 @@ export default function App() {\n     }\n   }, [currentPage, totalPages]);\n \n+  const handleApplyFilters = () => {\n+    setAppliedFilters({\n+      query: queryInput,\n+      department: selectedDepartmentInput,\n+    });\n+    setCurrentPage(1);\n+  };\n+\n+  const handleClearFilters = () => {\n+    setQueryInput(\"\");\n+    setSelectedDepartmentInput(\"\");\n+    setAppliedFilters({ query: \"\", department: \"\" });\n+    setCurrentPage(1);\n+  };\n+\n   const handleSubmit = (payload) => {\n     setLastSubmission(payload);\n     // Required by ticket: log filled form data on successful submit.\n@@ -78,15 +110,28 @@ export default function App() {\n \n       <main className=\"layout-grid\">\n         <div className=\"left-column\">\n+          <FilterBar\n+            query={queryInput}\n+            selectedDepartment={selectedDepartmentInput}\n+            departments={departments}\n+            visibleCount={paginatedEmployees.length}\n+            filteredCount={filteredEmployees.length}\n+            totalCount={employees.length}\n+            onQueryChange={setQueryInput}\n+            onDepartmentChange={setSelectedDepartmentInput}\n+            onApply={handleApplyFilters}\n+            onClear={handleClearFilters}\n+          />\n+\n           <ActivityList\n             employees={paginatedEmployees}\n             loading={loading}\n             error={error}\n             currentPage={safePage}\n             totalPages={totalPages}\n-            startIndex={employees.length ? startIndex + 1 : 0}\n-            endIndex={Math.min(endIndex, employees.length)}\n-            totalFilteredItems={employees.length}\n+            startIndex={filteredEmployees.length ? startIndex + 1 : 0}\n+            endIndex={Math.min(endIndex, filteredEmployees.length)}\n+            totalFilteredItems={filteredEmployees.length}\n             onNextPage={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}\n             onPreviousPage={() => setCurrentPage((page) => Math.max(page - 1, 1))}\n           />\ndiff --git a/src/components/EmployeeForm.jsx b/src/components/EmployeeForm.jsx\nindex db95ada..4c91a8d 100644\n--- a/src/components/EmployeeForm.jsx\n+++ b/src/components/EmployeeForm.jsx\n@@ -281,7 +281,7 @@ export default function EmployeeForm({ employees = [], onSubmit }) {\n           <button\n             className=\"btn btn-primary\"\n             type=\"submit\"\n-            disabled={isSubmitting}\n+            disabled={isSubmitting || !isFormReady}\n             aria-describedby={SUBMIT_STATUS_ID}\n           >\n             {isSubmitting ? \"Submitting...\" : \"Submit\"}\ndiff --git a/src/components/FilterBar.jsx b/src/components/FilterBar.jsx\nindex 9ec9915..4c34905 100644\n--- a/src/components/FilterBar.jsx\n+++ b/src/components/FilterBar.jsx\n@@ -14,52 +14,59 @@ export default function FilterBar({\n }) {\n   const totalFiltered = typeof filteredCount === \"number\" ? filteredCount : totalCount;\n \n+  const handleSubmit = (event) => {\n+    event.preventDefault();\n+    onApply();\n+  };\n+\n   return (\n     <section className=\"card search-card\" aria-label=\"Filter employees\">\n       <div className=\"search-heading-row\">\n         <h2>Employee Finder</h2>\n-        <p aria-live=\"polite\">\n+        <p id=\"employee-finder-results\" aria-live=\"polite\">\n           Showing <strong>{visibleCount}</strong> of {totalFiltered} filtered\n           ({totalCount} total)\n         </p>\n       </div>\n \n-      <div className=\"search-grid\">\n-        <label htmlFor=\"employee-search\">\n-          Search by name, email, role, or employee code\n-        </label>\n-        <input\n-          id=\"employee-search\"\n-          name=\"employee-search\"\n-          value={query}\n-          onChange={(event) => onQueryChange(event.target.value)}\n-          placeholder=\"Try: Amelia, QA, EMP-0004...\"\n-        />\n+      <form onSubmit={handleSubmit} aria-describedby=\"employee-finder-results\">\n+        <div className=\"search-grid\">\n+          <label htmlFor=\"employee-search\">\n+            Search by name, email, role, or employee code\n+          </label>\n+          <input\n+            id=\"employee-search\"\n+            name=\"employee-search\"\n+            value={query}\n+            onChange={(event) => onQueryChange(event.target.value)}\n+            placeholder=\"Try: Amelia, QA, EMP-0004...\"\n+          />\n \n-        <label htmlFor=\"department-filter\">Filter by department</label>\n-        <select\n-          id=\"department-filter\"\n-          name=\"department-filter\"\n-          value={selectedDepartment}\n-          onChange={(event) => onDepartmentChange(event.target.value)}\n-        >\n-          <option value=\"\">All departments</option>\n-          {departments.map((department) => (\n-            <option key={department} value={department}>\n-              {department}\n-            </option>\n-          ))}\n-        </select>\n-      </div>\n+          <label htmlFor=\"department-filter\">Filter by department</label>\n+          <select\n+            id=\"department-filter\"\n+            name=\"department-filter\"\n+            value={selectedDepartment}\n+            onChange={(event) => onDepartmentChange(event.target.value)}\n+          >\n+            <option value=\"\">All departments</option>\n+            {departments.map((department) => (\n+              <option key={department} value={department}>\n+                {department}\n+              </option>\n+            ))}\n+          </select>\n+        </div>\n \n-      <div className=\"button-row\">\n-        <button type=\"button\" className=\"btn btn-primary\" onClick={onApply}>\n-          Apply Filters\n-        </button>\n-        <button type=\"button\" className=\"btn btn-secondary\" onClick={onClear}>\n-          Clear Filters\n-        </button>\n-      </div>\n+        <div className=\"button-row\">\n+          <button type=\"submit\" className=\"btn btn-primary\">\n+            Apply Filters\n+          </button>\n+          <button type=\"button\" className=\"btn btn-secondary\" onClick={onClear}>\n+            Clear Filters\n+          </button>\n+        </div>\n+      </form>\n     </section>\n   );\n }\ndiff --git a/tests/activity-filter.spec.md b/tests/activity-filter.spec.md\nindex 352d2eb..e6caff0 100644\n--- a/tests/activity-filter.spec.md\n+++ b/tests/activity-filter.spec.md\n@@ -8,14 +8,16 @@\n \n - Verify typing in search filters employee cards by name/email/title/code.\n - Verify department dropdown limits results to selected team.\n-- Verify clear button resets search and department filters.\n+- Verify `Apply Filters` updates the employee list in place.\n+- Verify `Clear Filters` resets search and department filters.\n+- Verify finder header shows visible, filtered, and total counts.\n - Verify only 10 employee cards are shown per page.\n-- Verify `Next` and `Previous` paginate results correctly.\n+- Verify `Next` and `Previous` paginate filtered results correctly.\n \n ## Form Validations\n \n-- Verify the `Submit Employee Form` button stays disabled until every required field is completed.\n-- Verify the `Submit Employee Form` button remains disabled when email format is invalid or summary is shorter than 20 trimmed characters.\n+- Verify the `Submit` button stays disabled until every required field is completed.\n+- Verify the `Submit` button remains disabled when email format is invalid or summary is shorter than 20 trimmed characters.\n - Verify required field errors appear for empty submit.\n - Verify invalid email shows inline validation error.\n - Verify summary less than 20 chars is rejected.\n@@ -36,3 +38,4 @@\n - Verify failed submit returns focus to the first invalid control.\n - Verify labels are associated with each input/select/textarea.\n - Verify validation errors are announced (alert role + aria-invalid).\n+- Verify employee finder result summary is announced after applying or clearing filters.\ndiff --git a/tests/employee-form.test.mjs b/tests/employee-form.test.mjs\nindex 106274a..27bb936 100644\n--- a/tests/employee-form.test.mjs\n+++ b/tests/employee-form.test.mjs\n@@ -12,6 +12,10 @@ import {\n   hasAllRequiredFields,\n   isFormSubmittable,\n } from \"../src/components/employeeFormUtils.js\";\n+import {\n+  filterEmployees,\n+  getEmployeeDepartments,\n+} from \"../src/components/employeeFilterUtils.js\";\n import OracleLogo, { ORACLE_LOGO_LABEL } from \"../src/components/OracleLogo.js\";\n \n function createValidForm(overrides = {}) {\n@@ -27,6 +31,33 @@ function createValidForm(overrides = {}) {\n   };\n }\n \n+const EMPLOYEE_FIXTURE = [\n+  {\n+    id: 1,\n+    name: \"Amelia Chen\",\n+    email: \"amelia.chen@example.com\",\n+    title: \"Frontend Engineer\",\n+    department: \"Platform Engineering\",\n+    employeeCode: \"EMP-0101\",\n+  },\n+  {\n+    id: 2,\n+    name: \"Noah Singh\",\n+    email: \"noah.singh@example.com\",\n+    title: \"QA Engineer\",\n+    department: \"Quality Engineering\",\n+    employeeCode: \"EMP-0102\",\n+  },\n+  {\n+    id: 3,\n+    name: \"Liam Ortiz\",\n+    email: \"liam.ortiz@example.com\",\n+    title: \"Accessibility Specialist\",\n+    department: \"Experience Design\",\n+    employeeCode: \"EMP-0103\",\n+  },\n+];\n+\n const tests = [\n   {\n     name: \"empty required fields keep the form disabled\",\n@@ -64,6 +95,20 @@ const tests = [\n       );\n     },\n   },\n+  {\n+    name: \"submittable state transitions from invalid to valid\",\n+    run() {\n+      const invalidForm = createValidForm({\n+        requesterEmail: \"invalid-email\",\n+      });\n+      const validForm = createValidForm({\n+        requesterEmail: \"valid.user@example.com\",\n+      });\n+\n+      assert.equal(isFormSubmittable(invalidForm), false);\n+      assert.equal(isFormSubmittable(validForm), true);\n+    },\n+  },\n   {\n     name: \"valid required values enable submission\",\n     run() {\n@@ -127,17 +172,92 @@ const tests = [\n     },\n   },\n   {\n-    name: \"employee form source uses the updated submit button label\",\n+    name: \"employee finder filters by query across identity fields\",\n+    run() {\n+      assert.deepEqual(\n+        filterEmployees(EMPLOYEE_FIXTURE, { query: \"amelia\" }).map(\n+          (employee) => employee.id\n+        ),\n+        [1]\n+      );\n+      assert.deepEqual(\n+        filterEmployee\n\n[truncated 3264 chars]",
+  "nextAction": "Review changed files, reviewer findings, and verification evidence before approval."
+}

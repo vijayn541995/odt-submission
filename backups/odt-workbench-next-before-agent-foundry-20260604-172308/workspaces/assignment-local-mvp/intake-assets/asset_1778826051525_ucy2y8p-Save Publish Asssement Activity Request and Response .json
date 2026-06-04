@@ -1,0 +1,216 @@
+//Publish Payload
+
+
+{
+  "activity_detail": {
+    "activity_name": "Vijay Test - Assessment",
+    "display_name": "Vijay Test - Assessment",
+    "description": "<p>Assessment description</p>",
+    "activity_status": 1,
+    "activity_type": "Assessment",
+    "passing_score": 80,
+    "attempt_limit": 2,
+    "learner_alert_enabled": true,
+    "learner_alert_msg": "You must complete this assessment to continue.",
+    "duration": null,
+    "activity_question_details_attributes": [
+      {
+        "question": "<p>Which activity type supports scoring?</p>",
+        "question_type": "Single",
+        "display_order": 1,
+        "rationale": "<p>Assessment supports scored responses.</p>",
+        "activity_answer_details_attributes": [
+          {
+            "answer": "Assessment",
+            "display_order": 1,
+            "is_correct": true,
+            "id": "answer-uuid-1-1"
+          },
+          {
+            "answer": "Survey",
+            "display_order": 2,
+            "is_correct": false,
+            "id": "answer-uuid-1-2"
+          },
+          {
+            "answer": "Link",
+            "display_order": 3,
+            "is_correct": false,
+            "id": "answer-uuid-1-3"
+          }
+        ],
+        "id": "question-uuid-1"
+      },
+      {
+        "question": "<p>Select all valid Assessment answer types.</p>",
+        "question_type": "Multiple",
+        "display_order": 2,
+        "rationale": "<p>Assessment supports single-answer and multiple-answer questions.</p>",
+        "activity_answer_details_attributes": [
+          {
+            "answer": "Single answer",
+            "display_order": 1,
+            "is_correct": true,
+            "id": "answer-uuid-2-1"
+          },
+          {
+            "answer": "Multiple answer",
+            "display_order": 2,
+            "is_correct": true,
+            "id": "answer-uuid-2-2"
+          },
+          {
+            "answer": "Likert scale",
+            "display_order": 3,
+            "is_correct": false,
+            "id": "answer-uuid-2-3"
+          },
+          {
+            "answer": "Short text",
+            "display_order": 4,
+            "is_correct": false,
+            "id": "answer-uuid-2-4"
+          }
+        ],
+        "id": "question-uuid-2"
+      },
+      {
+        "question": "<p>What happens when the learner reaches the passing score?</p>",
+        "question_type": "Single",
+        "display_order": 3,
+        "rationale": "<p>The attempt is marked as passed when the score meets or exceeds the passing score.</p>",
+        "activity_answer_details_attributes": [
+          {
+            "answer": "Assessment is passed",
+            "display_order": 1,
+            "is_correct": true,
+            "id": "answer-uuid-3-1"
+          },
+          {
+            "answer": "Attempt is always failed",
+            "display_order": 2,
+            "is_correct": false,
+            "id": "answer-uuid-3-2"
+          }
+        ],
+        "id": "question-uuid-3"
+      }
+    ],
+    "user": "lastname,firstname updated"
+  }
+}
+
+
+//Publish Response
+
+{
+  "isSuccessful": "true",
+  "id": 40692,
+  "activity": {
+    "id": 40692,
+    "activity_name": "Vijay Test - Assessment",
+    "display_name": "Vijay Test - Assessment",
+    "description": "<p>Assessment description</p>",
+    "activity_library_type": "Model",
+    "activity_status": "Published",
+    "activity_type": "Assessment",
+    "organization_id": "CERN_LRN",
+    "duration_seconds": null,
+    "passing_score": "80.0",
+    "attempt_limit": 2,
+    "learner_alert_enabled": true,
+    "learner_alert_msg": "You must complete this assessment to continue.",
+    "created_by": "lastname,firstname updated",
+    "updated_by": "lastname,firstname updated",
+    "created_at": "2026-05-12T09:46:29.000Z",
+    "updated_at": "2026-05-12T09:58:12.000Z",
+    "is_deleted": false,
+    "inherited_from": null,
+    "activity_notes_count": 0,
+    "activity_question_details": [
+      {
+        "question": "<p>Which activity type supports scoring?</p>",
+        "question_type": "Single",
+        "display_order": 1,
+        "rationale": "<p>Assessment supports scored responses.</p>",
+        "id": "question-uuid-1",
+        "activity_answer_details": [
+          {
+            "answer": "Assessment",
+            "display_order": 1,
+            "is_correct": true,
+            "id": "answer-uuid-1-1"
+          },
+          {
+            "answer": "Survey",
+            "display_order": 2,
+            "is_correct": false,
+            "id": "answer-uuid-1-2"
+          },
+          {
+            "answer": "Link",
+            "display_order": 3,
+            "is_correct": false,
+            "id": "answer-uuid-1-3"
+          }
+        ]
+      },
+      {
+        "question": "<p>Select all valid Assessment answer types.</p>",
+        "question_type": "Multiple",
+        "display_order": 2,
+        "rationale": "<p>Assessment supports single-answer and multiple-answer questions.</p>",
+        "id": "question-uuid-2",
+        "activity_answer_details": [
+          {
+            "answer": "Single answer",
+            "display_order": 1,
+            "is_correct": true,
+            "id": "answer-uuid-2-1"
+          },
+          {
+            "answer": "Multiple answer",
+            "display_order": 2,
+            "is_correct": true,
+            "id": "answer-uuid-2-2"
+          },
+          {
+            "answer": "Likert scale",
+            "display_order": 3,
+            "is_correct": false,
+            "id": "answer-uuid-2-3"
+          },
+          {
+            "answer": "Short text",
+            "display_order": 4,
+            "is_correct": false,
+            "id": "answer-uuid-2-4"
+          }
+        ]
+      },
+      {
+        "question": "<p>What happens when the learner reaches the passing score?</p>",
+        "question_type": "Single",
+        "display_order": 3,
+        "rationale": "<p>The attempt is marked as passed when the score meets or exceeds the passing score.</p>",
+        "id": "question-uuid-3",
+        "activity_answer_details": [
+          {
+            "answer": "Assessment is passed",
+            "display_order": 1,
+            "is_correct": true,
+            "id": "answer-uuid-3-1"
+          },
+          {
+            "answer": "Attempt is always failed",
+            "display_order": 2,
+            "is_correct": false,
+            "id": "answer-uuid-3-2"
+          }
+        ]
+      }
+    ]
+  }
+}
+
+
