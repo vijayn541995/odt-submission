@@ -56,6 +56,10 @@ Use Overview when you want to know where the work currently stands.
 
 Captures requirement/Jira text, target repo or folder, base branch, and uploaded context files. Folder selection in the browser is read-only and may not expose the absolute path; a pasted absolute path is needed for backend path-level scanning and Codex worker launch.
 
+Use **Import Jira** to read a Jira ticket through the backend-only Jira connector and convert it into Intake evidence. ODT classifies the Jira status before planning. If the ticket is already Done/Closed/Resolved, ODT should switch the work item into verification mode instead of assuming new implementation is needed.
+
+When a local repo path is present, Jira import also performs a read-only repo evidence check for the Jira key in git history and tracked files. For example, importing `JOURNEY-25366` against `journey-builder-js` identifies the Jira as completed and finds matching git commits, so the next action becomes verification, review, test/build evidence, and PR/release readiness rather than coding.
+
 Context assets are copied into the ODT workspace, classified, checksummed, and analyzed. Text-like files such as Markdown, text, JSON, YAML, and CSV receive local excerpts. Binary or packaged files such as PDFs, DOCX, XLSX, PPTX, and images are stored with metadata and optional AI/parser enrichment status.
 
 Use Intake when starting a new task or adding missing requirement/repo context.
@@ -84,11 +88,15 @@ Uploaded context assets are included in worker handoff with file path, checksum,
 
 Captures human review comments, blocker decisions, accepted risk, rework routing, implementation evidence, and review-cycle closeout.
 
+For completed Jira work, Review shows a verification evidence checklist. It separates what is already ready, such as Jira Done classification and repo commit evidence, from what still needs action, such as Reviewer evidence, build/test verification, and the current verification evidence record. The evidence capture form switches to verification wording so developers record proof instead of pretending new implementation happened.
+
 Use Review when something must be resolved, accepted as risk, or sent back to an agent for rework.
 
 ### PR Ready
 
 Generates and displays the PR readiness package: summary, changed files, tests, accessibility notes, security notes, dependency notes, risks, rollback plan, reviewer notes, blockers, and checklist.
+
+For completed Jira verification, PR Ready uses the same verification evidence checklist as Review and counts verification gaps before a PR pack is generated. This prevents stale old evidence or an old PR pack from making the current task look ready before Reviewer and build/test proof are captured.
 
 Use PR Ready after implementation evidence, reviewer pass, and build verification are complete.
 
@@ -224,15 +232,33 @@ Use Runs to audit what happened.
 
 ### Monitoring
 
-Shows AI usage metrics and provider health.
+Shows AI usage metrics, provider health, error visibility, and ODT self-validation status.
 
 Use Monitoring to check AI request volume, latency, tokens, and errors.
+
+Use **Error & Health Log** to see one operator-facing list of active backend failures, blocked workflow events, connector issues, standards findings, review comments, dependency requests, agent worker problems, relay questions, and validation failures. The log does not erase audit history; it points the developer to the right page and action to resolve the issue.
+
+Connector issues are resolved in the operator view when a later successful check supersedes the earlier failure for the same connector/action, or when the connector now reports Ready in Settings. Resolved rows remain visible as audit history, but they no longer count as critical, blocked, warning, or needs-attention items.
+
+Safe health-log actions can navigate to the owning page, open a run timeline, retry a read-only connector request, rerun UI smoke validation, or refresh an agent worker status. Monitoring should not perform write-capable fixes, dependency installs, destructive actions, or blocker overrides directly.
+
+Use **Run UI Smoke** in ODT Validation after workflow or evidence-scope changes. The self-check runs the local Playwright smoke script through the backend, records the result as run evidence, and stores screenshots under `output/playwright/`. This is an admin/developer confidence check, not a replacement for full product test coverage.
 
 ### Settings
 
 Shows local configuration, provider status, feature flags, and safe runtime settings. Secrets should stay backend-side and should not be exposed in frontend settings.
 
 Use Settings to confirm environment and provider behavior.
+
+The Connector Hub inside Settings shows optional Oracle/internal integration readiness without exposing secrets. Each connector card shows whether global MCP is enabled, whether the connector feature flag is enabled or detected, which server name is configured, whether the connector is read-only, and whether write actions require approval.
+
+ODT can detect safe MCP server metadata from environment variables or from local Codex MCP config such as `~/.codex/config.toml`. For example, if Codex has a Jira MCP server named `jira2`, ODT can mark Jira SD MCP as ready through Codex config without reading or exposing the Jira token/env-file contents.
+
+Use **Test Read Gate** on a connector card to safely verify whether ODT would allow a read-only connector request. If configuration is missing, ODT shows the missing environment variables directly in that card and keeps the connector blocked.
+
+For Jira SD MCP, ODT can now perform a backend-only read of a Jira issue such as `JOURNEY-25366` when Jira credentials are supplied through server environment variables or a detected Codex MCP `--env-file`. The Settings card returns safe issue fields such as key, summary, status, type, project, priority, assignee, reporter, timestamps, labels, components, fix versions, and a trimmed description excerpt. Tokens, env-file contents, and raw Jira responses are never sent to the frontend.
+
+Write-capable connector actions still require explicit human approval, and destructive actions remain blocked by default.
 
 ## Important Buttons And Actions
 

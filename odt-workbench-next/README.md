@@ -22,6 +22,26 @@ Local URLs:
 - Backend API: `http://127.0.0.1:5190`
 - OpenAPI: `http://127.0.0.1:5190/openapi.json`
 
+## UI Smoke Test
+
+With the API and React app running, use the Playwright smoke test to validate the completed-Jira verification workflow:
+
+```bash
+cd /Users/vn105957/Desktop/odt-submission/odt-workbench-next
+PATH=/Users/vn105957/.nvm/versions/node/v24.15.0/bin:$PATH npm run test:ui:smoke
+```
+
+The smoke test checks Planner, Standards, and Agent Team for `JOURNEY-25366` verification behavior:
+
+- historical Assessment Preview artifacts are hidden from the current Planner and Agent Team surfaces
+- Planner shows a verification plan instead of a stale implementation plan
+- Standards shows the completed-Jira verification contract
+- Agent Team keeps implementation lanes gated and points to Reviewer first
+
+Screenshots are written to `output/playwright/`, which is intentionally ignored by git.
+
+You can also run the same self-check from the Monitoring page with **Run UI Smoke**. The backend records the result under validation run evidence and displays the latest status, screenshot paths, and any failure output in ODT Validation.
+
 ## Design Boundaries
 
 - React never calls OCI GenAI, MCP, or secrets directly.

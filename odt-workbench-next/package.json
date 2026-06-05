@@ -12,7 +12,8 @@
     "dev": "vite --host 127.0.0.1 --port 5189",
     "dev:full": "node server/index.js & vite --host 127.0.0.1 --port 5189",
     "build": "vite build",
-    "preview": "vite preview --host 127.0.0.1 --port 4189"
+    "preview": "vite preview --host 127.0.0.1 --port 4189",
+    "test:ui:smoke": "node scripts/odt-ui-smoke.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^4.7.0",

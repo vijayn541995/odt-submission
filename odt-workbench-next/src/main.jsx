@@ -107,6 +107,8 @@ function useWorkbenchData() {
   const [snapshot, setSnapshot] = useState(null);
   const [settings, setSettings] = useState(null);
   const [usage, setUsage] = useState({ summary: {}, events: [] });
+  const [errorLog, setErrorLog] = useState({ summary: {}, items: [] });
+  const [validation, setValidation] = useState({ runs: [] });
   const [runs, setRuns] = useState([]);
   const [runEvents, setRunEvents] = useState([]);
   const [standards, setStandards] = useState(null);
@@ -122,30 +124,34 @@ function useWorkbenchData() {
   async function refresh() {
     setLoading(true);
     try {
-      const [snapshotResult, settingsResult, usageResult, runsResult, standardsResult, evidenceResult, uploadPolicyResult, agentFoundryResult, agentWorkersResult, executionHealthResult] = await Promise.all([
-        getJson('/api/snapshot'),
-        getJson('/api/settings'),
-        getJson('/api/monitoring/ai-usage'),
-        getJson('/api/runs'),
-        getJson('/api/standards'),
-        getJson('/api/assignments/assignment-local-mvp/evidence'),
-        getJson('/api/intake/upload-policy'),
-        getJson('/api/agent-foundry/domains'),
-        getJson('/api/agents/worker-roles'),
-        getJson('/api/agents/execution-health?assignmentId=assignment-local-mvp')
-      ]);
-      setSnapshot(snapshotResult);
-      setSettings(settingsResult);
-      setUsage(usageResult);
-      setRuns(runsResult.runs || []);
-      setStandards(standardsResult);
-      setEvidence(evidenceResult);
-      setUploadPolicy(uploadPolicyResult);
-      setAgentFoundry(agentFoundryResult);
-      setAgentWorkers(agentWorkersResult);
-      setExecutionHealth(executionHealthResult);
-      setSelectedRunId((current) => current || runsResult.runs?.[0]?.id || '');
-      setError('');
+      const requests = [
+        ['snapshot', getJson('/api/snapshot'), setSnapshot],
+        ['settings', getJson('/api/settings'), setSettings],
+        ['usage', getJson('/api/monitoring/ai-usage'), setUsage],
+        ['error log', getJson('/api/monitoring/error-log?assignmentId=assignment-local-mvp'), setErrorLog],
+        ['validation', getJson('/api/validation/runs'), setValidation],
+        ['runs', getJson('/api/runs'), (result) => {
+          setRuns(result.runs || []);
+          setSelectedRunId((current) => current || result.runs?.[0]?.id || '');
+        }],
+        ['standards', getJson('/api/standards'), setStandards],
+        ['evidence', getJson('/api/assignments/assignment-local-mvp/evidence'), setEvidence],
+        ['upload policy', getJson('/api/intake/upload-policy'), setUploadPolicy],
+        ['agent foundry', getJson('/api/agent-foundry/domains'), setAgentFoundry],
+        ['agent workers', getJson('/api/agents/worker-roles'), setAgentWorkers],
+        ['execution health', getJson('/api/agents/execution-health?assignmentId=assignment-local-mvp'), setExecutionHealth]
+      ];
+      const results = await Promise.allSettled(requests.map(([, promise]) => promise));
+      const failures = [];
+      results.forEach((result, index) => {
+        const [label, , setter] = requests[index];
+        if (result.status === 'fulfilled') {
+          setter(result.value);
+        } else {
+          failures.push(`${label}: ${result.reason?.message || 'request failed'}`);
+        }
+      });
+      setError(failures.length ? `Some workbench data could not refresh. ${failures.join('; ')}` : '');
     } catch (err) {
       setError(err.message || 'Unable to reach workbench backend.');
     } finally {
@@ -176,6 +182,8 @@ function useWorkbenchData() {
     snapshot,
     settings,
     usage,
+    errorLog,
+    validation,
     runs,
     runEvents,
     standards,
@@ -205,7 +213,7 @@ async function postJson(path, body) {
     body: JSON.stringify(body || {})
   });
   const data = await response.json();
-  if (!response.ok) throw new Error(data.error || data.message || `${path} returned ${response.status}`);
+  if (!response.ok) throw new Error(data.error || data.message || data.reason || data.detail?.reason || `${path} returned ${response.status}`);
   return data;
 }
 
@@ -408,7 +416,7 @@ function PageRouter({ activePage, setActivePage, data }) {
   if (activePage === 'artifacts') return <ArtifactsPage data={data} />;
   if (activePage === 'guide') return <GuidePage setActivePage={setActivePage} data={data} />;
   if (activePage === 'runs') return <RunsPage data={data} />;
-  if (activePage === 'monitoring') return <MonitoringPage data={data} />;
+  if (activePage === 'monitoring') return <MonitoringPage setActivePage={setActivePage} data={data} />;
   if (activePage === 'settings') return <SettingsPage data={data} />;
   return <OverviewPage setActivePage={setActivePage} data={data} />;
 }
@@ -542,10 +550,30 @@ function IntakePage({ setActivePage, data }) {
   const [repoResult, setRepoResult] = useState(null);
   const [browserRepoAnalysis, setBrowserRepoAnalysis] = useState(null);
   const [uploadResult, setUploadResult] = useState(null);
+  const [jiraIssueKey, setJiraIssueKey] = useState('JOURNEY-25366');
+  const [jiraImportResult, setJiraImportResult] = useState(null);
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState('');
   const policy = data.uploadPolicy?.uploadPolicy || data.snapshot?.intake?.uploadPolicy || {};
   const storedAssets = data.evidence?.intakeAssets || [];
+  const currentWorkbenchRepo = data.snapshot?.assignments?.[0]?.repoPath || data.evidence?.assignment?.repoPath || '';
+  const clarificationItems = result?.requirementAnalysis?.clarifyingQuestions?.length
+    ? result.requirementAnalysis.clarifyingQuestions.map((item) => [
+        item.severity || 'Review',
+        `${item.question}${item.defaultAssumption ? ` Default: ${item.defaultAssumption}` : ''}`
+      ])
+    : [
+        ['Requirement behavior', 'Should the action be synchronous or asynchronous? What happens on partial failure?'],
+        ['Roles and audit', 'Which roles can perform this action, and is audit history required?'],
+        ['UI states', 'What should loading, empty, validation, success, warning, and error states say?'],
+        ['Compliance', 'Does this feature affect VPAT/WCAG/Section 508 reporting, security review, or dependency approval?']
+      ];
+
+  useEffect(() => {
+    if (!repoPath.trim() && currentWorkbenchRepo) {
+      setRepoPath(currentWorkbenchRepo);
+    }
+  }, [currentWorkbenchRepo, repoPath]);
 
   async function extract() {
     setBusy('extract');
@@ -571,6 +599,39 @@ function IntakePage({ setActivePage, data }) {
       await data.refresh();
     } catch (err) {
       setNotice(err.message || 'Unable to analyze intake.');
+    } finally {
+      setBusy('');
+    }
+  }
+
+  async function importJiraIssue() {
+    setBusy('jira-import');
+    setNotice('');
+    try {
+      const effectiveRepoPath = repoPath.trim() || currentWorkbenchRepo;
+      const response = await postJson('/api/intake/import-jira', {
+        assignmentId: 'assignment-local-mvp',
+        issueKey: jiraIssueKey,
+        repoPath: effectiveRepoPath
+      });
+      setJiraImportResult(response);
+      setText(response.importedText || '');
+      setResult((current) => ({
+        ...(current || {}),
+        requirementAnalysis: response.analysis,
+        jiraImport: {
+          issue: response.issue,
+          workState: response.workState,
+          repoSignals: response.repoSignals
+        }
+      }));
+      const state = response.workState?.state === 'completed'
+        ? 'ODT identified this as completed Jira work. Continue with repo verification and evidence capture.'
+        : 'ODT imported this as active Jira work. Continue with repo analysis and planning.';
+      setNotice(`${response.issue?.key || jiraIssueKey}: ${state}`);
+      await data.refresh();
+    } catch (err) {
+      setNotice(err.message || 'Unable to import Jira issue.');
     } finally {
       setBusy('');
     }
@@ -782,6 +843,44 @@ function IntakePage({ setActivePage, data }) {
           title="Work request"
           copy="Paste the Jira story, requirement, acceptance criteria, API notes, constraints, and expected validation."
         >
+          <div className="jira-import-panel">
+            <div>
+              <span className="eyebrow">Jira Connector</span>
+              <strong>Import ticket and detect current work state</strong>
+              <p>ODT reads safe Jira fields, classifies Done/active status, and uses the repo path only for read-only Jira-key evidence checks.</p>
+            </div>
+            <div className="connector-query-row">
+              <input
+                type="text"
+                value={jiraIssueKey}
+                onChange={(event) => setJiraIssueKey(event.target.value)}
+                placeholder="JOURNEY-25366"
+                aria-label="Jira issue key to import"
+              />
+              <button className="secondary-button" type="button" onClick={importJiraIssue} disabled={Boolean(busy) || !jiraIssueKey.trim()}>
+                {busy === 'jira-import' ? 'Importing' : 'Import Jira'}
+              </button>
+            </div>
+            {jiraImportResult ? (
+              <div className="jira-import-result">
+                <StatusBadge
+                  label={jiraImportResult.workState?.label || 'Jira Imported'}
+                  tone={jiraImportResult.workState?.state === 'completed' ? 'success' : 'warning'}
+                />
+                <StatusBadge
+                  label={jiraImportResult.workState?.recommendedMode || 'review'}
+                  tone="info"
+                />
+                <StatusBadge
+                  label={titleCase(jiraImportResult.repoSignals?.status || 'repo not checked')}
+                  tone={jiraImportResult.repoSignals?.status === 'ticket_reference_found' ? 'success' : 'neutral'}
+                />
+                <p>{jiraImportResult.issue?.key}: {jiraImportResult.issue?.summary} ({jiraImportResult.issue?.status})</p>
+                <p>{jiraImportResult.workState?.nextAction}</p>
+                <p className="muted-copy">{jiraImportResult.repoSignals?.summary}</p>
+              </div>
+            ) : null}
+          </div>
           <label className="field" htmlFor="work-request-input">
             <span>Requirement, Jira details, acceptance criteria, constraints, and expectations</span>
             <textarea
@@ -894,14 +993,7 @@ function IntakePage({ setActivePage, data }) {
           title="Clarification prompts"
           copy="Use these as quality checks before planning or delegating work."
         >
-          <ActionList
-            items={[
-              ['Requirement behavior', 'Should the action be synchronous or asynchronous? What happens on partial failure?'],
-              ['Roles and audit', 'Which roles can perform this action, and is audit history required?'],
-              ['UI states', 'What should loading, empty, validation, success, warning, and error states say?'],
-              ['Compliance', 'Does this feature affect VPAT/WCAG/Section 508 reporting, security review, or dependency approval?']
-            ]}
-          />
+          <ActionList items={clarificationItems} />
         </IntakeStep>
       </div>
     </div>
@@ -930,6 +1022,7 @@ function PlannerPage({ setActivePage, data }) {
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
   const workflow = workflowStateFromData(data);
+  const { verificationProfile, completedJiraVerification } = jiraVerificationState(workflow);
   const gate = standardsGateState(data.evidence);
   const latestCheck = gate.latestCheck;
   const blockers = gate.unresolvedBlockers;
@@ -939,8 +1032,14 @@ function PlannerPage({ setActivePage, data }) {
   const selectedAgent = getStoredSetting(data, 'executionAgent', 'codex');
   const approvedDependencies = (data.evidence?.dependencyRequests || []).filter((request) => request.status === 'approved');
   const pendingDependencies = (data.evidence?.dependencyRequests || []).filter((request) => request.status === 'pending');
-  const latestPlan = data.evidence?.implementationPlans?.[0]?.planJson || {};
-  const latestDesign = data.evidence?.technicalDesigns?.[0]?.designJson || {};
+  const currentPlans = currentEvidenceItems(data.evidence, 'implementationPlans');
+  const currentDesigns = currentEvidenceItems(data.evidence, 'technicalDesigns');
+  const historicalPlans = historicalEvidenceItems(data.evidence, 'implementationPlans');
+  const latestPlanRecord = currentPlans[0] || null;
+  const latestDesignRecord = currentDesigns[0] || null;
+  const latestPlan = latestPlanRecord?.planJson || {};
+  const latestDesign = latestDesignRecord?.designJson || {};
+  const hiddenHistoricalPlan = !latestPlanRecord ? historicalPlans[0] : null;
   const latestRequirement = data.evidence?.requirements?.[0] || {};
   const requirementSignals = data.evidence?.requirementSignals || {};
   const workBrief = currentWorkBrief(data);
@@ -949,7 +1048,39 @@ function PlannerPage({ setActivePage, data }) {
     data
   );
   const unresolvedClarifications = clarificationGate.filter(isClarificationOpen);
-  const planTitle = latestPlan.title || latestDesign.title || latestRequirement.summary || 'Implementation Plan';
+  const verificationPlanFallback = completedJiraVerification ? {
+    scope: [
+      'Verify Jira Done status against repo evidence.',
+      'Review Jira-linked commits and branch or PR state.',
+      'Capture build/test verification evidence before PR readiness.'
+    ],
+    frontendTasks: [
+      'Confirm visible UI acceptance criteria from Jira.',
+      'Check whether the completed change needs accessibility review evidence.',
+      'Send explicit rework only if Reviewer finds a gap.'
+    ],
+    validationTasks: [
+      'Launch Reviewer first.',
+      'Launch Build Verifier after reviewer pass or explicit approval.',
+      'Record verification evidence in Review.'
+    ],
+    backendTasks: [
+      'Inspect Jira-linked commit evidence.',
+      'Confirm branch/PR/release state.',
+      'Package verified evidence for PR Ready.'
+    ],
+    testTasks: [
+      'Run approved targeted repo test/build command, or capture accepted-risk notes if unavailable.'
+    ],
+    filesToChange: [],
+    filesToReview: [
+      'Jira-linked commit diffs',
+      'Files changed by matching commits',
+      'Targeted tests from reviewer/build evidence'
+    ]
+  } : {};
+  const planView = latestPlanRecord ? latestPlan : verificationPlanFallback;
+  const planTitle = latestPlan.title || latestDesign.title || (completedJiraVerification ? `${verificationProfile?.issueKey || 'Completed Jira'} Verification Plan` : latestRequirement.summary || 'Implementation Plan');
   const canApproveWrite = workflowAllows(workflow, 'canApproveWrite', Boolean(latestCheck && !reviewBlockers.length && !writeApproved)) && !blockers.length;
   const canDelegateWrite = workflowAllows(workflow, 'canDelegateWrite', Boolean(writeApproved && !blockers.length && !reviewBlockers.length));
   const effectiveGateStatus = gate.implementationBlocked
@@ -1016,14 +1147,19 @@ function PlannerPage({ setActivePage, data }) {
       {notice ? <div className="info-banner" role="status">{notice}</div> : null}
       <WorkflowDecisionBar workflow={workflow} onNavigate={setActivePage} />
       <CurrentWorkBrief data={data} onNavigate={setActivePage} compact />
+      {hiddenHistoricalPlan ? (
+        <div className="info-banner" role="status">
+          Planner is hiding historical plan "{hiddenHistoricalPlan.title}" from {formatTime(hiddenHistoricalPlan.createdAt)} because it predates the active requirement. Open Artifacts to review older evidence.
+        </div>
+      ) : null}
       <div className="two-column wide-left">
-        <Panel title="Plan Summary" eyebrow="Draft Plan">
+        <Panel title="Plan Summary" eyebrow={latestPlanRecord ? 'Current Plan' : completedJiraVerification ? 'Verification Plan' : 'Draft Plan'}>
           <ActionList
             items={[
-              [planTitle, summarizeItems(latestPlan.scope || latestDesign.scope, 'Generate a plan to create requirement-specific scope evidence.')],
-              ['Frontend behavior', summarizeItems(latestPlan.frontendTasks, 'Frontend behavior tasks have not been captured yet.')],
-              ['Validation and API rules', summarizeItems([...(latestPlan.validationTasks || []), ...(latestPlan.backendTasks || [])], 'Validation and API rules have not been captured yet.')],
-              ['Targeted tests', summarizeItems(latestPlan.testTasks || data.evidence?.testPlans?.[0]?.planJson?.targetedCommands, 'Targeted tests have not been captured yet.')]
+              [planTitle, summarizeItems(planView.scope || latestDesign.scope, 'Generate a plan to create requirement-specific scope evidence.')],
+              [completedJiraVerification ? 'Verification focus' : 'Frontend behavior', summarizeItems(planView.frontendTasks, completedJiraVerification ? 'Reviewer should inspect UI acceptance evidence.' : 'Frontend behavior tasks have not been captured yet.')],
+              [completedJiraVerification ? 'Evidence checks' : 'Validation and API rules', summarizeItems([...(planView.validationTasks || []), ...(planView.backendTasks || [])], completedJiraVerification ? 'Verification evidence has not been captured yet.' : 'Validation and API rules have not been captured yet.')],
+              ['Targeted tests', summarizeItems(planView.testTasks || currentEvidenceItems(data.evidence, 'testPlans')?.[0]?.planJson?.targetedCommands, 'Targeted tests have not been captured yet.')]
             ]}
           />
         </Panel>
@@ -1052,7 +1188,7 @@ function PlannerPage({ setActivePage, data }) {
               ['Assignment', data.evidence?.assignment?.title || planTitle],
               ['Target repo', requirementSignals.targetRepo || latestDesign.targetRepo || data.evidence?.assignment?.repoPath],
               ['API endpoint', requirementSignals.endpoint || latestDesign.apiChanges?.[0] || 'Not captured'],
-              ['Domain', requirementSignals.domainSignals?.assessment ? 'Assessment activity workflow' : 'General workflow']
+              ['Domain', completedJiraVerification ? 'Completed Jira verification' : requirementSignals.domainSignals?.assessment ? 'Assessment activity workflow' : 'General workflow']
             ]}
           />
         </Panel>
@@ -1060,9 +1196,9 @@ function PlannerPage({ setActivePage, data }) {
           <SimpleTable
             columns={['Type', 'Evidence']}
             rows={[
-              ['Files to change', summarizeItems(latestPlan.filesToChange, 'Not captured yet.')],
-              ['Files to review', summarizeItems(latestPlan.filesToReview || latestDesign.candidateFiles, 'Not captured yet.')],
-              ['Test commands/files', summarizeItems(latestPlan.testTasks, 'Not captured yet.')],
+              ['Files to change', summarizeItems(planView.filesToChange, completedJiraVerification ? 'No target repo writes until Reviewer creates explicit rework.' : 'Not captured yet.')],
+              ['Files to review', summarizeItems(planView.filesToReview || latestDesign.candidateFiles, 'Not captured yet.')],
+              ['Test commands/files', summarizeItems(planView.testTasks, 'Not captured yet.')],
               ['Clarifications', clarificationGate.length ? unresolvedClarifications.length ? `${unresolvedClarifications.length} question(s) need a decision.` : `${clarificationGate.length} demo decision(s) captured.` : 'No clarification gate generated yet.']
             ]}
           />
@@ -1151,6 +1287,7 @@ function StandardsPage({ setActivePage, data }) {
   });
   const evidence = data.evidence || {};
   const workflow = workflowStateFromData(data);
+  const { verificationProfile, completedJiraVerification } = jiraVerificationState(workflow);
   const workBrief = currentWorkBrief(data);
   const gate = standardsGateState(evidence);
   const latestCheck = gate.latestCheck;
@@ -1159,7 +1296,7 @@ function StandardsPage({ setActivePage, data }) {
   const reviewBlockers = gate.reviewBlockers || [];
   const reviewedBlockers = gate.blockerFindings;
   const hardSafetyBlockers = gate.hardSafetyBlockers || [];
-  const approvals = evidence.approvals || [];
+  const approvals = currentEvidenceItems(evidence, 'approvals');
   const writeApproved = gate.writeApproved;
   const approvalBlockedByDecision = workflow?.blockedReasons?.some((reason) => reason.category === 'approval');
   const canApproveFromStandards = workflowAllows(workflow, 'canApproveWrite', Boolean(latestCheck && !writeApproved)) && !reviewBlockers.length;
@@ -1173,13 +1310,13 @@ function StandardsPage({ setActivePage, data }) {
       : blockers.length
       ? 'Override Reviewed Blockers'
       : 'Approve With Warnings';
-  const dependencies = evidence.dependencyRequests || [];
+  const dependencies = currentEvidenceItems(evidence, 'dependencyRequests');
   const pendingDependencies = dependencies.filter((request) => request.status === 'pending');
   const approvedDependencies = dependencies.filter((request) => request.status === 'approved');
   const rejectedDependencies = dependencies.filter((request) => request.status === 'rejected');
-  const implementationEvidence = evidence.implementationEvidence || [];
+  const implementationEvidence = currentEvidenceItems(evidence, 'implementationEvidence');
   const failedRecordedTests = implementationEvidence.flatMap((record) => record.tests || []).filter((test) => test.status === 'failed');
-  const prReports = evidence.prReadinessReports || [];
+  const prReports = currentEvidenceItems(evidence, 'prReadinessReports');
   const flexibility = data.standards?.flexibility;
   const standardsSources = data.standards?.registry?.sources || [];
   const standardsConfigSource = standardsSources.find((source) => source.id === 'standards-config');
@@ -1223,7 +1360,9 @@ function StandardsPage({ setActivePage, data }) {
     try {
       await postJson('/api/design/draft', { assignmentId: 'assignment-local-mvp' });
       await postJson('/api/plan/draft', { assignmentId: 'assignment-local-mvp' });
-      setNotice('Technical design and implementation plan drafts were refreshed.');
+      setNotice(completedJiraVerification
+        ? 'Verification design and verification plan drafts were refreshed for the completed Jira work.'
+        : 'Technical design and implementation plan drafts were refreshed.');
       await data.refresh();
     } catch (err) {
       setNotice(err.message || 'Plan update failed.');
@@ -1389,6 +1528,30 @@ function StandardsPage({ setActivePage, data }) {
       {notice ? <div className="info-banner" role="status">{notice}</div> : null}
       <CurrentWorkBrief data={data} onNavigate={setActivePage} compact />
       <WorkflowDecisionBar workflow={workflow} onNavigate={setActivePage} />
+      {completedJiraVerification ? (
+        <Panel title="Verification Standards Contract" eyebrow="Completed Jira Gate">
+          <div className="verification-lane-panel">
+            <div>
+              <StatusBadge label={verificationProfile.issueKey || 'Jira Done'} tone="success" />
+              <StatusBadge label="No implementation by default" tone="warning" />
+              <StatusBadge label={verificationProfile.hasRepoEvidence ? 'Commit evidence detected' : 'Repo evidence needed'} tone={verificationProfile.hasRepoEvidence ? 'success' : 'warning'} />
+            </div>
+            <p>{verificationProfile.summary} Standards should validate the verification path for this completed work, not approve a stale implementation plan from another task.</p>
+            <ActionList
+              items={[
+                ['Behavior contract', 'Treat Jira Done as implementation-complete until Reviewer finds explicit rework.'],
+                ['Update rules', 'No update/API payload work is assumed for this ticket unless current Jira evidence or Reviewer findings say so.'],
+                ['Required evidence', 'Reviewer output, build/test command evidence, and PR/release readiness notes.'],
+                ['Approval rule', 'Fresh write approval is only needed after Reviewer creates explicit rework.']
+              ]}
+            />
+            <div className="button-row">
+              <button className="primary-button" type="button" onClick={() => setActivePage('team')}>Open Reviewer Lane</button>
+              <button className="secondary-button" type="button" onClick={() => setActivePage('review')}>Record Verification Evidence</button>
+            </div>
+          </div>
+        </Panel>
+      ) : null}
       <div className="metric-grid">
         <MetricCard label="Overall Gate" value={effectiveGateStatus} detail={writeApproved ? 'Warnings approved and write scope captured' : 'Latest standards status'} tone={standardsTone(effectiveGateStatus)} />
         <MetricCard label="Findings" value={findings.length || 0} detail="Stored review findings" tone="info" />
@@ -1433,7 +1596,7 @@ function StandardsPage({ setActivePage, data }) {
             />
           </label>
           <div className="button-row vertical">
-            <button type="button" className="secondary-button" onClick={updatePlan} disabled={Boolean(busy)}>{busy === 'plan' ? 'Updating' : 'Update Plan'}</button>
+            <button type="button" className="secondary-button" onClick={updatePlan} disabled={Boolean(busy)}>{busy === 'plan' ? 'Updating' : completedJiraVerification ? 'Update Verification Plan' : 'Update Plan'}</button>
             <button
               type="button"
               className="secondary-button"
@@ -1825,25 +1988,28 @@ function AgentTeamPage({ setActivePage, data }) {
   const selectedAgentConfig = executionAgents.find((agent) => agent.id === selectedAgent) || executionAgents[0];
   const selectedWorker = teamRoles.find((role) => role.id === selectedWorkerRole) || teamRoles[0];
   const workflow = workflowStateFromData(data);
+  const { verificationProfile, completedJiraVerification } = jiraVerificationState(workflow);
   const gate = standardsGateState(data.evidence);
   const blockers = gate.unresolvedBlockers;
   const reviewBlockers = gate.reviewBlockers || [];
   const writeApproved = gate.writeApproved;
   const writeMode = workflowAllows(workflow, 'canDelegateWrite', Boolean(writeApproved && !blockers.length && !reviewBlockers.length));
   const selectedWorkerNeedsWrite = Boolean(selectedWorker.requiresWrite);
+  const implementationWorkerIds = new Set(['fullstack-dev', 'backend-dev', 'frontend-dev']);
+  const selectedWorkerBlockedByVerification = completedJiraVerification && implementationWorkerIds.has(selectedWorkerRole);
   const executionAdapters = data.executionHealth?.adapters || {};
   const selectedExecutionHealth = executionAdapters[selectedAgent] || null;
   const codexExecutionHealth = executionAdapters.codex || null;
   const codexLaunchHealthy = codexExecutionHealth?.status === 'healthy';
   const executionHealthIssues = data.executionHealth?.issues || [];
-  const canLaunchCodexWorker = selectedAgent === 'codex' && codexLaunchHealthy && (!selectedWorkerNeedsWrite || writeMode);
+  const canLaunchCodexWorker = selectedAgent === 'codex' && codexLaunchHealthy && !selectedWorkerBlockedByVerification && (!selectedWorkerNeedsWrite || writeMode);
   const approvedDependencies = (data.evidence?.dependencyRequests || []).filter((request) => request.status === 'approved');
   const pendingDependencies = (data.evidence?.dependencyRequests || []).filter((request) => request.status === 'pending');
-  const workerRuns = data.evidence?.agentWorkerRuns || [];
-  const relayItems = data.evidence?.agentRelayItems || [];
+  const workerRuns = currentEvidenceItems(data.evidence, 'agentWorkerRuns');
+  const relayItems = currentEvidenceItems(data.evidence, 'agentRelayItems');
   const selectedWorkerRun = workerRuns.find((run) => run.id === selectedWorkerRunId) || workerRuns[0] || null;
   const selectedRelayItem = relayItems.find((item) => item.id === selectedRelayId) || relayItems[0] || null;
-  const latestPlan = data.evidence?.implementationPlans?.[0]?.planJson || {};
+  const latestPlan = currentEvidenceItems(data.evidence, 'implementationPlans')?.[0]?.planJson || {};
   const sharedTaskItems = normalizeList(latestPlan.frontendTasks || latestPlan.scope).slice(0, 5);
 
   useEffect(() => {
@@ -1853,6 +2019,12 @@ function AgentTeamPage({ setActivePage, data }) {
   useEffect(() => {
     setSelectedWorkerRole(storedWorkerRole);
   }, [storedWorkerRole]);
+
+  useEffect(() => {
+    if (completedJiraVerification && implementationWorkerIds.has(selectedWorkerRole)) {
+      setSelectedWorkerRole('reviewer');
+    }
+  }, [completedJiraVerification, selectedWorkerRole]);
 
   useEffect(() => {
     if (!workerRuns.length) {
@@ -1952,6 +2124,7 @@ function AgentTeamPage({ setActivePage, data }) {
       const result = await postJson('/api/agents/delegate', {
         assignmentId: 'assignment-local-mvp',
         executionAgent: selectedAgent,
+        workerRoleId: selectedWorkerRole,
         requireWriteApproved,
         notes: requireWriteApproved
           ? 'Prepared from Agent Team with write approval.'
@@ -1970,32 +2143,39 @@ function AgentTeamPage({ setActivePage, data }) {
     }
   }
 
-  async function launchCodexWorker() {
-    if (!canLaunchCodexWorker) {
+  async function launchCodexWorker(workerRoleOverride = selectedWorkerRole) {
+    const launchRole = teamRoles.find((role) => role.id === workerRoleOverride) || selectedWorker;
+    const launchRoleBlockedByVerification = completedJiraVerification && implementationWorkerIds.has(launchRole.id);
+    const launchRoleNeedsWrite = Boolean(launchRole.requiresWrite);
+    const canLaunchRole = selectedAgent === 'codex' && codexLaunchHealthy && !launchRoleBlockedByVerification && (!launchRoleNeedsWrite || writeMode);
+    if (!canLaunchRole) {
       setAgentNotice(selectedAgent === 'codex'
         ? !codexLaunchHealthy
           ? 'Codex CLI adapter is not healthy. Review Execution Health before launching a terminal worker.'
-          : `${selectedWorker.name} is waiting on Standards, review blockers, or write approval. Read-only lanes can still run for planning/review.`
+          : launchRoleBlockedByVerification
+            ? `${verificationProfile.issueKey} is already completed in Jira. Launch Reviewer first, then Build Verifier or PR Ready evidence if needed.`
+          : `${launchRole.name} is waiting on Standards, review blockers, or write approval. Read-only lanes can still run for planning/review.`
         : 'Terminal launch is wired for Codex in this slice. Use governed handoff for Cline or Manual.');
       return;
     }
+    setSelectedWorkerRole(launchRole.id);
     setHandoffBusy(true);
     setAgentNotice('');
     try {
       const result = await postJson('/api/agents/launch-worker', {
         assignmentId: 'assignment-local-mvp',
         executionAgent: selectedAgent,
-        workerRole: selectedWorkerRole,
+        workerRole: launchRole.id,
         launchMode: 'terminal',
-        notes: `Launched ${selectedWorker.name} from Agent Team.`
+        notes: `Launched ${launchRole.name} from Agent Team.`
       });
       const launch = result.launch || {};
       if (result.status === 'launched') {
-        setAgentNotice(`${selectedWorker.name} launched in Terminal with Codex. Bundle: ${launch.bundleDir}. Response: ${launch.responseFile}.`);
+        setAgentNotice(`${launchRole.name} launched in Terminal with Codex. Bundle: ${launch.bundleDir}. Response: ${launch.responseFile}.`);
       } else if (result.status === 'manual_fallback') {
-        setAgentNotice(`${selectedWorker.name} bundle is ready, but Terminal launch needs manual start: ${launch.manualCommand}`);
+        setAgentNotice(`${launchRole.name} bundle is ready, but Terminal launch needs manual start: ${launch.manualCommand}`);
       } else {
-        setAgentNotice(`${selectedWorker.name} bundle prepared: ${launch.bundleDir || 'workspace bundle'}.`);
+        setAgentNotice(`${launchRole.name} bundle prepared: ${launch.bundleDir || 'workspace bundle'}.`);
       }
       await data.refresh();
     } catch (err) {
@@ -2142,6 +2322,31 @@ function AgentTeamPage({ setActivePage, data }) {
       />
       <WorkflowDecisionBar workflow={workflow} onNavigate={setActivePage} />
       <CurrentWorkBrief data={data} onNavigate={setActivePage} compact />
+      {completedJiraVerification ? (
+        <Panel title="Verification Lane" eyebrow="Completed Jira Detected">
+          <div className="verification-lane-panel">
+            <div>
+              <StatusBadge label="Completed in Jira" tone="success" />
+              <StatusBadge label="Verification first" tone="info" />
+              <StatusBadge label={verificationProfile.hasRepoEvidence ? 'Repo evidence found' : 'Repo evidence needed'} tone={verificationProfile.hasRepoEvidence ? 'success' : 'warning'} />
+            </div>
+            <p>{verificationProfile.summary} ODT should verify evidence before launching implementation workers.</p>
+            <ActionList
+              items={[
+                ['Reviewer', 'Review Jira details, linked commits, branch/PR state, risks, and missing evidence.'],
+                ['Build Verifier', 'After reviewer pass or explicit test approval, capture build/test evidence.'],
+                ['PR Ready', 'Prepare the PR/release-ready package once verification evidence is recorded.']
+              ]}
+            />
+            <div className="button-row">
+              <button className="primary-button" type="button" onClick={() => launchCodexWorker('reviewer')} disabled={handoffBusy || selectedAgent !== 'codex' || !codexLaunchHealthy}>Launch Reviewer</button>
+              <button className="secondary-button" type="button" onClick={() => chooseWorkerRole('reviewer')}>Select Reviewer</button>
+              <button className="secondary-button" type="button" onClick={() => chooseWorkerRole('build-verifier')}>Select Build Verifier</button>
+              <button className="secondary-button" type="button" onClick={() => setActivePage('pr')}>Open PR Ready</button>
+            </div>
+          </div>
+        </Panel>
+      ) : null}
       <Panel title="Team Operating Model" eyebrow="How Agent Team Works">
         <SimpleTable
           columns={['Lane', 'Engine', 'Parallel Policy', 'ODT Gate']}
@@ -2187,7 +2392,8 @@ function AgentTeamPage({ setActivePage, data }) {
         </div>
         <div className="worker-lane-grid" role="radiogroup" aria-label="Select worker lane">
           {teamRoles.map((role) => {
-            const roleReady = !role.requiresWrite || writeMode;
+            const roleBlockedByVerification = completedJiraVerification && implementationWorkerIds.has(role.id);
+            const roleReady = !roleBlockedByVerification && (!role.requiresWrite || writeMode);
             return (
               <button
                 className={`worker-lane-card ${selectedWorkerRole === role.id ? 'selected' : ''}`}
@@ -2203,7 +2409,7 @@ function AgentTeamPage({ setActivePage, data }) {
                   <p>{role.scope}</p>
                   <span>{role.mode}</span>
                 </div>
-                <StatusBadge label={roleReady ? 'Ready' : 'Needs Write Approval'} tone={roleReady ? 'success' : 'warning'} />
+                <StatusBadge label={roleBlockedByVerification ? 'Verification First' : roleReady ? 'Ready' : 'Needs Write Approval'} tone={roleReady ? 'success' : 'warning'} />
               </button>
             );
           })}
@@ -2362,7 +2568,7 @@ function AgentTeamPage({ setActivePage, data }) {
             <div className="worker-queue-list">
               {workerRuns.slice(0, 8).map((run) => {
                 const activeRun = isWorkerRunActive(run.status);
-                const hasResponse = Boolean(run.output?.responseBytes > 0 || run.output?.rawText || ['response_ready', 'completed', 'needs_input'].includes(String(run.status || '').toLowerCase()));
+                const hasResponse = workerRunHasReviewableOutput(run);
                 return (
                   <article className={`worker-queue-card ${selectedWorkerRun?.id === run.id ? 'selected' : ''}`} key={run.id}>
                     <div className="worker-queue-main">
@@ -2452,10 +2658,10 @@ function AgentTeamPage({ setActivePage, data }) {
 		                  Stop Worker
 		                </button>
 		              ) : null}
-		              <button className="primary-button" type="button" onClick={() => ingestWorkerRun(selectedWorkerRun.id)} disabled={handoffBusy || !(selectedWorkerRun.output?.responseBytes > 0 || ['response_ready', 'completed', 'needs_input'].includes(String(selectedWorkerRun.status || '').toLowerCase()))}>
+		              <button className="primary-button" type="button" onClick={() => ingestWorkerRun(selectedWorkerRun.id)} disabled={handoffBusy || !workerRunHasReviewableOutput(selectedWorkerRun)}>
 		                Ingest Output
 		              </button>
-		              <button className="secondary-button" type="button" onClick={() => deriveImplementationEvidence(selectedWorkerRun.id)} disabled={handoffBusy || !(selectedWorkerRun.output?.responseBytes > 0 || selectedWorkerRun.output?.rawText || ['response_ready', 'completed', 'needs_input'].includes(String(selectedWorkerRun.status || '').toLowerCase()))}>
+		              <button className="secondary-button" type="button" onClick={() => deriveImplementationEvidence(selectedWorkerRun.id)} disabled={handoffBusy || !workerRunHasReviewableOutput(selectedWorkerRun)}>
 		                Record Evidence From Worker
 		              </button>
 		            </div>
@@ -2521,9 +2727,10 @@ function ReviewPage({ setActivePage, data }) {
   const assignments = data.snapshot?.assignments || [];
   const evidence = data.evidence || {};
   const workflow = workflowStateFromData(data);
+  const { verificationProfile, completedJiraVerification } = jiraVerificationState(workflow);
   const gate = standardsGateState(evidence);
-  const comments = evidence.reviewComments || [];
-  const implementationEvidence = evidence.implementationEvidence || [];
+  const comments = currentEvidenceItems(evidence, 'reviewComments');
+  const implementationEvidence = currentEvidenceItems(evidence, 'implementationEvidence');
   const latestImplementationEvidence = implementationEvidence[0];
   const recordedTests = implementationEvidence.flatMap((record) => record.tests || []);
   const failedRecordedTests = recordedTests.filter((test) => test.status === 'failed');
@@ -2533,12 +2740,28 @@ function ReviewPage({ setActivePage, data }) {
   const openBlockers = openComments.filter((comment) => comment.severity === 'blocker');
   const acceptedRisk = comments.filter((comment) => comment.status === 'accepted_risk');
   const resolved = comments.filter((comment) => comment.status === 'resolved');
-  const reworkRelayItems = (evidence.agentRelayItems || []).filter((item) => item.itemType === 'rework');
+  const reworkRelayItems = currentEvidenceItems(evidence, 'agentRelayItems').filter((item) => item.itemType === 'rework');
   const activeReworkRelayItems = reworkRelayItems.filter((item) => ['open', 'assigned', 'answered'].includes(String(item.status || '').toLowerCase()));
   const reworkRelayCommentIds = new Set(reworkRelayItems.map((item) => item.context?.reviewCommentId).filter(Boolean));
   const selectedAgent = getStoredSetting(data, 'executionAgent', 'codex');
+  const latestPrReport = evidence.prReadinessReports?.[0]?.reportJson || null;
+  const verificationEvidenceRows = buildVerificationEvidenceRows({ evidence, workflow, latestReport: latestPrReport });
   const writeReady = workflowAllows(workflow, 'canDelegateWrite', Boolean(gate.writeApproved && !gate.unresolvedBlockers.length && !openBlockers.length));
   const canRecordImplementationEvidence = workflowAllows(workflow, 'canRecordImplementationEvidence', Boolean(gate.writeApproved || evidence.agentEvents?.some((event) => event.eventType === 'handoff_prepared')));
+  const implementationDefaults = completedJiraVerification ? {
+    changedFiles: [
+      verificationProfile?.hasRepoEvidence ? `${verificationProfile.commitCount || 0} Jira-linked commit(s) found for ${verificationProfile.issueKey}` : 'Jira-linked commit evidence still needs review',
+      verificationProfile?.repoPath ? `Repository: ${verificationProfile.repoPath}` : ''
+    ].filter(Boolean).join('\n'),
+    commands: 'Review Jira-linked commits and diffs\nRun approved targeted build/test command or record why unavailable',
+    tests: 'Reviewer verification | pending | Inspect Jira Done state, commit evidence, and acceptance proof.\nBuild/test verification | pending | Capture approved repo test/build result.',
+    summary: `${verificationProfile?.issueKey || 'Completed Jira'} verification evidence: confirm Jira Done state, repo commits, reviewer findings, build/test proof, and PR/release readiness before implementation work is reopened.`
+  } : {
+    changedFiles: 'server/index.js\nsrc/main.jsx\nsrc/styles.css',
+    commands: 'npm run build',
+    tests: 'Build verification | passed | Production bundle completed.',
+    summary: 'Implemented the governed workflow slice and recorded evidence for post-implementation standards review.'
+  };
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState('');
   const [commentForm, setCommentForm] = useState({
@@ -2551,11 +2774,22 @@ function ReviewPage({ setActivePage, data }) {
     notes: 'Please rework the plan to address the open review finding before write-approved delegation.'
   });
   const [implementationForm, setImplementationForm] = useState({
-    changedFiles: 'server/index.js\nsrc/main.jsx\nsrc/styles.css',
-    commands: 'npm run build',
-    tests: 'Build verification | passed | Production bundle completed.',
-    summary: 'Implemented the governed workflow slice and recorded evidence for post-implementation standards review.'
+    changedFiles: implementationDefaults.changedFiles,
+    commands: implementationDefaults.commands,
+    tests: implementationDefaults.tests,
+    summary: implementationDefaults.summary
   });
+
+  useEffect(() => {
+    if (!completedJiraVerification) return;
+    setImplementationForm((current) => {
+      const stillGenericDefaults = current.changedFiles === 'server/index.js\nsrc/main.jsx\nsrc/styles.css'
+        && current.commands === 'npm run build'
+        && current.summary === 'Implemented the governed workflow slice and recorded evidence for post-implementation standards review.';
+      const emptyForm = !current.changedFiles.trim() && !current.commands.trim() && !current.tests.trim() && !current.summary.trim();
+      return stillGenericDefaults || emptyForm ? implementationDefaults : current;
+    });
+  }, [completedJiraVerification, verificationProfile?.issueKey]);
 
   function updateCommentField(field, value) {
     setCommentForm((current) => ({ ...current, [field]: value }));
@@ -2747,6 +2981,49 @@ function ReviewPage({ setActivePage, data }) {
       />
       {notice ? <div className="info-banner" role="status">{notice}</div> : null}
       <WorkflowDecisionBar workflow={workflow} onNavigate={setActivePage} />
+      {completedJiraVerification ? (
+        <Panel title="Completed Jira Verification" eyebrow="Imported Work State">
+          <div className="verification-lane-panel">
+            <div>
+              <StatusBadge label={verificationProfile.issueKey || 'Jira Done'} tone="success" />
+              <StatusBadge label="Reviewer First" tone="info" />
+              <StatusBadge label={verificationProfile.hasRepoEvidence ? `${verificationProfile.commitCount || 0} Commit${verificationProfile.commitCount === 1 ? '' : 's'}` : 'Repo Evidence Needed'} tone={verificationProfile.hasRepoEvidence ? 'success' : 'warning'} />
+            </div>
+            <p>{verificationProfile.summary} Because the ticket is already Done, ODT should verify existing repo/test/PR evidence before any implementation lane is opened.</p>
+            <ActionList
+              items={[
+                ['Safe next step', workflow?.nextAction?.detail || verificationProfile.nextAction],
+                ['Review focus', 'Check Jira details, linked commits, branch/PR status, test evidence, and missing acceptance proof.'],
+                ['Write policy', 'Implementation workers stay locked unless Reviewer creates explicit rework.']
+              ]}
+            />
+            <div className="button-row">
+              <button className="primary-button" type="button" onClick={() => openWorkerForRole('reviewer')} disabled={Boolean(busy)}>
+                Open Reviewer Lane
+              </button>
+              <button className="secondary-button" type="button" onClick={() => openWorkerForRole('build-verifier')} disabled={Boolean(busy)}>
+                Select Build Verifier
+              </button>
+              <button className="secondary-button" type="button" onClick={() => setActivePage('pr')} disabled={Boolean(busy)}>
+                Open PR Ready
+              </button>
+            </div>
+          </div>
+        </Panel>
+      ) : null}
+      {completedJiraVerification ? (
+        <Panel title="Verification Evidence Checklist" eyebrow="Reviewer To PR">
+          <SimpleTable
+            columns={['Evidence', 'State', 'Detail', 'Next Action']}
+            rows={verificationEvidenceRows.map((item) => [
+              item.label,
+              <StatusBadge label={item.status} tone={item.tone} />,
+              item.detail,
+              item.action
+            ])}
+          />
+        </Panel>
+      ) : null}
       <div className="metric-grid">
         <MetricCard label="Open Comments" value={openComments.length || 0} detail="Need review decision" tone={openComments.length ? 'warning' : 'success'} />
         <MetricCard label="Review Blockers" value={openBlockers.length || 0} detail="Block delegation until resolved or accepted" tone={openBlockers.length ? 'danger' : 'success'} />
@@ -2902,10 +3179,10 @@ function ReviewPage({ setActivePage, data }) {
         </Panel>
       </div>
       <div className="two-column wide-left">
-        <Panel title="Implementation Evidence Capture" eyebrow="Post-Handoff Evidence">
+        <Panel title={completedJiraVerification ? 'Verification Evidence Capture' : 'Implementation Evidence Capture'} eyebrow={completedJiraVerification ? 'Completed Jira Evidence' : 'Post-Handoff Evidence'}>
           <div className="form-grid two">
             <label className="field" htmlFor="implementation-files">
-              <span>Changed files</span>
+              <span>{completedJiraVerification ? 'Evidence sources' : 'Changed files'}</span>
               <textarea
                 id="implementation-files"
                 className="notes-input compact-notes"
@@ -2915,7 +3192,7 @@ function ReviewPage({ setActivePage, data }) {
               />
             </label>
             <label className="field" htmlFor="implementation-commands">
-              <span>Commands run</span>
+              <span>{completedJiraVerification ? 'Verification actions' : 'Commands run'}</span>
               <textarea
                 id="implementation-commands"
                 className="notes-input compact-notes"
@@ -2936,7 +3213,7 @@ function ReviewPage({ setActivePage, data }) {
             />
           </label>
           <label className="field" htmlFor="implementation-summary">
-            <span>Implementation summary</span>
+            <span>{completedJiraVerification ? 'Verification summary' : 'Implementation summary'}</span>
             <textarea
               id="implementation-summary"
               className="notes-input"
@@ -2951,16 +3228,16 @@ function ReviewPage({ setActivePage, data }) {
               type="button"
               onClick={recordEvidence}
               disabled={Boolean(busy) || !canRecordImplementationEvidence || (!implementationForm.summary.trim() && !implementationForm.changedFiles.trim() && !implementationForm.commands.trim() && !implementationForm.tests.trim())}
-              title={canRecordImplementationEvidence ? 'Record changed files, commands, and tests as implementation evidence.' : 'Implementation evidence is locked until write/delegate approval is current and blockers are cleared.'}
+              title={canRecordImplementationEvidence ? (completedJiraVerification ? 'Record reviewer, repo, command, and test evidence for completed-Jira verification.' : 'Record changed files, commands, and tests as implementation evidence.') : 'Implementation evidence is locked until write/delegate approval is current and blockers are cleared.'}
             >
-              {busy === 'implementation-evidence' ? 'Recording Evidence' : 'Record Implementation Evidence'}
+              {busy === 'implementation-evidence' ? 'Recording Evidence' : completedJiraVerification ? 'Record Verification Evidence' : 'Record Implementation Evidence'}
             </button>
             <button className="secondary-button" type="button" onClick={runPostImplementationCheck} disabled={Boolean(busy) || !latestImplementationEvidence}>
               {busy === 'post-check' ? 'Checking' : 'Run Post-Implementation Check'}
             </button>
           </div>
         </Panel>
-        <Panel title="Latest Implementation Evidence" eyebrow="PR Gate Input">
+        <Panel title={completedJiraVerification ? 'Latest Verification Evidence' : 'Latest Implementation Evidence'} eyebrow="PR Gate Input">
           {latestImplementationEvidence ? (
             <InfoList
               items={[
@@ -2974,7 +3251,7 @@ function ReviewPage({ setActivePage, data }) {
               ]}
             />
           ) : (
-            <div className="empty-state">No implementation evidence yet. Record it after Codex, Cline, or manual work finishes.</div>
+            <div className="empty-state">{completedJiraVerification ? 'No verification evidence yet. Record reviewer/build/test proof before PR readiness.' : 'No implementation evidence yet. Record it after Codex, Cline, or manual work finishes.'}</div>
           )}
           <div className="button-row vertical">
             <button className="secondary-button" type="button" onClick={() => setActivePage('artifacts')}>Open Evidence Artifact</button>
@@ -3000,19 +3277,30 @@ function ReviewPage({ setActivePage, data }) {
 function PrReadinessPage({ setActivePage, data }) {
   const evidence = data.evidence || {};
   const workflow = workflowStateFromData(data);
-  const latestReport = evidence.prReadinessReports?.[0]?.reportJson || null;
-  const latestImplementationEvidence = evidence.implementationEvidence?.[0] || null;
+  const { verificationProfile, completedJiraVerification } = jiraVerificationState(workflow);
+  const currentPrReports = currentEvidenceItems(evidence, 'prReadinessReports');
+  const latestReport = currentPrReports?.[0]?.reportJson || null;
+  const latestImplementationEvidence = currentEvidenceItems(evidence, 'implementationEvidence')?.[0] || null;
   const reviewCycleCloseout = evidence.reviewCycleCloseout || {};
   const tests = latestImplementationEvidence?.tests || [];
   const failedTests = tests.filter((test) => test.status === 'failed');
   const blockingItems = latestReport?.blockingItems || [];
   const checklist = latestReport?.readinessChecklist || [];
+  const verificationEvidenceRows = buildVerificationEvidenceRows({ evidence, workflow, latestReport });
+  const verificationGaps = completedJiraVerification
+    ? verificationEvidenceRows.filter((item) => item.status !== 'Ready').length
+    : 0;
   const [busy, setBusy] = useState('');
   const [notice, setNotice] = useState('');
   const [form, setForm] = useState({
-    linkedJira: latestReport?.linkedJira || '',
+    linkedJira: latestReport?.linkedJira || verificationProfile?.issueKey || '',
     notes: latestReport?.reviewerNotes || 'Prepared from PR Readiness Command Center.'
   });
+
+  useEffect(() => {
+    if (!verificationProfile?.issueKey) return;
+    setForm((current) => current.linkedJira ? current : { ...current, linkedJira: verificationProfile.issueKey });
+  }, [verificationProfile?.issueKey]);
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -3075,10 +3363,51 @@ function PrReadinessPage({ setActivePage, data }) {
       />
       {notice ? <div className="info-banner" role="status">{notice}</div> : null}
       <WorkflowDecisionBar workflow={workflow} onNavigate={setActivePage} />
+      {completedJiraVerification ? (
+        <Panel title="Completed Jira Verification Inputs" eyebrow="PR Evidence Source">
+          <div className="verification-lane-panel">
+            <div>
+              <StatusBadge label={verificationProfile.issueKey || 'Jira Done'} tone="success" />
+              <StatusBadge label={verificationProfile.hasRepoEvidence ? 'Repo Evidence Found' : 'Repo Evidence Needed'} tone={verificationProfile.hasRepoEvidence ? 'success' : 'warning'} />
+              <StatusBadge label="Human Review Required" tone="warning" />
+            </div>
+            <p>{verificationProfile.summary} Generate the PR pack only after Reviewer and build/test evidence are captured or consciously accepted as risk.</p>
+            <ActionList
+              items={[
+                ['Linked Jira', verificationProfile.issueKey || 'Detected from imported evidence'],
+                ['Repository', verificationProfile.repoPath || 'Use imported repo context'],
+                ['Required evidence', 'Reviewer notes, build/test command results, and any missing PR/release proof.']
+              ]}
+            />
+            <div className="button-row">
+              <button className="primary-button" type="button" onClick={() => setActivePage('team')}>Open Agent Team</button>
+              <button className="secondary-button" type="button" onClick={() => setActivePage('review')}>Record Verification Evidence</button>
+            </div>
+          </div>
+        </Panel>
+      ) : null}
+      {completedJiraVerification ? (
+        <Panel title="Verification Evidence Checklist" eyebrow="PR Gate Inputs">
+          <SimpleTable
+            columns={['Evidence', 'State', 'Detail', 'Next Action']}
+            rows={verificationEvidenceRows.map((item) => [
+              item.label,
+              <StatusBadge label={item.status} tone={item.tone} />,
+              item.detail,
+              item.action
+            ])}
+          />
+        </Panel>
+      ) : null}
       <div className="metric-grid">
         <MetricCard label="Workflow State" value={workflow?.label || 'Not Started'} detail={workflow?.nextAction?.label || 'Collect evidence'} tone={workflowTone(workflow)} />
         <MetricCard label="PR Gate" value={status} detail={latestReport ? 'Latest generated pack' : 'Generate first pack'} tone={status === 'PR_READY_REVIEW' ? 'success' : status === 'BLOCKED' ? 'danger' : 'warning'} />
-        <MetricCard label="Blocking Items" value={blockingItems.length || 0} detail="Must resolve or accept risk" tone={blockingItems.length ? 'danger' : 'success'} />
+        <MetricCard
+          label="Blocking Items"
+          value={latestReport ? blockingItems.length || 0 : verificationGaps}
+          detail={latestReport ? 'Must resolve or accept risk' : 'Verification gaps before pack'}
+          tone={latestReport ? blockingItems.length ? 'danger' : 'success' : verificationGaps ? 'warning' : 'success'}
+        />
         <MetricCard label="Checklist" value={`${checkedCount}/${checklist.length || 0}`} detail="Evidence-backed items" tone={checklist.length && checkedCount === checklist.length ? 'success' : 'warning'} />
         <MetricCard label="Review Cycle" value={reviewCycleCloseout.readyForPrPack ? 'Ready' : reviewCycleCloseout.requiresCloseout ? 'Open' : 'None'} detail={reviewCycleCloseout.label || 'No rework queued'} tone={reviewCycleCloseout.readyForPrPack ? 'success' : reviewCycleCloseout.requiresCloseout ? 'warning' : 'neutral'} />
         <MetricCard label="Changed Files" value={latestImplementationEvidence?.changedFiles?.length || 0} detail="From implementation evidence" tone={latestImplementationEvidence ? 'success' : 'warning'} />
@@ -3403,6 +3732,7 @@ function GuidePage({ setActivePage, data }) {
           provider: response.provider || 'local',
           model: response.model || 'local-guide-model',
           fallbackUsed: Boolean(response.fallbackUsed),
+          sources: Array.isArray(response.sources) ? response.sources : [],
           error: response.error || null
         }
       }]);
@@ -3437,6 +3767,14 @@ function GuidePage({ setActivePage, data }) {
                   <div className="message-meta">
                     <small>{message.meta.provider} / {message.meta.model}</small>
                     {message.meta.fallbackUsed ? <StatusBadge label="Fallback" tone="warning" /> : <StatusBadge label="Provider" tone="success" />}
+                    {message.meta.sources?.length ? (
+                      <div className="message-sources" aria-label="Sources used by ODT Guide">
+                        <strong>Grounded by</strong>
+                        {message.meta.sources.slice(0, 4).map((source) => (
+                          <span key={`${source.id}-${source.chunk || ''}`}>{source.title}</span>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
               </div>
@@ -3512,9 +3850,102 @@ function RunsPage({ data }) {
   );
 }
 
-function MonitoringPage({ data }) {
+function MonitoringPage({ data, setActivePage }) {
   const summary = data.usage.summary || {};
   const events = data.usage.events || [];
+  const errorSummary = data.errorLog?.summary || {};
+  const errorItems = data.errorLog?.items || [];
+  const validationRuns = data.validation?.runs || [];
+  const latestValidation = validationRuns[0];
+  const workflow = workflowStateFromData(data);
+  const activeIssueKey = workflow?.verificationProfile?.issueKey || 'JOURNEY-25366';
+  const [validationBusy, setValidationBusy] = useState(false);
+  const [validationNotice, setValidationNotice] = useState('');
+  const [healthBusy, setHealthBusy] = useState('');
+  const [healthNotice, setHealthNotice] = useState('');
+
+  async function runUiSmokeValidation() {
+    setValidationBusy(true);
+    setValidationNotice('');
+    try {
+      const result = await postJson('/api/validation/ui-smoke', {
+        assignmentId: 'assignment-local-mvp'
+      });
+      setValidationNotice(result.passed
+        ? `UI smoke passed for ${result.expectedIssue || 'the active assignment'}. Evidence was added to ${shortId(result.runId)}.`
+        : `UI smoke failed for ${result.expectedIssue || 'the active assignment'}. Review the captured output below.`);
+      await data.refresh();
+    } catch (err) {
+      setValidationNotice(err.message || 'Unable to run UI smoke validation.');
+    } finally {
+      setValidationBusy(false);
+    }
+  }
+
+  function openHealthItem(item) {
+    if (item.runId && data.setSelectedRunId) data.setSelectedRunId(item.runId);
+    setActivePage(item.page || (item.runId ? 'runs' : 'monitoring'));
+  }
+
+  async function retryHealthConnector(item) {
+    const connectorId = item.meta?.connectorId || item.sourceId || 'jira';
+    const issueKey = item.meta?.issueKey || activeIssueKey;
+    setHealthBusy(item.id);
+    setHealthNotice('');
+    try {
+      const result = await postJson('/api/connectors/query', {
+        connectorId,
+        action: connectorId === 'jira' && issueKey ? 'read-issue' : 'readiness-test',
+        mode: 'read',
+        assignmentId: 'assignment-local-mvp',
+        issueKey
+      });
+      setHealthNotice(connectorId === 'jira' && result.issue
+        ? `Jira read passed for ${result.issue.key}: ${result.issue.summary || 'issue loaded'}.`
+        : `${titleCase(connectorId)} read gate passed.`);
+      await data.refresh();
+    } catch (err) {
+      setHealthNotice(`${titleCase(connectorId)} retry still needs attention: ${err.message || 'request failed'}`);
+      await data.refresh();
+    } finally {
+      setHealthBusy('');
+    }
+  }
+
+  async function refreshHealthWorker(item) {
+    const workerRunId = item.meta?.workerRunId || '';
+    if (!workerRunId) {
+      openHealthItem({ ...item, page: 'team' });
+      return;
+    }
+    setHealthBusy(item.id);
+    setHealthNotice('');
+    try {
+      const result = await postJson(`/api/agents/worker-runs/${encodeURIComponent(workerRunId)}/status`, {
+        assignmentId: 'assignment-local-mvp'
+      });
+      const worker = result.workerRun || {};
+      setHealthNotice(`${worker.workerRoleLabel || 'Worker'} refreshed: ${titleCase(worker.status || 'unknown')}.`);
+      await data.refresh();
+    } catch (err) {
+      setHealthNotice(`Worker refresh needs attention: ${err.message || 'request failed'}`);
+      await data.refresh();
+    } finally {
+      setHealthBusy('');
+    }
+  }
+
+  async function rerunHealthValidation(item) {
+    setHealthBusy(item.id);
+    setHealthNotice('');
+    try {
+      await runUiSmokeValidation();
+      setHealthNotice('UI smoke validation rerun completed. Review the ODT Validation result below.');
+    } finally {
+      setHealthBusy('');
+    }
+  }
+
   return (
     <div className="page-stack">
       <PageHeader
@@ -3528,9 +3959,122 @@ function MonitoringPage({ data }) {
         <MetricCard label="Total Tokens" value={summary.totalTokensToday || 0} detail="Today" tone="accent" />
         <MetricCard label="Errors" value={summary.errorsToday || 0} detail="Today" tone={summary.errorsToday ? 'danger' : 'success'} />
       </div>
+
+      <Panel title="Error & Health Log" eyebrow="Operator View">
+        <div className="health-log-summary">
+          <div>
+            <StatusBadge
+              label={titleCase(errorSummary.status || 'healthy')}
+              tone={monitoringSeverityTone(errorSummary.status)}
+            />
+            <strong>{errorSummary.needsAttention || 0} item{errorSummary.needsAttention === 1 ? '' : 's'} need attention</strong>
+            <span>{errorSummary.latestAt ? `Latest signal ${formatTime(errorSummary.latestAt)}` : 'No active error, blocker, or warning signals detected.'}</span>
+          </div>
+          <div className="health-log-counts">
+            <span><strong>{errorSummary.critical || 0}</strong>Critical</span>
+            <span><strong>{errorSummary.blocked || 0}</strong>Blocked</span>
+            <span><strong>{errorSummary.warning || 0}</strong>Warning</span>
+            <span><strong>{errorSummary.resolved || 0}</strong>Resolved</span>
+          </div>
+        </div>
+
+        {healthNotice ? <div className="info-banner">{healthNotice}</div> : null}
+
+        <SimpleTable
+          columns={['Time', 'Source', 'Severity', 'Status', 'Issue', 'Action']}
+          rows={errorItems.map((item) => [
+            formatTime(item.createdAt),
+            item.source,
+            <StatusBadge label={titleCase(item.severity)} tone={monitoringSeverityTone(item.severity)} />,
+            <StatusBadge label={titleCase(item.status)} tone={monitoringSeverityTone(item.status || item.severity)} />,
+            <div className="health-log-issue">
+              <strong>{item.title}</strong>
+              <span>{item.message}</span>
+              {item.resolutionReason ? <span>{item.resolutionReason}</span> : null}
+            </div>,
+            <div className="health-log-action">
+              <span>{item.action}</span>
+              <HealthLogActions
+                item={item}
+                busy={healthBusy === item.id}
+                onOpen={() => openHealthItem(item)}
+                onRetryConnector={() => retryHealthConnector(item)}
+                onRerunValidation={() => rerunHealthValidation(item)}
+                onRefreshWorker={() => refreshHealthWorker(item)}
+              />
+            </div>
+          ])}
+          empty="No active error, blocker, warning, connector, worker, validation, or review signals found."
+        />
+      </Panel>
+
+      <Panel title="ODT Validation" eyebrow="Self Check">
+        <div className="validation-card">
+          <div className="validation-card-lead">
+            <div>
+              <StatusBadge
+                label={latestValidation ? titleCase(latestValidation.status) : 'Not Run'}
+                tone={validationTone(latestValidation?.status)}
+              />
+              <h4>Run governed UI smoke validation</h4>
+              <p>
+                Confirms the current ODT workflow screens render the active Jira verification context, hide stale evidence, and keep write delegation blocked until governed rework exists.
+              </p>
+            </div>
+            <button className="primary-button" type="button" onClick={runUiSmokeValidation} disabled={validationBusy}>
+              {validationBusy ? 'Running...' : 'Run UI Smoke'}
+            </button>
+          </div>
+
+          {validationNotice ? <div className="info-banner">{validationNotice}</div> : null}
+
+          {latestValidation ? (
+            <>
+              <InfoList
+                items={[
+                  ['Last Run', shortId(latestValidation.runId)],
+                  ['Issue', latestValidation.expectedIssue || 'Active assignment'],
+                  ['Updated', formatTime(latestValidation.updatedAt)],
+                  ['Exit Code', latestValidation.exitCode ?? 0]
+                ]}
+              />
+
+              {latestValidation.screenshots?.length ? (
+                <div className="validation-screenshots">
+                  {latestValidation.screenshots.map((item) => (
+                    <div className="validation-screenshot-path" key={`${latestValidation.runId}-${item.name}`}>
+                      <strong>{titleCase(item.name)}</strong>
+                      <code>{item.screenshotPath}</code>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+
+              {latestValidation.stderr ? (
+                <pre className="validation-output">{latestValidation.stderr}</pre>
+              ) : null}
+            </>
+          ) : (
+            <div className="empty-state">No validation run has been recorded yet. Run the self-check after major ODT workflow changes.</div>
+          )}
+        </div>
+
+        <SimpleTable
+          columns={['Time', 'Run', 'Issue', 'Status', 'Screenshots']}
+          rows={validationRuns.slice(0, 6).map((run) => [
+            formatTime(run.updatedAt),
+            shortId(run.runId),
+            run.expectedIssue || 'Active',
+            <StatusBadge label={titleCase(run.status)} tone={validationTone(run.status)} />,
+            run.screenshots?.length || 0
+          ])}
+          empty="No validation history yet."
+        />
+      </Panel>
+
       <Panel title="Usage Events" eyebrow="Audit">
         <SimpleTable
-          columns={['Time', 'Type', 'Provider', 'Model', 'Tokens', 'Latency', 'Fallback', 'Status']}
+          columns={['Time', 'Type', 'Provider', 'Model', 'Tokens', 'Latency', 'Sources', 'Fallback', 'Status']}
           rows={events.map((event) => [
             formatTime(event.createdAt),
             event.requestType,
@@ -3538,6 +4082,7 @@ function MonitoringPage({ data }) {
             event.model,
             event.totalTokens,
             `${event.latencyMs} ms`,
+            event.sources?.length ? `${event.sources.length} source${event.sources.length === 1 ? '' : 's'}` : 'None',
             event.fallbackUsed ? <StatusBadge label="Yes" tone="warning" /> : <StatusBadge label="No" tone="success" />,
             <StatusBadge label={titleCase(event.status)} tone={toneFor(event.status)} />
           ])}
@@ -3548,18 +4093,64 @@ function MonitoringPage({ data }) {
   );
 }
 
+function HealthLogActions({ item, busy, onOpen, onRetryConnector, onRerunValidation, onRefreshWorker }) {
+  const source = String(item.source || '').toLowerCase();
+  const resolved = item.resolutionStatus === 'resolved' || String(item.status || '').toLowerCase() === 'resolved';
+  const pageLabel = item.runId ? 'Run' : item.page ? titleCase(item.page) : 'Details';
+  const canRetryConnector = source.includes('connector') && !resolved;
+  const canRerunValidation = source.includes('validation') && !resolved;
+  const canRefreshWorker = source.includes('agent worker') && !resolved;
+  return (
+    <div className="health-log-actions">
+      {item.page || item.runId ? <StatusBadge label={pageLabel} tone="neutral" /> : null}
+      <div className="health-log-button-row">
+        {(item.page || item.runId) ? (
+          <button className="table-button" type="button" onClick={onOpen} disabled={busy}>
+            Open {pageLabel}
+          </button>
+        ) : null}
+        {canRetryConnector ? (
+          <button className="table-button" type="button" onClick={onRetryConnector} disabled={busy}>
+            {busy ? 'Retrying...' : 'Retry Read'}
+          </button>
+        ) : null}
+        {canRerunValidation ? (
+          <button className="table-button" type="button" onClick={onRerunValidation} disabled={busy}>
+            {busy ? 'Running...' : 'Rerun Smoke'}
+          </button>
+        ) : null}
+        {canRefreshWorker ? (
+          <button className="table-button" type="button" onClick={onRefreshWorker} disabled={busy}>
+            {busy ? 'Refreshing...' : 'Refresh Worker'}
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function SettingsPage({ data }) {
   const ai = data.settings?.ai || data.snapshot?.ai || {};
   const connectors = data.settings?.connectors || [];
   const executionAgent = getStoredSetting(data, 'executionAgent', 'codex');
   const [connectorNotice, setConnectorNotice] = useState('');
+  const [connectorResults, setConnectorResults] = useState({});
   const [busyConnector, setBusyConnector] = useState('');
-  const readyConnectors = connectors.filter((connector) => connector.enabled).length;
+  const [jiraIssueKey, setJiraIssueKey] = useState('JOURNEY-25366');
+  const readyConnectors = connectors.filter((connector) => connector.readiness === 'READY').length;
+  const degradedConnectors = connectors.filter((connector) => connector.readiness === 'DEGRADED').length;
   const configuredConnectors = connectors.filter((connector) => connector.featureEnabled || connector.serverConfigured).length;
 
   async function testConnectorRead(connector) {
     setBusyConnector(connector.id);
     setConnectorNotice('');
+    setConnectorResults((previous) => ({
+      ...previous,
+      [connector.id]: {
+        tone: 'info',
+        message: `${connector.label}: testing read gate...`
+      }
+    }));
     try {
       const response = await fetch(`${API_BASE}/api/connectors/query`, {
         method: 'POST',
@@ -3572,14 +4163,102 @@ function SettingsPage({ data }) {
         })
       });
       const result = await response.json();
+      const message = !response.ok
+        ? `${connector.label}: ${result.reason || 'Read gate blocked.'}`
+        : `${connector.label}: read gate passed. ${result.note || 'Connector gateway is governed.'}`;
       if (!response.ok) {
-        setConnectorNotice(`${connector.label}: ${result.reason || 'Read gate blocked.'}`);
+        setConnectorNotice(message);
+        setConnectorResults((previous) => ({
+          ...previous,
+          [connector.id]: {
+            tone: result.status === 'approval_required' ? 'warning' : 'blocked',
+            message
+          }
+        }));
       } else {
-        setConnectorNotice(`${connector.label}: read gate passed. ${result.note || 'Connector gateway is governed.'}`);
+        setConnectorNotice(message);
+        setConnectorResults((previous) => ({
+          ...previous,
+          [connector.id]: {
+            tone: 'success',
+            message
+          }
+        }));
       }
       await data.refresh();
     } catch (err) {
-      setConnectorNotice(`${connector.label}: ${err.message || 'Unable to test connector.'}`);
+      const message = `${connector.label}: ${err.message || 'Unable to test connector.'}`;
+      setConnectorNotice(message);
+      setConnectorResults((previous) => ({
+        ...previous,
+        [connector.id]: {
+          tone: 'blocked',
+          message
+        }
+      }));
+    } finally {
+      setBusyConnector('');
+    }
+  }
+
+  async function readJiraIssue(connector) {
+    const issueKey = jiraIssueKey.trim();
+    setBusyConnector(connector.id);
+    setConnectorNotice('');
+    setConnectorResults((previous) => ({
+      ...previous,
+      [connector.id]: {
+        tone: 'info',
+        message: `${connector.label}: reading ${issueKey || 'Jira issue'}...`
+      }
+    }));
+    try {
+      const response = await fetch(`${API_BASE}/api/connectors/query`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          connectorId: connector.id,
+          action: 'get-issue',
+          mode: 'read',
+          assignmentId: 'assignment-local-mvp',
+          issueKey
+        })
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        const message = `${connector.label}: ${result.reason || result.detail?.reason || 'Issue read blocked.'}`;
+        setConnectorNotice(message);
+        setConnectorResults((previous) => ({
+          ...previous,
+          [connector.id]: {
+            tone: result.status === 'approval_required' ? 'warning' : 'blocked',
+            message
+          }
+        }));
+      } else {
+        const issue = result.issue || {};
+        const message = `${issue.key}: ${issue.summary || 'Jira issue loaded'} (${issue.status || 'status unknown'})`;
+        setConnectorNotice(`${connector.label}: read-only issue lookup passed.`);
+        setConnectorResults((previous) => ({
+          ...previous,
+          [connector.id]: {
+            tone: 'success',
+            message,
+            issue
+          }
+        }));
+      }
+      await data.refresh();
+    } catch (err) {
+      const message = `${connector.label}: ${err.message || 'Unable to read Jira issue.'}`;
+      setConnectorNotice(message);
+      setConnectorResults((previous) => ({
+        ...previous,
+        [connector.id]: {
+          tone: 'blocked',
+          message
+        }
+      }));
     } finally {
       setBusyConnector('');
     }
@@ -3643,50 +4322,100 @@ function SettingsPage({ data }) {
       <Panel title="Connector Hub" eyebrow="Oracle Internal Readiness">
         <div className="connector-summary">
           <StatusBadge label={`${readyConnectors}/${connectors.length} ready`} tone={readyConnectors ? 'success' : 'warning'} />
+          {degradedConnectors ? <StatusBadge label={`${degradedConnectors} degraded`} tone="warning" /> : null}
           <StatusBadge label={`${configuredConnectors} partially configured`} tone={configuredConnectors ? 'info' : 'neutral'} />
           <StatusBadge label="Writes approval-gated" tone="warning" />
           <StatusBadge label="Destructive blocked" tone="danger" />
         </div>
-        <p className="muted-copy">ODT treats internal connectors as read-first SDLC evidence sources. A connector is ready only when global MCP, the connector flag, and its server name are configured. Write-capable actions still require human approval.</p>
+        <p className="muted-copy">ODT treats internal connectors as read-first SDLC evidence sources. A connector is ready when ODT finds safe MCP metadata from environment variables or the local Codex MCP config. Write-capable actions still require human approval.</p>
         {connectorNotice ? <div className="info-banner" role="status">{connectorNotice}</div> : null}
         <div className="connector-hub-grid">
-          {connectors.map((connector) => (
-            <section className="connector-card" key={connector.id}>
-              <div className="connector-card-head">
-                <div>
-                  <span className="eyebrow">{connector.phaseFit || 'Governed connector'}</span>
-                  <h4>{connector.label}</h4>
+          {connectors.map((connector) => {
+            const connectorResult = connectorResults[connector.id];
+
+            return (
+              <section className="connector-card" key={connector.id}>
+                <div className="connector-card-head">
+	                  <div>
+	                    <span className="eyebrow">{connector.phaseFit || 'Governed connector'}</span>
+	                    <h4>{connector.label}</h4>
+	                  </div>
+	                  <StatusBadge
+	                    label={titleCase(connector.readiness || 'Disabled')}
+	                    tone={connector.readiness === 'READY' ? 'success' : 'warning'}
+	                    title={connector.readinessDetail}
+	                  />
+	                </div>
+	                <p>{connector.description || 'Governed internal connector.'}</p>
+                <InfoList
+                  items={[
+                    ['Global MCP', connector.mcpEnabled ? `Enabled${connector.mcpSource === 'codex-config' ? ' via Codex config' : ''}` : 'Missing ENABLE_MCP'],
+                    ['Connector flag', connector.featureEnabled ? 'Enabled' : 'Missing connector flag'],
+                    ['Server', connector.serverConfigured ? connector.serverName || 'Configured' : 'Missing server name'],
+                    ['Config source', connector.configurationSource === 'codex-config' ? 'Codex MCP config' : titleCase(connector.configurationSource || 'not configured')],
+                    ['Mode', connector.readOnly ? 'Read-only' : 'Read/write'],
+	                    ['Write actions', connector.requireWriteApproval ? 'Approval required' : 'Not allowed']
+	                  ]}
+	                />
+	                {connector.readiness === 'DEGRADED' ? (
+	                  <div className="connector-test-result warning">
+	                    <strong>Live check degraded.</strong> {connector.readinessDetail}
+	                  </div>
+	                ) : null}
+	                {connector.missingConfig?.length ? (
+	                  <div className="missing-config">
+                    <strong>Missing config</strong>
+                    <span>{connector.missingConfig.join(', ')}</span>
+                  </div>
+                ) : null}
+                <div className="button-row">
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={() => testConnectorRead(connector)}
+                    disabled={busyConnector === connector.id}
+                  >
+                    {busyConnector === connector.id ? 'Testing' : 'Test Read Gate'}
+                  </button>
                 </div>
-                <StatusBadge label={connector.enabled ? 'Ready' : titleCase(connector.readiness || 'Disabled')} tone={connector.enabled ? 'success' : 'warning'} />
-              </div>
-              <p>{connector.description || 'Governed internal connector.'}</p>
-              <InfoList
-                items={[
-                  ['Global MCP', connector.mcpEnabled ? 'Enabled' : 'Missing ENABLE_MCP'],
-                  ['Connector flag', connector.featureEnabled ? 'Enabled' : 'Missing connector flag'],
-                  ['Server', connector.serverConfigured ? 'Configured' : 'Missing server name'],
-                  ['Mode', connector.readOnly ? 'Read-only' : 'Read/write'],
-                  ['Write actions', connector.requireWriteApproval ? 'Approval required' : 'Not allowed']
-                ]}
-              />
-              {connector.missingConfig?.length ? (
-                <div className="missing-config">
-                  <strong>Missing config</strong>
-                  <span>{connector.missingConfig.join(', ')}</span>
-                </div>
-              ) : null}
-              <div className="button-row">
-                <button
-                  className="secondary-button"
-                  type="button"
-                  onClick={() => testConnectorRead(connector)}
-                  disabled={busyConnector === connector.id}
-                >
-                  {busyConnector === connector.id ? 'Testing' : 'Test Read Gate'}
-                </button>
-              </div>
-            </section>
-          ))}
+                {connector.id === 'jira' ? (
+                  <div className="connector-query-control">
+                    <label htmlFor="jira-issue-key">Read Jira issue through Jira2</label>
+                    <div className="connector-query-row">
+                      <input
+                        id="jira-issue-key"
+                        type="text"
+                        value={jiraIssueKey}
+                        onChange={(event) => setJiraIssueKey(event.target.value)}
+                        placeholder="JOURNEY-25366"
+                      />
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        onClick={() => readJiraIssue(connector)}
+                        disabled={busyConnector === connector.id || !jiraIssueKey.trim()}
+                      >
+                        {busyConnector === connector.id ? 'Reading' : 'Read Issue'}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+                {connectorResult ? (
+                  <div className={`connector-test-result ${connectorResult.tone}`}>
+                    {connectorResult.message}
+                    {connectorResult.issue ? (
+                      <div className="connector-issue-preview">
+                        <span><strong>Status</strong>{connectorResult.issue.status || 'Unknown'}</span>
+                        <span><strong>Type</strong>{connectorResult.issue.issueType || 'Issue'}</span>
+                        <span><strong>Priority</strong>{connectorResult.issue.priority || 'None'}</span>
+                        <span><strong>Assignee</strong>{connectorResult.issue.assignee || 'Unassigned'}</span>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+              </section>
+            );
+          })}
         </div>
       </Panel>
     </div>
@@ -3810,11 +4539,12 @@ function CurrentWorkBrief({ data, onNavigate, compact = false }) {
   const brief = currentWorkBrief(data);
   if (!brief.hasRealWork) return null;
   const workflow = workflowStateFromData(data);
+  const { completedJiraVerification } = jiraVerificationState(workflow);
   const openDecisionItems = brief.openClarifications.length
     ? brief.openClarifications.map((item) => `${titleCase(item.severity || 'NEEDS_REVIEW')}: ${item.question}`)
     : brief.clarifications.map((item) => formatClarificationDecision(item));
   const verificationItems = [
-    ...brief.files.slice(0, 2).map((item) => `Change: ${item}`),
+    ...brief.files.slice(0, 2).map((item) => completedJiraVerification ? `Review: ${item}` : `Change: ${item}`),
     ...brief.tests.slice(0, 3).map((item) => `Test: ${item}`)
   ];
 
@@ -3843,19 +4573,19 @@ function CurrentWorkBrief({ data, onNavigate, compact = false }) {
       <div className="evidence-card-grid">
         <EvidenceCard
           eyebrow="Requirement Signals"
-          title="Behavior Contract"
+          title={completedJiraVerification ? 'Verification Contract' : 'Behavior Contract'}
           items={brief.behaviors}
           empty="No behavior-specific requirement signals captured yet."
         />
         <EvidenceCard
           eyebrow="API / Data"
-          title="Update Rules"
+          title={completedJiraVerification ? 'Repo Evidence' : 'Update Rules'}
           items={brief.apiRules}
-          empty="No API or payload rule evidence captured yet."
+          empty={completedJiraVerification ? 'No repo evidence captured yet.' : 'No API or payload rule evidence captured yet.'}
         />
         <EvidenceCard
           eyebrow="Implementation Surface"
-          title="Files and Tests"
+          title={completedJiraVerification ? 'Evidence to Review' : 'Files and Tests'}
           items={verificationItems}
           empty="No impacted file or test evidence captured yet."
         />
@@ -4321,12 +5051,22 @@ function normalizeEvidenceStatus(value) {
   return 'unknown';
 }
 
+function currentEvidenceItems(evidence, key) {
+  return evidence?.current?.[key] || evidence?.[key] || [];
+}
+
+function historicalEvidenceItems(evidence, key) {
+  return evidence?.historical?.[key] || [];
+}
+
 function currentWorkBrief(data) {
   const evidence = data.evidence || {};
   const assignment = evidence.assignment || data.snapshot?.assignments?.[0] || {};
-  const latestPlan = evidence.implementationPlans?.[0]?.planJson || {};
-  const latestDesign = evidence.technicalDesigns?.[0]?.designJson || {};
+  const latestPlan = currentEvidenceItems(evidence, 'implementationPlans')?.[0]?.planJson || {};
+  const latestDesign = currentEvidenceItems(evidence, 'technicalDesigns')?.[0]?.designJson || {};
   const signals = evidence.requirementSignals || {};
+  const workflow = workflowStateFromData(data);
+  const { verificationProfile, completedJiraVerification } = jiraVerificationState(workflow);
   const targetRepo = signals.targetRepo || latestDesign.targetRepo || assignment.repoPath || '';
   const repoName = targetRepo.split(/[\\/]/).filter(Boolean).pop() || '';
   const title = signals.title
@@ -4334,21 +5074,35 @@ function currentWorkBrief(data) {
     || cleanAssignmentTitle(assignment.title, repoName)
     || latestPlan.title
     || 'Current work item';
-  const behaviors = normalizeList(signals.keyBehaviors?.length ? signals.keyBehaviors : latestPlan.frontendTasks?.length ? latestPlan.frontendTasks : latestPlan.scope);
-  const apiRules = normalizeList(signals.updateApiScenarios?.length ? signals.updateApiScenarios : latestPlan.backendTasks)
+  const behaviors = completedJiraVerification
+    ? normalizeList([
+      `${verificationProfile?.issueKey || 'Jira'} is Done and should enter verification, not implementation.`,
+      'Reviewer must inspect Jira details, matching commits, branch/PR state, risks, and missing evidence.',
+      'Build/test evidence is required before PR or release readiness.'
+    ])
+    : normalizeList(signals.keyBehaviors?.length ? signals.keyBehaviors : latestPlan.frontendTasks?.length ? latestPlan.frontendTasks : latestPlan.scope);
+  const apiRules = completedJiraVerification
+    ? normalizeList([
+      verificationProfile?.summary,
+      verificationProfile?.repoPath ? `Repository: ${verificationProfile.repoPath}` : '',
+      verificationProfile?.hasRepoEvidence ? `${verificationProfile.commitCount || 0} Jira-linked commit(s) detected.` : 'Repository completion evidence still needs verification.'
+    ])
+    : normalizeList(signals.updateApiScenarios?.length ? signals.updateApiScenarios : latestPlan.backendTasks)
     .filter((item) => !/^method:\s*/i.test(item))
     .filter((item) => !/^while editing/i.test(item));
   const tests = normalizeList(signals.testPlan?.length ? signals.testPlan : latestPlan.testTasks);
-  const files = normalizeList(latestPlan.filesToChange?.length ? latestPlan.filesToChange : latestDesign.candidateFiles?.length ? latestDesign.candidateFiles : signals.mentionedFiles);
+  const files = completedJiraVerification
+    ? normalizeList(latestPlan.filesToReview?.length ? latestPlan.filesToReview : latestDesign.candidateFiles?.length ? latestDesign.candidateFiles : ['Jira-linked commit diffs', 'Changed files from matching commits'])
+    : normalizeList(latestPlan.filesToChange?.length ? latestPlan.filesToChange : latestDesign.candidateFiles?.length ? latestDesign.candidateFiles : signals.mentionedFiles);
   const clarifications = resolvedClarificationGate(signals.clarifyingQuestions?.length ? signals.clarifyingQuestions : latestPlan.clarificationGate, data);
   const openClarifications = clarifications.filter(isClarificationOpen);
-  const domain = deriveDomainLabel(signals, latestPlan, latestDesign);
+  const domain = completedJiraVerification ? 'Completed Jira verification workflow' : deriveDomainLabel(signals, latestPlan, latestDesign);
   const endpoint = signals.endpoint || firstUrl([...normalizeList(latestDesign.apiChanges), ...apiRules]) || '';
   const summary = [
     domain,
     repoName ? `targeting ${repoName}` : '',
     endpoint ? 'with endpoint evidence captured' : '',
-    behaviors.length ? `${behaviors.length} behavior rule${behaviors.length === 1 ? '' : 's'}` : '',
+    behaviors.length ? `${behaviors.length} ${completedJiraVerification ? 'verification rule' : 'behavior rule'}${behaviors.length === 1 ? '' : 's'}` : '',
     tests.length ? `${tests.length} verification target${tests.length === 1 ? '' : 's'}` : ''
   ].filter(Boolean).join('. ');
 
@@ -4472,6 +5226,106 @@ function workflowAllows(workflow, key, fallback = false) {
   return typeof value === 'boolean' ? value : fallback;
 }
 
+function jiraVerificationState(workflow) {
+  const verificationProfile = workflow?.verificationProfile || null;
+  return {
+    verificationProfile,
+    completedJiraVerification: verificationProfile?.state === 'completed' && verificationProfile?.mode === 'verification'
+  };
+}
+
+function workerRunHasReviewableOutput(run = {}) {
+  const status = String(run.status || '').toLowerCase();
+  const output = run.output || {};
+  return Boolean(
+    String(output.rawText || '').trim()
+    || output.responseBytes > 0
+    || ['completed', 'response_ready', 'needs_input'].includes(status)
+  );
+}
+
+function verificationTestPassed(test = {}) {
+  return String(test.status || '').toLowerCase() === 'passed';
+}
+
+function buildVerificationEvidenceRows({ evidence = {}, workflow = {}, latestReport = null } = {}) {
+  const profile = workflow?.verificationProfile || null;
+  if (!profile) return [];
+  const implementationEvidence = currentEvidenceItems(evidence, 'implementationEvidence');
+  const latestEvidence = implementationEvidence[0] || null;
+  const tests = implementationEvidence.flatMap((record) => record.tests || []);
+  const commands = implementationEvidence.flatMap((record) => record.commands || []);
+  const workerRuns = currentEvidenceItems(evidence, 'agentWorkerRuns');
+  const reviewerRuns = workerRuns.filter((run) => run.workerRole === 'reviewer');
+  const buildVerifierRuns = workerRuns.filter((run) => run.workerRole === 'build-verifier');
+  const reviewableReviewerRuns = reviewerRuns.filter(workerRunHasReviewableOutput);
+  const reviewableBuildVerifierRuns = buildVerifierRuns.filter(workerRunHasReviewableOutput);
+  const passedTests = tests.filter(verificationTestPassed);
+  const inconclusiveTests = tests.filter((test) => !verificationTestPassed(test));
+  const prReport = latestReport || currentEvidenceItems(evidence, 'prReadinessReports')?.[0]?.reportJson || null;
+  const prReady = Boolean(prReport && prReport.status === 'PR_READY_REVIEW' && latestEvidence && (passedTests.length || reviewableBuildVerifierRuns.length));
+  const row = (label, ready, detail, action, readyLabel = 'Ready', missingLabel = 'Missing') => ({
+    label,
+    status: ready ? readyLabel : missingLabel,
+    tone: ready ? 'success' : 'warning',
+    detail,
+    action
+  });
+  return [
+    row(
+      'Jira Done classification',
+      profile.state === 'completed',
+      profile.issueKey ? `${profile.issueKey} imported as completed work.` : 'Import Jira to classify the work item.',
+      'Use Intake > Import Jira when classification is missing.'
+    ),
+    row(
+      'Repository evidence',
+      profile.hasRepoEvidence,
+      profile.hasRepoEvidence ? `${profile.commitCount || 0} matching commit${profile.commitCount === 1 ? '' : 's'} detected.` : 'No matching repo evidence has been attached yet.',
+      'Attach/re-analyze the target repo or paste the absolute repo path.'
+    ),
+    row(
+      'Reviewer evidence',
+      reviewableReviewerRuns.length > 0,
+      reviewableReviewerRuns.length
+        ? `${reviewableReviewerRuns.length} reviewer output${reviewableReviewerRuns.length === 1 ? '' : 's'} ingested or ready to review.`
+        : reviewerRuns.length
+          ? `${reviewerRuns.length} reviewer run${reviewerRuns.length === 1 ? '' : 's'} exists, but output has not been ingested or captured.`
+          : 'Reviewer has not inspected Jira, commits, risks, and missing acceptance proof yet.',
+      reviewerRuns.length ? 'Refresh and ingest Reviewer output in Agent Team.' : 'Open Agent Team and launch/select Reviewer.',
+      'Ready',
+      reviewerRuns.length ? 'Pending Output' : 'Missing'
+    ),
+    row(
+      'Build/test verification',
+      Boolean(passedTests.length || reviewableBuildVerifierRuns.length),
+      passedTests.length || commands.length
+        ? `${passedTests.length} passed test result${passedTests.length === 1 ? '' : 's'}, ${inconclusiveTests.length} inconclusive result${inconclusiveTests.length === 1 ? '' : 's'}, and ${commands.length} command${commands.length === 1 ? '' : 's'} recorded.`
+        : reviewableBuildVerifierRuns.length
+          ? `${reviewableBuildVerifierRuns.length} Build Verifier output${reviewableBuildVerifierRuns.length === 1 ? '' : 's'} ingested or ready to review.`
+          : buildVerifierRuns.length
+            ? `${buildVerifierRuns.length} Build Verifier run${buildVerifierRuns.length === 1 ? '' : 's'} exists, but output has not been ingested or captured.`
+          : 'No build/test verification evidence is recorded.',
+      buildVerifierRuns.length ? 'Refresh and ingest Build Verifier output in Agent Team.' : 'Record passed test/build evidence in Review or launch Build Verifier.',
+      'Ready',
+      buildVerifierRuns.length ? 'Pending Output' : 'Missing'
+    ),
+    row(
+      'Verification evidence record',
+      Boolean(latestEvidence),
+      latestEvidence ? latestEvidence.summary || `Evidence ${shortId(latestEvidence.id)} is recorded.` : 'No Review evidence record has been captured.',
+      'Use Review > Record Verification Evidence.'
+    ),
+    {
+      label: 'PR readiness package',
+      status: prReady ? 'Ready' : prReport ? 'Needs Refresh' : 'Missing',
+      tone: prReady ? 'success' : 'warning',
+      detail: prReport ? `Latest PR pack status: ${prReport.status}.` : 'No PR readiness pack generated yet.',
+      action: prReady ? 'Open PR Ready to review/copy the package.' : 'Generate or refresh the PR pack after verification evidence is ready.'
+    }
+  ];
+}
+
 function workflowTone(workflow) {
   const state = workflow?.state || workflow;
   if (!state) return 'neutral';
@@ -4483,14 +5337,16 @@ function workflowTone(workflow) {
 }
 
 function activeStandardsFindings(evidence) {
-  return evidence?.standardsChecks?.[0]?.findings || evidence?.standardsFindings || [];
+  const currentChecks = currentEvidenceItems(evidence, 'standardsChecks');
+  if (evidence?.current) return currentChecks?.[0]?.findings || [];
+  return currentChecks?.[0]?.findings || evidence?.standardsChecks?.[0]?.findings || evidence?.standardsFindings || [];
 }
 
 function standardsGateState(evidence) {
-  const latestCheck = evidence?.standardsChecks?.[0] || null;
+  const latestCheck = currentEvidenceItems(evidence, 'standardsChecks')?.[0] || null;
   const findings = activeStandardsFindings(evidence);
-  const approvals = evidence?.approvals || [];
-  const reviewBlockers = (evidence?.reviewComments || []).filter((comment) => comment.status === 'open' && comment.severity === 'blocker');
+  const approvals = currentEvidenceItems(evidence, 'approvals');
+  const reviewBlockers = currentEvidenceItems(evidence, 'reviewComments').filter((comment) => comment.status === 'open' && comment.severity === 'blocker');
   const blockerOverride = hasRecentApproval(approvals, ['standards_blocker_override', 'blocker_override'], latestCheck?.createdAt);
   const warningOverride = hasRecentApproval(approvals, ['standards_warning_override', 'warning_override'], latestCheck?.createdAt);
   const writeApproval = latestApproval(approvals, ['write_scope', 'approved_to_write', 'APPROVED_TO_WRITE']);
@@ -4582,6 +5438,22 @@ function toneFor(value) {
   if (text.includes('wait') || text.includes('review') || text.includes('pending') || text.includes('open') || text.includes('assign')) return 'warning';
   if (text.includes('ready') || text.includes('ok') || text.includes('done') || text.includes('online') || text.includes('answer') || text.includes('resolve') || text.includes('complete')) return 'success';
   return 'neutral';
+}
+
+function validationTone(value) {
+  const text = String(value || '').toLowerCase();
+  if (text.includes('fail') || text.includes('error') || text.includes('timeout')) return 'danger';
+  if (text.includes('running') || text.includes('not run')) return 'warning';
+  if (text.includes('pass') || text.includes('ok') || text.includes('complete')) return 'success';
+  return 'neutral';
+}
+
+function monitoringSeverityTone(value) {
+  const text = String(value || '').toLowerCase();
+  if (text.includes('critical') || text.includes('block') || text.includes('error') || text.includes('fail')) return 'danger';
+  if (text.includes('warning') || text.includes('pending') || text.includes('needs') || text.includes('review') || text.includes('fallback')) return 'warning';
+  if (text.includes('healthy') || text.includes('ok') || text.includes('pass') || text.includes('resolved') || text.includes('superseded')) return 'success';
+  return 'info';
 }
 
 function isWorkerRunActive(status) {

@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import { execFile, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { chmodSync, existsSync, mkdirSync, openSync, closeSync, readSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 import {
@@ -96,6 +96,544 @@ const aiConfig = {
   limits
 };
 
+function parseCodexMcpServersFromToml(text = '') {
+  const servers = [];
+  let current = null;
+  let body = [];
+  const flush = () => {
+    if (!current) return;
+    const bodyText = body.join('\n');
+    const command = bodyText.match(/^\s*command\s*=\s*"([^"]+)"/m)?.[1] || '';
+    const args = bodyText.match(/^\s*args\s*=\s*\[([^\]]*)\]/ms)?.[1] || '';
+    servers.push({
+      name: current,
+      command,
+      hasDockerEnvFile: /--env-file/.test(args),
+      bodyText
+    });
+  };
+
+  String(text || '').split(/\r?\n/).forEach((line) => {
+    const section = line.match(/^\s*\[mcp_servers\.("?)([^"\]]+)\1\]\s*$/);
+    if (section) {
+      flush();
+      current = section[2];
+      body = [];
+      return;
+    }
+    if (/^\s*\[/.test(line)) {
+      flush();
+      current = null;
+      body = [];
+      return;
+    }
+    if (current) body.push(line);
+  });
+  flush();
+  return servers;
+}
+
+function loadCodexMcpConfig() {
+  if (process.env.ODT_DETECT_CODEX_MCP === 'false') {
+    return { enabled: false, paths: [], servers: [] };
+  }
+  const home = process.env.HOME || process.env.USERPROFILE || '';
+  const configuredPaths = String(process.env.ODT_CODEX_MCP_CONFIG_PATHS || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const candidatePaths = configuredPaths.length
+    ? configuredPaths
+    : [
+        home ? join(home, '.codex', 'config.toml') : '',
+        home ? join(home, '.codex', 'gpt-5-3-codex.config.toml') : ''
+      ].filter(Boolean);
+
+  const loaded = [];
+  const servers = [];
+  candidatePaths.forEach((path) => {
+    if (!existsSync(path)) return;
+    try {
+      const parsedServers = parseCodexMcpServersFromToml(readFileSync(path, 'utf8'));
+      if (parsedServers.length) {
+        loaded.push(path);
+        servers.push(...parsedServers.map((server) => ({ ...server, configPath: path })));
+      }
+    } catch {
+      // Codex MCP config discovery is best-effort and must not block ODT startup.
+    }
+  });
+
+  return {
+    enabled: true,
+    paths: loaded,
+    servers
+  };
+}
+
+const codexMcpConfig = loadCodexMcpConfig();
+
+function parseTomlStringArray(bodyText = '', key = 'args') {
+  const match = String(bodyText || '').match(new RegExp(`^\\s*${key}\\s*=\\s*\\[([\\s\\S]*?)\\]`, 'm'));
+  if (!match) return [];
+  return [...match[1].matchAll(/"((?:\\.|[^"])*)"/g)].map((item) => (
+    item[1]
+      .replace(/\\"/g, '"')
+      .replace(/\\\\/g, '\\')
+  ));
+}
+
+function expandLocalPath(rawPath = '') {
+  const trimmed = String(rawPath || '').trim();
+  if (!trimmed) return '';
+  const home = process.env.HOME || process.env.USERPROFILE || '';
+  const expanded = trimmed
+    .replace(/^\$HOME(?=\/|$)/, home)
+    .replace(/^\$\{HOME\}(?=\/|$)/, home)
+    .replace(/^~(?=\/|$)/, home);
+  return isAbsolute(expanded) ? expanded : resolve(appRoot, expanded);
+}
+
+function getCodexMcpEnvFilePaths(server) {
+  const args = parseTomlStringArray(server?.bodyText || '', 'args');
+  const paths = [];
+  args.forEach((arg, index) => {
+    if (arg === '--env-file' && args[index + 1]) paths.push(args[index + 1]);
+    const inline = String(arg || '').match(/^--env-file=(.+)$/);
+    if (inline?.[1]) paths.push(inline[1]);
+  });
+  return paths.map(expandLocalPath).filter(Boolean);
+}
+
+function parseEnvValue(rawValue = '') {
+  const trimmed = String(rawValue || '').trim();
+  if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+    return trimmed.slice(1, -1);
+  }
+  return trimmed;
+}
+
+function readEnvFileValues(filePath) {
+  if (!filePath || !existsSync(filePath)) return {};
+  try {
+    const stat = statSync(filePath);
+    if (!stat.isFile() || stat.size > 128 * 1024) return {};
+    return readFileSync(filePath, 'utf8')
+      .split(/\r?\n/)
+      .reduce((values, line) => {
+        const normalized = line.trim();
+        if (!normalized || normalized.startsWith('#')) return values;
+        const match = normalized.match(/^(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
+        if (!match) return values;
+        values[match[1]] = parseEnvValue(match[2]);
+        return values;
+      }, {});
+  } catch {
+    return {};
+  }
+}
+
+function findCodexMcpServerByName(serverName) {
+  if (!serverName) return null;
+  return codexMcpConfig.servers.find((server) => server.name === serverName) || null;
+}
+
+function firstValue(values, keys) {
+  return keys.map((key) => values[key]).find((value) => value !== undefined && value !== null && String(value).trim() !== '') || '';
+}
+
+function loadJiraConnectorCredentials(connector) {
+  const merged = {
+    JIRA_URL: process.env.JIRA_URL,
+    JIRA_BASE_URL: process.env.JIRA_BASE_URL,
+    ATLASSIAN_URL: process.env.ATLASSIAN_URL,
+    JIRA_PERSONAL_TOKEN: process.env.JIRA_PERSONAL_TOKEN,
+    JIRA_TOKEN: process.env.JIRA_TOKEN,
+    JIRA_API_TOKEN: process.env.JIRA_API_TOKEN,
+    ATLASSIAN_API_TOKEN: process.env.ATLASSIAN_API_TOKEN,
+    JIRA_USERNAME: process.env.JIRA_USERNAME,
+    JIRA_USER: process.env.JIRA_USER,
+    JIRA_PASSWORD: process.env.JIRA_PASSWORD,
+    JIRA_SSL_VERIFY: process.env.JIRA_SSL_VERIFY
+  };
+  let source = firstValue(merged, ['JIRA_URL', 'JIRA_BASE_URL', 'ATLASSIAN_URL']) ? 'environment' : '';
+  const server = findCodexMcpServerByName(connector?.serverName) || findCodexMcpServers([/jira/, /jirasd/])[0];
+
+  if (server) {
+    getCodexMcpEnvFilePaths(server).forEach((envPath) => {
+      const fileValues = readEnvFileValues(envPath);
+      if (!Object.keys(fileValues).length) return;
+      Object.entries(fileValues).forEach(([key, value]) => {
+        if (merged[key] === undefined || merged[key] === '') merged[key] = value;
+      });
+      source = source || 'codex-env-file';
+    });
+  }
+
+  const baseUrl = firstValue(merged, ['JIRA_URL', 'JIRA_BASE_URL', 'ATLASSIAN_URL']).replace(/\/+$/, '');
+  const username = firstValue(merged, ['JIRA_USERNAME', 'JIRA_USER']);
+  const password = firstValue(merged, ['JIRA_PASSWORD']);
+  const apiToken = firstValue(merged, ['JIRA_API_TOKEN', 'ATLASSIAN_API_TOKEN']);
+  const personalToken = firstValue(merged, ['JIRA_PERSONAL_TOKEN', 'JIRA_TOKEN']);
+  const token = apiToken || personalToken;
+  const authMode = username && (password || apiToken) ? 'basic' : token ? 'bearer' : '';
+
+  return {
+    ready: Boolean(baseUrl && authMode),
+    baseUrl,
+    username,
+    password: password || apiToken,
+    token,
+    authMode,
+    source: source || 'not-configured',
+    sslVerify: firstValue(merged, ['JIRA_SSL_VERIFY']) || 'true'
+  };
+}
+
+function normalizeJiraIssueKey(value = '') {
+  const match = String(value || '').trim().match(/[A-Z][A-Z0-9]+-\d+/i);
+  return match ? match[0].toUpperCase() : '';
+}
+
+function truncateText(value = '', maxLength = 4000) {
+  const text = String(value || '').replace(/\s+/g, ' ').trim();
+  return text.length > maxLength ? `${text.slice(0, maxLength - 1)}...` : text;
+}
+
+function safeJiraUser(user) {
+  if (!user || typeof user !== 'object') return 'Unassigned';
+  return user.displayName || user.name || user.key || 'Unknown';
+}
+
+function safeJiraNameList(items) {
+  return Array.isArray(items) ? items.map((item) => item?.name).filter(Boolean) : [];
+}
+
+function jiraIssueBrowseUrl(baseUrl, issueKey) {
+  return `${baseUrl.replace(/\/+$/, '')}/browse/${encodeURIComponent(issueKey)}`;
+}
+
+function safeResponsePreview(text = '') {
+  return String(text || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 280);
+}
+
+function classifyUpstreamBody(contentType = '', bodyText = '') {
+  const normalizedContentType = String(contentType || '').toLowerCase();
+  const preview = safeResponsePreview(bodyText);
+  if (normalizedContentType.includes('text/html') || /^\s*</.test(String(bodyText || ''))) {
+    return {
+      kind: 'html',
+      message: 'Jira returned an HTML page instead of JSON. This usually means the configured URL/auth path is redirecting to login, SSO, an error page, or a proxy page.'
+    };
+  }
+  if (!normalizedContentType.includes('json')) {
+    return {
+      kind: 'non_json',
+      message: `Jira returned ${contentType || 'a non-JSON response'} instead of JSON. Verify the Jira base URL, REST path, token, and SSO/proxy behavior.`
+    };
+  }
+  return {
+    kind: 'invalid_json',
+    message: 'Jira returned invalid JSON. Verify the Jira REST endpoint and credentials.'
+  };
+}
+
+function simplifyJiraIssue(issue, baseUrl) {
+  const fields = issue?.fields || {};
+  return {
+    key: issue?.key || '',
+    browseUrl: issue?.key ? jiraIssueBrowseUrl(baseUrl, issue.key) : '',
+    summary: fields.summary || '',
+    status: fields.status?.name || 'Unknown',
+    issueType: fields.issuetype?.name || 'Issue',
+    projectKey: fields.project?.key || '',
+    projectName: fields.project?.name || '',
+    priority: fields.priority?.name || 'None',
+    assignee: safeJiraUser(fields.assignee),
+    reporter: safeJiraUser(fields.reporter),
+    created: fields.created || '',
+    updated: fields.updated || '',
+    labels: Array.isArray(fields.labels) ? fields.labels : [],
+    components: safeJiraNameList(fields.components),
+    fixVersions: safeJiraNameList(fields.fixVersions),
+    descriptionExcerpt: truncateText(
+      typeof fields.description === 'string'
+        ? fields.description
+        : fields.description
+          ? JSON.stringify(fields.description)
+          : ''
+    )
+  };
+}
+
+function classifyJiraWorkState(issue = {}) {
+  const status = String(issue.status || '').toLowerCase();
+  const done = /\b(done|closed|resolved|complete|completed|accepted|delivered)\b/.test(status);
+  const blocked = /\b(blocked|on hold|rejected)\b/.test(status);
+  if (done) {
+    return {
+      state: 'completed',
+      label: 'Completed in Jira',
+      confidence: 'high',
+      recommendedMode: 'verification',
+      nextAction: 'Verify the completed implementation in the target repo, capture test/build evidence, and prepare PR or release-readiness notes if needed.'
+    };
+  }
+  if (blocked) {
+    return {
+      state: 'blocked',
+      label: 'Blocked in Jira',
+      confidence: 'medium',
+      recommendedMode: 'clarification',
+      nextAction: 'Review the blocker reason and capture clarification before planning implementation.'
+    };
+  }
+  return {
+    state: 'active',
+    label: 'Active Jira work',
+    confidence: 'medium',
+    recommendedMode: 'implementation-planning',
+    nextAction: 'Analyze the repo, map acceptance criteria, draft the implementation plan, and keep writes approval-gated.'
+  };
+}
+
+function safeRepoPathForRead(repoPath = '') {
+  const trimmed = String(repoPath || '').trim();
+  if (!trimmed || trimmed.startsWith('Browser folder:')) return '';
+  const expanded = expandLocalPath(trimmed);
+  try {
+    if (!existsSync(expanded) || !statSync(expanded).isDirectory()) return '';
+    return expanded;
+  } catch {
+    return '';
+  }
+}
+
+function runRepoCommand(command, args, options = {}) {
+  try {
+    const result = spawnSync(command, args, {
+      encoding: 'utf8',
+      timeout: options.timeout || 8000,
+      maxBuffer: options.maxBuffer || 256 * 1024,
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+    return {
+      ok: result.status === 0,
+      status: result.status,
+      stdout: String(result.stdout || '').trim(),
+      stderr: String(result.stderr || '').trim()
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      status: -1,
+      stdout: '',
+      stderr: err.message || 'Command failed.'
+    };
+  }
+}
+
+function readJiraRepoCompletionSignals({ issueKey = '', repoPath = '' } = {}) {
+  const pathToRead = safeRepoPathForRead(repoPath);
+  if (!pathToRead) {
+    return {
+      checked: false,
+      repoPath: repoPath || '',
+      status: 'not_checked',
+      summary: 'No readable local repo path was provided for completion evidence.'
+    };
+  }
+
+  const hasGit = existsSync(join(pathToRead, '.git'));
+  const signals = {
+    checked: true,
+    repoPath: pathToRead,
+    status: 'no_ticket_reference_found',
+    summary: `No direct ${issueKey} reference was found in git history or tracked files.`,
+    gitHistory: [],
+    trackedFileMatches: []
+  };
+
+  if (hasGit) {
+    const gitLog = runRepoCommand('git', ['-C', pathToRead, 'log', '--all', '--oneline', '--grep', issueKey, '-n', '8']);
+    signals.gitHistory = gitLog.stdout
+      ? gitLog.stdout.split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
+      : [];
+    const gitGrep = runRepoCommand('git', ['-C', pathToRead, 'grep', '-n', '--fixed-strings', issueKey, '--', ':!node_modules', ':!dist', ':!build', ':!.next']);
+    signals.trackedFileMatches = gitGrep.stdout
+      ? gitGrep.stdout.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).slice(0, 20)
+      : [];
+  }
+
+  if (signals.gitHistory.length || signals.trackedFileMatches.length) {
+    signals.status = 'ticket_reference_found';
+    signals.summary = `${issueKey} appears in ${signals.gitHistory.length} git commit(s) and ${signals.trackedFileMatches.length} tracked file reference(s).`;
+  }
+  return signals;
+}
+
+function formatJiraIntakeText({ issue, workState, repoSignals }) {
+  const lines = [
+    `Jira: ${issue.key}`,
+    `Title: ${issue.summary}`,
+    `Status: ${issue.status}`,
+    `Type: ${issue.issueType}`,
+    `Project: ${issue.projectKey}${issue.projectName ? ` - ${issue.projectName}` : ''}`,
+    `Priority: ${issue.priority}`,
+    `Assignee: ${issue.assignee}`,
+    `Reporter: ${issue.reporter}`,
+    `Updated: ${issue.updated || 'Unknown'}`,
+    '',
+    'ODT Work State:',
+    `- Classification: ${workState.label}`,
+    `- Recommended mode: ${workState.recommendedMode}`,
+    `- Next action: ${workState.nextAction}`,
+    '',
+    'Repo Completion Signals:',
+    repoSignals.repoPath ? `- Repository: ${repoSignals.repoPath}` : '- Repository: not provided',
+    `- ${repoSignals.summary}`,
+    ...(repoSignals.gitHistory?.length ? ['- Matching git commits:', ...repoSignals.gitHistory.map((item) => `  - ${item}`)] : []),
+    ...(repoSignals.trackedFileMatches?.length ? ['- Matching tracked file references:', ...repoSignals.trackedFileMatches.slice(0, 8).map((item) => `  - ${item}`)] : []),
+    '',
+    'Requirement Handling Instruction:',
+    workState.state === 'completed'
+      ? '- Do not assume this needs new implementation. Treat it as completed Jira work; verify the repository state, capture evidence, run/review tests, and prepare PR/readiness notes only if needed.'
+      : '- Treat this as active work. Analyze the repository, identify gaps, draft design and test plan, and require approval before writes.',
+    '',
+    'Jira Description Excerpt:',
+    issue.descriptionExcerpt || 'No description excerpt returned by Jira.'
+  ];
+  return lines.join('\n');
+}
+
+async function importJiraIssueForIntake({ assignmentId = 'assignment-local-mvp', issueKey = '', repoPath = '' } = {}) {
+  const connector = listConnectors().find((item) => item.id === 'jira');
+  if (!connector || !connector.enabled) {
+    const error = new Error(connector?.readinessDetail || 'Jira connector is not ready.');
+    error.statusCode = 403;
+    throw error;
+  }
+  const normalizedIssueKey = normalizeJiraIssueKey(issueKey);
+  if (!normalizedIssueKey) {
+    const error = new Error('A Jira issue key such as JOURNEY-25366 is required.');
+    error.statusCode = 400;
+    throw error;
+  }
+  const credentials = loadJiraConnectorCredentials(connector);
+  if (!credentials.ready) {
+    const error = new Error('Jira read credentials are not available server-side.');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const issue = await fetchJiraIssue(normalizedIssueKey, credentials);
+  const workState = classifyJiraWorkState(issue);
+  const repoSignals = readJiraRepoCompletionSignals({ issueKey: normalizedIssueKey, repoPath });
+  const importedText = formatJiraIntakeText({ issue, workState, repoSignals });
+  const analysis = buildRequirementAnalysis({
+    assignmentId,
+    input: importedText,
+    sourceType: 'jira-import'
+  });
+
+  createRunEvent(createId('run'), 'jira_issue_imported_for_intake', workState.state === 'completed' ? 'ok' : 'warning', {
+    assignmentId,
+    issueKey: normalizedIssueKey,
+    issueStatus: issue.status,
+    workState: workState.state,
+    recommendedMode: workState.recommendedMode,
+    repoEvidenceStatus: repoSignals.status,
+    credentialSource: credentials.source,
+    safeFieldsOnly: true
+  }, assignmentId);
+
+  return {
+    assignmentId,
+    issue,
+    workState,
+    repoSignals,
+    importedText,
+    analysis,
+    metadata: {
+      credentialSource: credentials.source,
+      safeFieldsOnly: true
+    }
+  };
+}
+
+async function fetchJiraIssue(issueKey, credentials) {
+  const fields = [
+    'summary',
+    'status',
+    'issuetype',
+    'project',
+    'priority',
+    'assignee',
+    'reporter',
+    'created',
+    'updated',
+    'description',
+    'labels',
+    'components',
+    'fixVersions'
+  ].join(',');
+  const url = `${credentials.baseUrl}/rest/api/2/issue/${encodeURIComponent(issueKey)}?fields=${encodeURIComponent(fields)}`;
+  const headers = { Accept: 'application/json' };
+  if (credentials.authMode === 'basic') {
+    headers.Authorization = `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64')}`;
+  } else {
+    headers.Authorization = `Bearer ${credentials.token}`;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  try {
+    const upstream = await fetch(url, { headers, signal: controller.signal });
+    const contentType = upstream.headers.get('content-type') || '';
+    const bodyText = await upstream.text();
+    if (!upstream.ok) {
+      const statusMessage = upstream.status === 404
+        ? 'Jira issue was not found.'
+        : upstream.status === 401 || upstream.status === 403
+          ? 'Jira rejected the configured read credentials.'
+          : `Jira read failed with HTTP ${upstream.status}.`;
+      const error = new Error(statusMessage);
+      error.httpStatus = upstream.status === 404 ? 404 : 502;
+      error.upstreamStatus = upstream.status;
+      error.upstreamContentType = contentType;
+      error.upstreamPreview = safeResponsePreview(bodyText);
+      throw error;
+    }
+    try {
+      return simplifyJiraIssue(JSON.parse(bodyText), credentials.baseUrl);
+    } catch {
+      const classification = classifyUpstreamBody(contentType, bodyText);
+      const error = new Error(classification.message);
+      error.httpStatus = 502;
+      error.upstreamStatus = upstream.status;
+      error.upstreamContentType = contentType;
+      error.upstreamResponseKind = classification.kind;
+      error.upstreamPreview = classification.kind === 'html'
+        ? 'HTML response received; preview suppressed. Check Jira base URL/auth/SSO.'
+        : safeResponsePreview(bodyText);
+      throw error;
+    }
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function findCodexMcpServers(matchers = []) {
+  if (!codexMcpConfig.enabled || !matchers.length) return [];
+  return codexMcpConfig.servers.filter((server) => {
+    const haystack = `${server.name}\n${server.command}\n${server.bodyText}`.toLowerCase();
+    return matchers.some((matcher) => matcher.test(haystack));
+  });
+}
+
 function optionalMcpConnector({
   id,
   label,
@@ -103,17 +641,36 @@ function optionalMcpConnector({
   readOnlyEnv,
   serverNameEnv,
   phaseFit,
-  description
+  description,
+  codexMatchers = []
 }) {
+  const detectedServers = findCodexMcpServers(codexMatchers);
+  const envServerName = process.env[serverNameEnv] || '';
+  const detectedServerName = detectedServers[0]?.name || '';
+  const serverName = envServerName || detectedServerName;
+  const envEnabled = process.env[enabledEnv] === 'true';
+  const codexDetected = Boolean(detectedServerName);
+
   return {
     id,
     label,
     enabledEnv,
     readOnlyEnv,
     serverNameEnv,
-    enabled: process.env[enabledEnv] === 'true',
+    enabled: envEnabled || codexDetected,
     readOnly: process.env[readOnlyEnv] !== 'false',
-    serverName: process.env[serverNameEnv] || '',
+    serverName,
+    configurationSource: envServerName || envEnabled
+      ? 'environment'
+      : codexDetected
+        ? 'codex-config'
+        : 'not-configured',
+    detectedServers: detectedServers.map((server) => ({
+      name: server.name,
+      command: server.command,
+      configPath: server.configPath,
+      hasDockerEnvFile: server.hasDockerEnvFile
+    })),
     phaseFit,
     description,
     requireWriteApproval: process.env.MCP_REQUIRE_APPROVAL_FOR_WRITE !== 'false',
@@ -122,7 +679,12 @@ function optionalMcpConnector({
 }
 
 const connectorConfig = {
-  mcpEnabled: process.env.ENABLE_MCP === 'true',
+  mcpEnabled: process.env.ENABLE_MCP === 'true' || codexMcpConfig.servers.length > 0,
+  mcpSource: process.env.ENABLE_MCP === 'true'
+    ? 'environment'
+    : codexMcpConfig.servers.length > 0
+      ? 'codex-config'
+      : 'not-configured',
   jira: optionalMcpConnector({
     id: 'jira',
     label: 'Jira SD MCP',
@@ -130,7 +692,8 @@ const connectorConfig = {
     readOnlyEnv: 'JIRA_MCP_READ_ONLY',
     serverNameEnv: 'JIRA_MCP_SERVER_NAME',
     phaseFit: 'Intake, clarify, review',
-    description: 'Issue/request details, queues, SLA, attachments, and requirement context.'
+    description: 'Issue/request details, queues, SLA, attachments, and requirement context.',
+    codexMatchers: [/jira/, /jirasd/, /atlassian/, /jira_personal_token/, /jira_url/]
   }),
   bitbucket: optionalMcpConnector({
     id: 'bitbucket',
@@ -281,6 +844,7 @@ db.exec(`
     status TEXT NOT NULL,
     error TEXT,
     fallback_used INTEGER NOT NULL,
+    sources_json TEXT NOT NULL DEFAULT '[]',
     created_at TEXT NOT NULL
   );
 
@@ -519,6 +1083,7 @@ function ensureColumn(tableName, columnName, definition) {
 }
 
 ensureColumn('intake_assets', 'analysis_json', "TEXT NOT NULL DEFAULT '{}'");
+ensureColumn('ai_usage_events', 'sources_json', "TEXT NOT NULL DEFAULT '[]'");
 
 const statements = {
   insertAssignment: db.prepare(`
@@ -611,14 +1176,15 @@ const statements = {
     INSERT INTO ai_usage_events (
       id, request_id, run_id, session_id, user_id, request_type, provider, model,
       input_chars, prompt_tokens, completion_tokens, total_tokens, latency_ms,
-      status, error, fallback_used, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      status, error, fallback_used, sources_json, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `),
   selectAiUsage: db.prepare(`
     SELECT id, request_id AS requestId, run_id AS runId, session_id AS sessionId, user_id AS userId,
       request_type AS requestType, provider, model, input_chars AS inputChars,
       prompt_tokens AS promptTokens, completion_tokens AS completionTokens, total_tokens AS totalTokens,
-      latency_ms AS latencyMs, status, error, fallback_used AS fallbackUsed, created_at AS createdAt
+      latency_ms AS latencyMs, status, error, fallback_used AS fallbackUsed, sources_json AS sourcesJson,
+      created_at AS createdAt
     FROM ai_usage_events
     ORDER BY created_at DESC
     LIMIT 200
@@ -1061,7 +1627,7 @@ async function buildSnapshot() {
     getOdtJson('/odt/review-packet'),
     getOdtJson('/odt/clarifications')
   ]);
-  const usage = statements.selectAiUsage.all();
+  const usage = statements.selectAiUsage.all().map(hydrateAiUsageEvent);
   const runs = listRuns();
   const assignments = statements.selectAssignments.all().map((assignment) => ({
     ...assignment,
@@ -1127,6 +1693,26 @@ function safeAiConfig() {
   };
 }
 
+function recentConnectorIssue(connectorId, maxAgeMs = 6 * 60 * 60 * 1000) {
+  const nowMs = Date.now();
+  const latest = statements.selectConnectorEvents.all()
+    .filter((event) => event.connectorId === connectorId)
+    .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))[0];
+  if (!latest) return null;
+  const ageMs = nowMs - timeMillis(latest.createdAt);
+  if (Number.isFinite(ageMs) && ageMs > maxAgeMs) return null;
+  const status = String(latest.status || '').toLowerCase();
+  if (['ok', 'ready', 'passed'].includes(status)) return null;
+  return {
+    connectorId,
+    action: latest.action,
+    mode: latest.mode,
+    status: latest.status,
+    detail: parseJsonValue(latest.detail, latest.detail),
+    createdAt: latest.createdAt
+  };
+}
+
 function listConnectors() {
   return [
     connectorConfig.jira,
@@ -1144,15 +1730,25 @@ function listConnectors() {
       connector.serverName ? '' : connector.serverNameEnv
     ].filter(Boolean);
     const ready = missingConfig.length === 0;
+    const recentIssue = ready ? recentConnectorIssue(connector.id) : null;
+    const degraded = Boolean(recentIssue);
     const readiness = ready
-      ? 'READY'
+      ? degraded
+        ? 'DEGRADED'
+        : 'READY'
       : !connectorConfig.mcpEnabled
         ? 'MCP_DISABLED'
         : !connector.enabled
           ? 'CONNECTOR_DISABLED'
           : 'SERVER_MISSING';
     const readinessDetail = ready
-      ? 'Connector is ready for governed read checks. Write actions still require approval.'
+      ? degraded
+        ? `Connector is configured but the latest live ${recentIssue.action || 'read'} check returned ${recentIssue.status}. ${monitoringMessageFromDetail(recentIssue.detail, 'Review the connector event in Monitoring and retry after fixing auth/base URL/SSO state.')}`
+        : connector.id === 'jira'
+        ? `Jira connector is ready through ${connector.configurationSource === 'codex-config' ? `Codex MCP server ${connector.serverName}` : 'server environment configuration'}. ODT can perform backend-only read issue lookups with safe fields only; writes still require approval.`
+        : connector.configurationSource === 'codex-config'
+        ? `Connector is ready through Codex MCP server ${connector.serverName}. ODT can gate read handoff; direct MCP transport remains an adapter layer.`
+        : 'Connector is ready for governed read checks. Write actions still require approval.'
       : `Missing ${missingConfig.join(', ')}. Connector remains blocked until configured.`;
     return {
       id: connector.id,
@@ -1160,12 +1756,17 @@ function listConnectors() {
       enabled: ready,
       featureEnabled: connector.enabled,
       mcpEnabled: connectorConfig.mcpEnabled,
+      mcpSource: connectorConfig.mcpSource,
       readOnly: connector.readOnly,
+      configurationSource: connector.configurationSource,
       serverConfigured: Boolean(connector.serverName),
+      serverName: connector.serverName || '',
+      detectedServers: connector.detectedServers || [],
       phaseFit: connector.phaseFit,
       description: connector.description,
       readiness,
       readinessDetail,
+      recentIssue,
       missingConfig,
       requireWriteApproval: connector.requireWriteApproval,
       destructiveBlocked: connector.destructiveBlocked
@@ -1186,6 +1787,16 @@ function summarizeUsage(events) {
     totalTokensToday: totalTokens,
     errorsToday: errors,
     avgLatencyMs: avgLatency
+  };
+}
+
+function hydrateAiUsageEvent(event) {
+  const sources = parseJsonValue(event.sourcesJson, []);
+  const { sourcesJson, ...rest } = event;
+  return {
+    ...rest,
+    fallbackUsed: Boolean(rest.fallbackUsed),
+    sources: Array.isArray(sources) ? sources : []
   };
 }
 
@@ -1363,7 +1974,8 @@ class LocalDeterministicProvider {
   }
 
   async chat({ question, snapshot, assignmentId }) {
-    const content = localProviderContent('chat', question, snapshot, assignmentId);
+    const sourceSink = { sources: [] };
+    const content = localProviderContent('chat', question, snapshot, assignmentId, { sourceSink });
     return {
       provider: this.id,
       model: this.model,
@@ -1374,7 +1986,7 @@ class LocalDeterministicProvider {
         totalTokens: estimateTokens(question) + estimateTokens(content)
       },
       fallbackUsed: true,
-      sources: []
+      sources: sourceSink.sources
     };
   }
 }
@@ -1590,6 +2202,548 @@ function createRunEvent(runId, eventType, status, detail, assignmentId = null) {
     JSON.stringify(detail || {}),
     new Date().toISOString()
   );
+}
+
+function parseSmokeScriptJson(stdout) {
+  const text = String(stdout || '').trim();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start >= 0 && end > start) {
+      try {
+        return JSON.parse(text.slice(start, end + 1));
+      } catch {
+        return null;
+      }
+    }
+  }
+  return null;
+}
+
+function normalizeSmokeScreenshots(parsed) {
+  const screenshots = Array.isArray(parsed?.screenshots) ? parsed.screenshots : [];
+  return screenshots.map((item) => ({
+    name: item.name || 'screenshot',
+    screenshotPath: item.screenshotPath || item.path || ''
+  })).filter((item) => item.screenshotPath);
+}
+
+function runUiSmokeScript({ assignmentId = 'assignment-local-mvp', expectedIssue = '', runId = createId('run') } = {}) {
+  const workflow = collectEvidence(assignmentId).workflowState || {};
+  const issueKey = String(expectedIssue || workflow.verificationProfile?.issueKey || process.env.ODT_EXPECT_ISSUE || 'JOURNEY-25366').trim();
+  const appBase = process.env.ODT_VALIDATION_APP_BASE || process.env.ODT_APP_BASE || 'http://127.0.0.1:5189';
+  const apiBase = process.env.ODT_VALIDATION_API_BASE || `http://127.0.0.1:${port}`;
+  const screenshotDir = join(appRoot, 'output', 'playwright', 'monitoring', runId);
+  const timeoutMs = Number(process.env.ODT_VALIDATION_TIMEOUT_MS || 90000);
+  const scriptPath = join(appRoot, 'scripts', 'odt-ui-smoke.mjs');
+  const startedAt = new Date().toISOString();
+
+  createRunEvent(runId, 'ui_smoke_validation_started', 'running', {
+    requestType: 'validation',
+    validationType: 'ui_smoke',
+    assignmentId,
+    expectedIssue: issueKey,
+    appBase,
+    apiBase,
+    timeoutMs,
+    screenshotDir,
+    startedAt
+  }, assignmentId);
+
+  return new Promise((resolve) => {
+    execFile(
+      process.execPath,
+      [scriptPath],
+      {
+        cwd: appRoot,
+        timeout: timeoutMs,
+        maxBuffer: 1024 * 1024,
+        env: {
+          ...process.env,
+          ODT_APP_BASE: appBase,
+          ODT_API_BASE: apiBase,
+          ODT_ASSIGNMENT_ID: assignmentId,
+          ODT_EXPECT_ISSUE: issueKey,
+          ODT_SMOKE_SCREENSHOT_DIR: screenshotDir
+        }
+      },
+      (error, stdout = '', stderr = '') => {
+        const completedAt = new Date().toISOString();
+        const parsed = parseSmokeScriptJson(stdout);
+        const passed = !error && parsed?.status === 'passed';
+        const detail = {
+          requestType: 'validation',
+          validationType: 'ui_smoke',
+          assignmentId,
+          expectedIssue: issueKey,
+          appBase,
+          apiBase,
+          status: passed ? 'passed' : 'failed',
+          passed,
+          exitCode: error ? error.code || 1 : 0,
+          signal: error?.signal || null,
+          timedOut: Boolean(error?.killed),
+          screenshots: normalizeSmokeScreenshots(parsed),
+          stdout: truncateForApi(stdout, 12000),
+          stderr: truncateForApi(stderr || error?.message || '', 12000),
+          screenshotDir,
+          startedAt,
+          completedAt
+        };
+        createRunEvent(runId, 'ui_smoke_validation_completed', passed ? 'ok' : 'error', detail, assignmentId);
+        resolve({ runId, ...detail });
+      }
+    );
+  });
+}
+
+function listValidationRuns(limit = 10) {
+  const grouped = new Map();
+  statements.selectRunEvents.all().forEach((event) => {
+    if (!String(event.eventType || '').startsWith('ui_smoke_validation_')) return;
+    if (!grouped.has(event.runId)) {
+      grouped.set(event.runId, {
+        runId: event.runId,
+        assignmentId: event.assignmentId,
+        status: event.status === 'running' ? 'running' : 'unknown',
+        passed: false,
+        latestEventType: event.eventType,
+        createdAt: event.createdAt,
+        updatedAt: event.createdAt,
+        events: []
+      });
+    }
+    const run = grouped.get(event.runId);
+    const detail = parseJsonValue(event.detail, {});
+    run.events.push({ ...event, detailJson: compactJsonForApi(detail, { maxString: 1600, maxArray: 30, maxDepth: 5 }) });
+    if (event.createdAt >= run.updatedAt) {
+      run.updatedAt = event.createdAt;
+      run.latestEventType = event.eventType;
+      run.status = detail.status || event.status;
+      run.passed = Boolean(detail.passed);
+      run.expectedIssue = detail.expectedIssue || run.expectedIssue;
+      run.appBase = detail.appBase || run.appBase;
+      run.apiBase = detail.apiBase || run.apiBase;
+      run.screenshots = normalizeSmokeScreenshots(detail);
+      run.stderr = truncateForApi(detail.stderr || '', 2200);
+      run.stdout = truncateForApi(detail.stdout || '', 2200);
+      run.screenshotDir = detail.screenshotDir || run.screenshotDir;
+      run.exitCode = detail.exitCode ?? run.exitCode;
+      run.timedOut = Boolean(detail.timedOut);
+    }
+    if (event.createdAt < run.createdAt) run.createdAt = event.createdAt;
+  });
+  return Array.from(grouped.values())
+    .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))
+    .slice(0, limit);
+}
+
+function monitoringLabel(value = '') {
+  return String(value || '')
+    .replace(/[-_]/g, ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function monitoringStatusSeverity(status = '', fallback = 'info') {
+  const text = String(status || '').toLowerCase();
+  if (text.includes('error') || text.includes('fail') || text.includes('timeout')) return 'critical';
+  if (text.includes('block') || text.includes('rejected') || text.includes('denied')) return 'blocked';
+  if (text.includes('warning') || text.includes('needs') || text.includes('review') || text.includes('pending') || text.includes('approval') || text.includes('fallback')) return 'warning';
+  return fallback;
+}
+
+function isConnectorOkStatus(status = '') {
+  return ['ok', 'ready', 'passed'].includes(String(status || '').toLowerCase());
+}
+
+function monitoringMessageFromDetail(detail, fallback = '') {
+  if (typeof detail === 'string') return truncateForApi(detail, 900);
+  if (!detail || typeof detail !== 'object') return truncateForApi(fallback, 900);
+  const value = detail.error
+    || detail.reason
+    || detail.message
+    || detail.nextStep
+    || detail.readinessDetail
+    || detail.status
+    || fallback;
+  if (value) return truncateForApi(value, 900);
+  return truncateForApi(JSON.stringify(compactJsonForApi(detail, { maxString: 500, maxArray: 8, maxDepth: 3 })), 900);
+}
+
+function connectorEventIssueKey(event = {}, detail = {}) {
+  const detailValue = detail && typeof detail === 'object'
+    ? detail.issueKey || detail.ticketKey || detail.query || detail.browseUrl || detail.note || detail.reason || detail.message
+    : detail;
+  return normalizeJiraIssueKey(detailValue || event.detail || '');
+}
+
+function connectorEventAssignmentId(detail = {}) {
+  return detail && typeof detail === 'object' ? String(detail.assignmentId || '') : '';
+}
+
+function findSupersedingConnectorEvent(event, detail, connectorEvents, fallbackIssueKey = '') {
+  const eventTime = timeMillis(event.createdAt);
+  const eventIssueKey = connectorEventIssueKey(event, detail) || fallbackIssueKey;
+  return connectorEvents.find((candidate) => {
+    if (!isConnectorOkStatus(candidate.status)) return false;
+    if (candidate.connectorId !== event.connectorId || candidate.action !== event.action) return false;
+    if (timeMillis(candidate.createdAt) <= eventTime) return false;
+    const candidateDetail = candidate.parsedDetail;
+    const candidateIssueKey = connectorEventIssueKey(candidate, candidateDetail) || fallbackIssueKey;
+    return !eventIssueKey || !candidateIssueKey || eventIssueKey === candidateIssueKey;
+  }) || null;
+}
+
+function findSupersedingValidationRun({ runId = '', assignmentId = '', expectedIssue = '', createdAt = '' } = {}, validationRuns = [], fallbackIssueKey = '') {
+  const eventTime = timeMillis(createdAt);
+  const eventIssueKey = normalizeJiraIssueKey(expectedIssue || fallbackIssueKey);
+  return validationRuns.find((candidate) => {
+    if (!candidate.passed) return false;
+    if (candidate.runId === runId) return false;
+    if (assignmentId && candidate.assignmentId && candidate.assignmentId !== assignmentId) return false;
+    if (timeMillis(candidate.updatedAt || candidate.createdAt) <= eventTime) return false;
+    const candidateIssueKey = normalizeJiraIssueKey(candidate.expectedIssue || fallbackIssueKey);
+    return !eventIssueKey || !candidateIssueKey || eventIssueKey === candidateIssueKey;
+  }) || null;
+}
+
+function shouldIncludeMonitoringRunEvent(event = {}, detail = {}) {
+  const statusText = `${event.status || ''} ${detail.status || ''} ${event.eventType || ''}`.toLowerCase();
+  return (
+    statusText.includes('error')
+    || statusText.includes('fail')
+    || statusText.includes('block')
+    || statusText.includes('warning')
+    || detail.passed === false
+  );
+}
+
+function actionForMonitoringItem(source = '', status = '') {
+  const sourceText = String(source || '').toLowerCase();
+  const statusText = String(status || '').toLowerCase();
+  if (sourceText.includes('connector')) return 'Open Settings, verify connector readiness, auth, and backend-only read gate.';
+  if (sourceText.includes('standards')) return 'Open Standards, resolve the finding or capture an allowed approval/override.';
+  if (sourceText.includes('review')) return 'Open Review, resolve the comment or route rework to Agent Team.';
+  if (sourceText.includes('dependency')) return 'Open Standards, use the explicit dependency approval path before install/write work.';
+  if (sourceText.includes('agent worker')) return 'Open Agent Team, refresh or ingest the worker, then inspect log/output evidence.';
+  if (sourceText.includes('relay')) return 'Open Agent Team and pass the relay context to the next worker.';
+  if (sourceText.includes('validation')) return 'Open Monitoring, inspect the smoke output and screenshots, then fix the failing workflow surface.';
+  if (sourceText.includes('ai')) return 'Open Settings/Monitoring, verify provider config, model, endpoint, and fallback behavior.';
+  if (statusText.includes('block')) return 'Open the related workflow page and resolve the blocking gate before delegation.';
+  return 'Review the related evidence in Runs or Artifacts before continuing.';
+}
+
+function buildMonitoringErrorLog({ assignmentId = 'assignment-local-mvp', limit = 80 } = {}) {
+  const evidence = collectEvidence(assignmentId);
+  const currentEvidence = scopedCurrentEvidence(evidence);
+  const cutoffMs = timeMillis(evidence.current?.cutoffAt || '');
+  const fallbackIssueKey = evidence.workflowState?.verificationProfile?.issueKey || '';
+  const validationRuns = listValidationRuns(80);
+  const items = [];
+  const seen = new Set();
+
+  const isCurrentAssignmentEvent = (eventAssignmentId, createdAt) => {
+    if (!eventAssignmentId || eventAssignmentId !== assignmentId) return true;
+    return !cutoffMs || timeMillis(createdAt) >= cutoffMs;
+  };
+
+  const pushItem = (item) => {
+    const id = item.id || `${item.source}:${item.sourceId || item.title}:${item.createdAt}`;
+    if (seen.has(id)) return;
+    seen.add(id);
+    const originalSeverity = item.severity || monitoringStatusSeverity(item.status);
+    const resolved = item.resolutionStatus === 'resolved' || item.resolved === true;
+    const severity = resolved ? 'info' : originalSeverity;
+    items.push({
+      id,
+      assignmentId: item.assignmentId || assignmentId,
+      source: item.source || 'Workbench',
+      sourceId: item.sourceId || '',
+      runId: item.runId || '',
+      severity,
+      status: resolved ? 'resolved' : item.status || severity,
+      originalSeverity: resolved ? originalSeverity : undefined,
+      originalStatus: resolved ? item.status || originalSeverity : undefined,
+      resolutionStatus: resolved ? 'resolved' : '',
+      resolutionReason: resolved ? item.resolutionReason || 'A later signal superseded this issue.' : '',
+      resolvedAt: resolved ? item.resolvedAt || '' : '',
+      title: item.title || monitoringLabel(item.source || 'Event'),
+      message: truncateForApi(item.message || '', 900),
+      action: resolved
+        ? item.action || 'No action required. Kept as audit history because a later healthy signal superseded it.'
+        : item.action || actionForMonitoringItem(item.source, item.status || severity),
+      page: item.page || '',
+      meta: item.meta || {},
+      createdAt: item.createdAt || new Date().toISOString()
+    });
+  };
+
+  statements.selectRunEvents.all().forEach((event) => {
+    if (event.assignmentId && event.assignmentId !== assignmentId) return;
+    if (!isCurrentAssignmentEvent(event.assignmentId, event.createdAt)) return;
+    const detail = parseJsonValue(event.detail, {});
+    if (!shouldIncludeMonitoringRunEvent(event, detail)) return;
+    const status = detail.status || event.status;
+    const isValidationEvent = String(event.eventType || '').startsWith('ui_smoke_validation_');
+    const supersedingValidationRun = isValidationEvent
+      ? findSupersedingValidationRun({
+        runId: event.runId,
+        assignmentId: detail.assignmentId || event.assignmentId || assignmentId,
+        expectedIssue: detail.expectedIssue || fallbackIssueKey,
+        createdAt: event.createdAt
+      }, validationRuns, fallbackIssueKey)
+      : null;
+    pushItem({
+      id: `run:${event.id}`,
+      assignmentId: event.assignmentId || assignmentId,
+      source: isValidationEvent ? 'Validation' : 'Workflow',
+      sourceId: event.eventType,
+      runId: event.runId,
+      severity: monitoringStatusSeverity(status || event.status),
+      status,
+      title: monitoringLabel(event.eventType),
+      message: monitoringMessageFromDetail(detail, `${monitoringLabel(event.eventType)} reported ${status || event.status}.`),
+      action: supersedingValidationRun
+        ? `Resolved by later passed UI smoke validation ${supersedingValidationRun.runId} at ${supersedingValidationRun.updatedAt}.`
+        : undefined,
+      page: isValidationEvent ? 'monitoring' : 'runs',
+      resolutionStatus: supersedingValidationRun ? 'resolved' : '',
+      resolutionReason: supersedingValidationRun ? `Superseded by validation run ${supersedingValidationRun.runId}.` : '',
+      resolvedAt: supersedingValidationRun?.updatedAt || '',
+      meta: {
+        expectedIssue: detail.expectedIssue || evidence.workflowState?.verificationProfile?.issueKey || '',
+        eventType: event.eventType,
+        supersededByRunId: supersedingValidationRun?.runId || ''
+      },
+      createdAt: event.createdAt
+    });
+  });
+
+  statements.selectAiUsage.all().map(hydrateAiUsageEvent).forEach((event) => {
+    const providerFallback = event.fallbackUsed && event.provider !== 'local';
+    if (event.status === 'ok' && !providerFallback) return;
+    pushItem({
+      id: `ai:${event.id}`,
+      assignmentId,
+      source: 'AI Provider',
+      sourceId: event.requestType,
+      runId: event.runId,
+      severity: event.status === 'ok' ? 'warning' : 'critical',
+      status: providerFallback ? 'fallback' : event.status,
+      title: `${monitoringLabel(event.requestType)} provider event`,
+      message: event.error || `${event.provider}/${event.model} used fallback behavior for this request.`,
+      page: 'monitoring',
+      createdAt: event.createdAt
+    });
+  });
+
+  const connectorsById = new Map(listConnectors().map((connector) => [connector.id, connector]));
+  const connectorEvents = statements.selectConnectorEvents.all()
+    .map((event) => ({
+      ...event,
+      parsedDetail: parseJsonValue(event.detail, event.detail)
+    }))
+    .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+
+  connectorEvents.forEach((event) => {
+    const ok = isConnectorOkStatus(event.status);
+    if (ok) return;
+    const detail = event.parsedDetail;
+    const eventAssignmentId = connectorEventAssignmentId(detail);
+    if (eventAssignmentId && eventAssignmentId !== assignmentId) return;
+    const supersedingEvent = findSupersedingConnectorEvent(event, detail, connectorEvents, fallbackIssueKey);
+    const connectorNow = connectorsById.get(event.connectorId);
+    const resolvedByReadyConnector = !supersedingEvent && connectorNow?.readiness === 'READY';
+    const resolved = Boolean(supersedingEvent || resolvedByReadyConnector);
+    pushItem({
+      id: `connector:${event.id}`,
+      assignmentId: eventAssignmentId || assignmentId,
+      source: 'Connector',
+      sourceId: event.connectorId,
+      severity: monitoringStatusSeverity(event.status),
+      status: event.status,
+      title: `${monitoringLabel(event.connectorId)} ${monitoringLabel(event.action)}`,
+      message: monitoringMessageFromDetail(detail, event.detail),
+      action: resolved
+        ? supersedingEvent
+          ? `Resolved by a later successful ${monitoringLabel(event.action)} check at ${supersedingEvent.createdAt}.`
+          : `${connectorNow?.label || monitoringLabel(event.connectorId)} is currently READY in Settings.`
+        : undefined,
+      page: 'settings',
+      resolutionStatus: resolved ? 'resolved' : '',
+      resolutionReason: resolved
+        ? supersedingEvent
+          ? `Superseded by connector event ${supersedingEvent.id}.`
+          : `${connectorNow?.label || event.connectorId} currently reports READY.`
+        : '',
+      resolvedAt: supersedingEvent?.createdAt || '',
+      meta: {
+        connectorId: event.connectorId,
+        action: event.action,
+        issueKey: connectorEventIssueKey(event, detail) || fallbackIssueKey,
+        supersededByEventId: supersedingEvent?.id || ''
+      },
+      createdAt: event.createdAt
+    });
+  });
+
+  currentEvidence.standardsFindings
+    .filter((finding) => !['PASS', 'INFO'].includes(String(finding.status || '').toUpperCase()))
+    .forEach((finding) => {
+      pushItem({
+        id: `standards:${finding.id}`,
+        assignmentId,
+        source: 'Standards',
+        sourceId: finding.category,
+        severity: monitoringStatusSeverity(finding.status),
+        status: finding.status,
+        title: `${monitoringLabel(finding.category)} finding`,
+        message: finding.message,
+        action: finding.recommendation || actionForMonitoringItem('Standards', finding.status),
+        page: 'standards',
+        createdAt: finding.createdAt
+      });
+    });
+
+  currentEvidence.reviewComments
+    .filter((comment) => !['resolved', 'accepted_risk', 'closed'].includes(String(comment.status || '').toLowerCase()))
+    .forEach((comment) => {
+      pushItem({
+        id: `review:${comment.id}`,
+        assignmentId,
+        source: 'Review',
+        sourceId: comment.targetType,
+        severity: String(comment.severity || '').toLowerCase().includes('blocker') ? 'blocked' : monitoringStatusSeverity(comment.severity || comment.status, 'warning'),
+        status: comment.status,
+        title: `${monitoringLabel(comment.severity)} review comment`,
+        message: comment.comment,
+        page: 'review',
+        createdAt: comment.updatedAt || comment.createdAt
+      });
+    });
+
+  currentEvidence.dependencyRequests
+    .filter((request) => !['approved', 'rejected', 'cancelled'].includes(String(request.status || '').toLowerCase()))
+    .forEach((request) => {
+      pushItem({
+        id: `dependency:${request.id}`,
+        assignmentId,
+        source: 'Dependency',
+        sourceId: request.packageName,
+        severity: monitoringStatusSeverity(request.status, 'warning'),
+        status: request.status,
+        title: `${request.packageName} dependency request`,
+        message: request.reason,
+        page: 'standards',
+        createdAt: request.decidedAt || request.requestedAt
+      });
+    });
+
+  currentEvidence.agentWorkerRuns
+    .filter((run) => /fail|block|needs|stopped|manual_fallback/i.test(String(run.status || '')))
+    .forEach((run) => {
+      pushItem({
+        id: `worker:${run.id}`,
+        assignmentId,
+        source: 'Agent Worker',
+        sourceId: run.workerRole,
+        runId: run.runId,
+        severity: monitoringStatusSeverity(run.status, 'warning'),
+        status: run.status,
+        title: `${run.workerRoleLabel || monitoringLabel(run.workerRole)} worker`,
+        message: monitoringMessageFromDetail(run.output || {}, `${run.workerRoleLabel || run.workerRole} is ${run.status}.`),
+        page: 'team',
+        meta: {
+          workerRunId: run.id,
+          workerRole: run.workerRole,
+          workerRoleLabel: run.workerRoleLabel
+        },
+        createdAt: run.updatedAt || run.createdAt
+      });
+    });
+
+  currentEvidence.agentRelayItems
+    .filter((item) => ['open', 'assigned'].includes(String(item.status || '').toLowerCase()))
+    .forEach((item) => {
+      pushItem({
+        id: `relay:${item.id}`,
+        assignmentId,
+        source: 'Agent Relay',
+        sourceId: item.targetWorkerRole || item.targetLane,
+        severity: monitoringStatusSeverity(item.severity || item.status, 'warning'),
+        status: item.status,
+        title: item.title,
+        message: item.message,
+        page: 'team',
+        createdAt: item.updatedAt || item.createdAt
+      });
+    });
+
+  validationRuns
+    .filter((run) => run.assignmentId === assignmentId && run.passed === false)
+    .forEach((run) => {
+      const supersedingValidationRun = findSupersedingValidationRun({
+        runId: run.runId,
+        assignmentId: run.assignmentId || assignmentId,
+        expectedIssue: run.expectedIssue || fallbackIssueKey,
+        createdAt: run.updatedAt || run.createdAt
+      }, validationRuns, fallbackIssueKey);
+      pushItem({
+        id: `validation:${run.runId}`,
+        assignmentId,
+        source: 'Validation',
+        sourceId: 'ui_smoke',
+        runId: run.runId,
+        severity: 'critical',
+        status: run.status,
+        title: 'UI smoke validation failed',
+        message: run.stderr || `UI smoke exited with code ${run.exitCode ?? 'unknown'}.`,
+        action: supersedingValidationRun
+          ? `Resolved by later passed UI smoke validation ${supersedingValidationRun.runId} at ${supersedingValidationRun.updatedAt}.`
+          : undefined,
+        page: 'monitoring',
+        resolutionStatus: supersedingValidationRun ? 'resolved' : '',
+        resolutionReason: supersedingValidationRun ? `Superseded by validation run ${supersedingValidationRun.runId}.` : '',
+        resolvedAt: supersedingValidationRun?.updatedAt || '',
+        meta: {
+          expectedIssue: run.expectedIssue || fallbackIssueKey,
+          supersededByRunId: supersedingValidationRun?.runId || ''
+        },
+        createdAt: run.updatedAt
+      });
+    });
+
+  const sorted = items
+    .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
+    .slice(0, limit);
+  const summary = sorted.reduce((acc, item) => {
+    acc.total += 1;
+    if (item.resolutionStatus === 'resolved') {
+      acc.resolved += 1;
+      return acc;
+    }
+    acc[item.severity] = (acc[item.severity] || 0) + 1;
+    return acc;
+  }, { total: 0, critical: 0, blocked: 0, warning: 0, info: 0, resolved: 0 });
+  summary.needsAttention = summary.critical + summary.blocked + summary.warning;
+  summary.latestAt = sorted[0]?.createdAt || '';
+  summary.status = summary.critical
+    ? 'critical'
+    : summary.blocked
+      ? 'blocked'
+      : summary.warning
+        ? 'warning'
+        : 'healthy';
+
+  return {
+    assignmentId,
+    generatedAt: new Date().toISOString(),
+    summary,
+    items: sorted
+  };
 }
 
 function createAgentEvent(assignmentId, agentId, eventType, status, detail) {
@@ -1892,6 +3046,128 @@ function requirementText(requirement = {}) {
   return requirement.rawText || requirement.raw_text || requirement.input || requirement.summary || '';
 }
 
+function deriveJiraVerificationProfile(evidence = {}) {
+  const requirement = (evidence.requirements || []).find((item) => (
+    item.sourceType === 'jira-import'
+    || String(item.rawText || '').includes('ODT Work State:')
+  )) || null;
+  const text = requirementText(requirement);
+  if (!text) return null;
+  const lower = text.toLowerCase();
+  const issueKey = normalizeJiraIssueKey(text);
+  const completed = lower.includes('classification: completed in jira') || lower.includes('recommended mode: verification');
+  if (!issueKey || !completed) return null;
+  const repoPath = (text.match(/Repository:\s*([^\n]+)/i)?.[1] || '').trim();
+  const commitMatch = text.match(/appears in\s+(\d+)\s+git commit/i);
+  const commitCount = commitMatch ? Number(commitMatch[1]) : 0;
+  const hasRepoEvidence = commitCount > 0 || lower.includes('ticket_reference_found');
+  return {
+    issueKey,
+    state: 'completed',
+    mode: 'verification',
+    label: 'Completed Jira Verification',
+    createdAt: requirement.updatedAt || requirement.createdAt || '',
+    repoPath,
+    hasRepoEvidence,
+    commitCount,
+    summary: hasRepoEvidence
+      ? `${issueKey} is Done in Jira and has ${commitCount} matching git commit${commitCount === 1 ? '' : 's'}.`
+      : `${issueKey} is Done in Jira. Repository completion evidence still needs verification.`,
+    nextAction: hasRepoEvidence
+      ? 'Launch Reviewer, then capture build/test evidence before PR readiness.'
+      : 'Confirm branch, commit, PR, or release evidence before closeout.'
+  };
+}
+
+function evidenceFreshnessCutoff(evidence = {}) {
+  const requirement = evidence.requirements?.[0] || null;
+  const cutoffMs = timeMillis(requirement?.updatedAt || requirement?.createdAt);
+  return {
+    requirement,
+    cutoffAt: requirement?.updatedAt || requirement?.createdAt || '',
+    cutoffMs
+  };
+}
+
+function splitEvidenceByFreshness(evidence = {}) {
+  const { requirement, cutoffAt, cutoffMs } = evidenceFreshnessCutoff(evidence);
+  const isCurrent = (item = {}) => !cutoffMs || timeMillis(item.updatedAt || item.createdAt || item.approvedAt) >= cutoffMs;
+  const split = (items = []) => ({
+    current: (items || []).filter(isCurrent),
+    historical: (items || []).filter((item) => !isCurrent(item))
+  });
+  const repoAnalysis = split(evidence.repoAnalysis);
+  const technicalDesigns = split(evidence.technicalDesigns);
+  const implementationPlans = split(evidence.implementationPlans);
+  const standardsChecks = split(evidence.standardsChecks);
+  const approvals = split(evidence.approvals);
+  const testPlans = split(evidence.testPlans);
+  const implementationEvidence = split(evidence.implementationEvidence);
+  const prReadinessReports = split(evidence.prReadinessReports);
+  const reviewComments = split(evidence.reviewComments);
+  const agentEvents = split(evidence.agentEvents);
+  const agentWorkerRuns = split(evidence.agentWorkerRuns);
+  const dependencyRequests = split(evidence.dependencyRequests);
+  const agentRelayItems = split(evidence.agentRelayItems);
+  return {
+    current: {
+      cutoffAt,
+      activeRequirementId: requirement?.id || '',
+      repoAnalysis: repoAnalysis.current,
+      technicalDesigns: technicalDesigns.current,
+      implementationPlans: implementationPlans.current,
+      standardsChecks: standardsChecks.current,
+      approvals: approvals.current,
+      testPlans: testPlans.current,
+      implementationEvidence: implementationEvidence.current,
+      prReadinessReports: prReadinessReports.current,
+      reviewComments: reviewComments.current,
+      agentEvents: agentEvents.current,
+      agentWorkerRuns: agentWorkerRuns.current,
+      agentRelayItems: agentRelayItems.current,
+      dependencyRequests: dependencyRequests.current
+    },
+    historical: {
+      cutoffAt,
+      repoAnalysis: repoAnalysis.historical,
+      technicalDesigns: technicalDesigns.historical,
+      implementationPlans: implementationPlans.historical,
+      standardsChecks: standardsChecks.historical,
+      approvals: approvals.historical,
+      testPlans: testPlans.historical,
+      implementationEvidence: implementationEvidence.historical,
+      prReadinessReports: prReadinessReports.historical,
+      reviewComments: reviewComments.historical,
+      agentEvents: agentEvents.historical,
+      agentWorkerRuns: agentWorkerRuns.historical,
+      agentRelayItems: agentRelayItems.historical,
+      dependencyRequests: dependencyRequests.historical
+    }
+  };
+}
+
+function scopedCurrentEvidence(evidence = {}) {
+  const freshness = evidence.current ? { current: evidence.current } : splitEvidenceByFreshness(evidence);
+  return {
+    ...evidence,
+    repoAnalysis: freshness.current.repoAnalysis || [],
+    technicalDesigns: freshness.current.technicalDesigns || [],
+    implementationPlans: freshness.current.implementationPlans || [],
+    standardsChecks: freshness.current.standardsChecks || [],
+    standardsFindings: (freshness.current.standardsChecks || []).flatMap((check) => check.findings || []),
+    approvals: freshness.current.approvals || [],
+    testPlans: freshness.current.testPlans || [],
+    implementationEvidence: freshness.current.implementationEvidence || [],
+    prReadinessReports: freshness.current.prReadinessReports || [],
+    reviewComments: freshness.current.reviewComments || [],
+    agentEvents: freshness.current.agentEvents || [],
+    agentWorkerRuns: freshness.current.agentWorkerRuns || [],
+    agentRelayItems: freshness.current.agentRelayItems || [],
+    agentFoundryRuns: evidence.agentFoundryRuns || [],
+    dependencyRequests: freshness.current.dependencyRequests || []
+  };
+}
+
 function parseRequirementSignals(input = '') {
   const text = String(input || '');
   const lower = text.toLowerCase();
@@ -1913,32 +3189,73 @@ function parseRequirementSignals(input = '') {
     ...extractMatches(text, /[\w./-]*activity_util\.jsx/g),
     ...extractMatches(text, /tests\/[^\s`]+\.js/g)
   ]);
-  const clarifyingQuestions = [
-    {
-      severity: 'NEEDS_REVIEW',
-      question: 'Should mobile Assessment edit/create preview behavior follow the same persisted-data rule as desktop?',
-      defaultAssumption: 'Apply the same rule if mobile shares the Assessment edit path; otherwise record mobile as a follow-up.',
-      decisionOwner: 'Product / Engineering'
-    },
-    {
-      severity: lower.includes('save draft may still be allowed') ? 'INFO' : 'NEEDS_REVIEW',
-      question: 'Can Save Draft continue to allow incomplete Assessment questions while Preview remains stricter?',
-      defaultAssumption: 'Yes. Save Draft may remain permissive, but Preview is disabled until all persisted questions are previewable.',
-      decisionOwner: 'Product'
-    },
-    {
-      severity: updateApiScenarios.length ? 'NEEDS_REVIEW' : 'INFO',
-      question: 'Are the update API payload id/removal rules in scope for the same PR as Preview gating?',
-      defaultAssumption: updateApiScenarios.length ? 'Yes. Treat update API payload serialization as in scope.' : 'No API payload change is assumed unless scenarios are supplied.',
-      decisionOwner: 'Engineering'
-    },
-    {
-      severity: targetRepo ? 'INFO' : 'BLOCKER',
-      question: 'Which repository and branch should receive the implementation?',
-      defaultAssumption: targetRepo ? `Use ${targetRepo} and the current working branch unless the user specifies otherwise.` : 'Ask for the target repo path before write delegation.',
-      decisionOwner: 'Developer'
-    }
-  ];
+  const isCompletedJiraImport = lower.includes('classification: completed in jira') || lower.includes('recommended mode: verification');
+  const isAssessmentPreviewRequest = lower.includes('preview') && (lower.includes('persisted') || lower.includes('save draft') || lower.includes('publish'));
+  const hasRepoCompletionSignal = lower.includes('ticket_reference_found') || /appears in \d+ git commit/.test(lower);
+  const clarifyingQuestions = isCompletedJiraImport
+    ? [
+        {
+          severity: hasRepoCompletionSignal ? 'INFO' : 'NEEDS_REVIEW',
+          question: 'Which verification evidence should ODT capture for this completed Jira work?',
+          defaultAssumption: hasRepoCompletionSignal
+            ? 'Use the detected Jira-linked commits as completion evidence, then capture tests/build output before PR or release readiness.'
+            : 'Ask for branch/commit/PR evidence before marking repository verification complete.',
+          decisionOwner: 'Developer'
+        },
+        {
+          severity: 'NEEDS_REVIEW',
+          question: 'Is this ticket already merged/released, or only completed on a feature branch?',
+          defaultAssumption: 'Treat Jira Done as implementation-complete but still require repo, test, and PR/release evidence before final closeout.',
+          decisionOwner: 'Developer / Reviewer'
+        },
+        {
+          severity: 'INFO',
+          question: 'Should ODT run a reviewer/build-verifier path instead of launching an implementation worker?',
+          defaultAssumption: 'Yes. Completed Jira work should move to verification, review, and evidence capture unless a gap is found.',
+          decisionOwner: 'Developer'
+        }
+      ]
+    : isAssessmentPreviewRequest
+      ? [
+          {
+            severity: 'NEEDS_REVIEW',
+            question: 'Should mobile Assessment edit/create preview behavior follow the same persisted-data rule as desktop?',
+            defaultAssumption: 'Apply the same rule if mobile shares the Assessment edit path; otherwise record mobile as a follow-up.',
+            decisionOwner: 'Product / Engineering'
+          },
+          {
+            severity: lower.includes('save draft may still be allowed') ? 'INFO' : 'NEEDS_REVIEW',
+            question: 'Can Save Draft continue to allow incomplete Assessment questions while Preview remains stricter?',
+            defaultAssumption: 'Yes. Save Draft may remain permissive, but Preview is disabled until all persisted questions are previewable.',
+            decisionOwner: 'Product'
+          },
+          {
+            severity: updateApiScenarios.length ? 'NEEDS_REVIEW' : 'INFO',
+            question: 'Are the update API payload id/removal rules in scope for the same PR as Preview gating?',
+            defaultAssumption: updateApiScenarios.length ? 'Yes. Treat update API payload serialization as in scope.' : 'No API payload change is assumed unless scenarios are supplied.',
+            decisionOwner: 'Engineering'
+          }
+        ]
+      : [
+          {
+            severity: testPlan.length ? 'INFO' : 'NEEDS_REVIEW',
+            question: 'Which acceptance criteria and tests prove this change is complete?',
+            defaultAssumption: testPlan.length ? 'Use the provided test plan and map it to implementation evidence.' : 'Ask for acceptance/test evidence before PR readiness.',
+            decisionOwner: 'Developer / QA'
+          },
+          {
+            severity: mentionedFiles.length ? 'INFO' : 'NEEDS_REVIEW',
+            question: 'Which files or modules are expected to change?',
+            defaultAssumption: mentionedFiles.length ? 'Use the mentioned files and confirm with read-only repo analysis.' : 'Run repo analysis before delegating implementation.',
+            decisionOwner: 'Engineering'
+          }
+        ];
+  clarifyingQuestions.push({
+    severity: targetRepo ? 'INFO' : 'BLOCKER',
+    question: 'Which repository and branch should receive the implementation or verification?',
+    defaultAssumption: targetRepo ? `Use ${targetRepo} and the current working branch unless the user specifies otherwise.` : 'Ask for the target repo path before write delegation.',
+    decisionOwner: 'Developer'
+  });
 
   return {
     title,
@@ -1955,6 +3272,11 @@ function parseRequirementSignals(input = '') {
       backend: lower.includes('api') || lower.includes('post') || lower.includes('payload'),
       data: lower.includes('db') || lower.includes('persisted') || lower.includes('saved'),
       tests: lower.includes('jest') || lower.includes('test plan') || lower.includes('tests/')
+    },
+    workState: {
+      completedJiraImport: isCompletedJiraImport,
+      verificationMode: isCompletedJiraImport,
+      hasRepoCompletionSignal
     },
     domainSignals: {
       assessment: lower.includes('assessment'),
@@ -2150,8 +3472,46 @@ function storeBrowserRepoAnalysis({ assignmentId, browserAnalysis }) {
 
 function buildTechnicalDesign({ assignmentId, requirement = {}, repoAnalysis = {}, title = 'Governed Developer Workflow Design' }) {
   const signals = parseRequirementSignals(requirementText(requirement));
-  const designTitle = signals.title !== 'Requirement-driven implementation' ? `${signals.title} Technical Design` : title;
-  const design = {
+  const isVerificationMode = signals.workState?.completedJiraImport;
+  const designTitle = signals.title !== 'Requirement-driven implementation'
+    ? `${signals.title} ${isVerificationMode ? 'Verification Design' : 'Technical Design'}`
+    : title;
+  const design = isVerificationMode ? {
+    title: designTitle,
+    assignmentId,
+    requirementSummary: requirement.summary || signals.title || 'Completed Jira verification.',
+    targetRepo: signals.targetRepo || repoAnalysis.repoPath,
+    scope: [
+      'Verify Jira Done status against repository evidence.',
+      'Review Jira-linked commits, branch/PR state, and release readiness.',
+      'Capture build/test evidence before PR or release closeout.',
+      'Launch implementation only if Reviewer identifies explicit rework.'
+    ],
+    outOfScope: [
+      'Starting new implementation work without a reviewer finding.',
+      'Changing files before a fresh write approval exists.',
+      'Treating Jira Done as PR-ready without evidence.'
+    ],
+    existingArchitectureObserved: repoAnalysis.frameworks?.length ? repoAnalysis.frameworks : ['Repository evidence from Jira-linked git commits'],
+    proposedArchitecture: 'Use a verification-first workflow: Reviewer inspects Jira, commits, diffs, and risk; Build Verifier captures approved test/build commands; PR Ready packages the verified evidence.',
+    apiChanges: [],
+    impactedAreas: [
+      'Jira completion evidence',
+      'Git commit and branch verification',
+      'Build/test evidence capture',
+      'PR or release readiness notes'
+    ],
+    candidateFiles: uniqueItems([
+      ...signals.mentionedFiles,
+      'Files changed by Jira-linked commits',
+      'Relevant test files from commit/reviewer evidence'
+    ]),
+    accessibility: 'Reviewer should verify whether the completed change affects visible UI, keyboard behavior, labels, contrast, or Redwood-style consistency.',
+    security: 'No write or external update should occur from completed-Jira verification unless rework is explicitly approved.',
+    testing: signals.testPlan.length ? signals.testPlan : ['Build Verifier should run the repo-approved targeted tests or capture why they were not run.'],
+    flexibility: 'If evidence is missing, the human reviewer can accept risk with notes or send explicit rework to the implementation lane.',
+    rollback: 'Do not change target repo files during verification. If rework is required, create a new write-approved handoff.'
+  } : {
     title: designTitle,
     assignmentId,
     requirementSummary: requirement.summary || signals.title || 'Requirement-driven implementation.',
@@ -2208,8 +3568,66 @@ function buildTechnicalDesign({ assignmentId, requirement = {}, repoAnalysis = {
 function buildImplementationPlan({ assignmentId, design = {}, title = 'Standards-Governed Implementation Plan' }) {
   const latestRequirement = statements.selectRequirementsByAssignment.all(assignmentId)[0] || {};
   const signals = parseRequirementSignals(requirementText(latestRequirement));
-  const planTitle = signals.title !== 'Requirement-driven implementation' ? `${signals.title} Implementation Plan` : title;
-  const plan = {
+  const isVerificationMode = signals.workState?.completedJiraImport;
+  const planTitle = signals.title !== 'Requirement-driven implementation'
+    ? `${signals.title} ${isVerificationMode ? 'Verification Plan' : 'Implementation Plan'}`
+    : title;
+  const plan = isVerificationMode ? {
+    title: planTitle,
+    assignmentId,
+    planType: 'completed-jira-verification',
+    scope: [
+      'Confirm Jira Done status and requirement summary.',
+      'Review Jira-linked commits, branch/PR status, and changed-file evidence.',
+      'Capture build/test verification evidence or accepted-risk notes.',
+      'Prepare PR/release readiness package only after evidence is reviewed.'
+    ],
+    filesToChange: [],
+    filesToReview: uniqueItems([
+      'Jira-linked commit diffs',
+      'Changed files from matching commits',
+      ...signals.mentionedFiles,
+      ...signals.testPlan
+    ]),
+    backendTasks: [
+      'Read repo history for the Jira key and inspect commit scope.',
+      'Verify whether PR/merge/release evidence exists.',
+      'Capture missing evidence as review comments or accepted risk.'
+    ],
+    frontendTasks: [
+      'Review visible UI acceptance criteria from Jira.',
+      'Confirm changed screens/components match the completed Jira story.',
+      'Send explicit rework only if the completed implementation is incomplete.'
+    ],
+    validationTasks: [
+      'Launch Reviewer first for risk/diff/evidence review.',
+      'Launch Build Verifier after reviewer pass or explicit test approval.',
+      'Record verification evidence in Review before PR Ready.'
+    ],
+    accessibilityTasks: [
+      'Check whether the completed change affects visible labels, keyboard use, focus, or contrast.',
+      'Record no-impact decision or accessibility risk evidence.'
+    ],
+    securityTasks: [
+      'Keep verification read-only unless reviewer creates explicit rework.',
+      'Do not expose Jira or provider credentials in frontend evidence.'
+    ],
+    testTasks: signals.testPlan.length ? signals.testPlan : [
+      'Run the repo-approved targeted test/build command if available.',
+      'Capture command output, skipped reason, or accepted risk.'
+    ],
+    approvalRequired: [
+      'Human review before accepting missing verification evidence.',
+      'Fresh write approval only if Reviewer requests rework.',
+      'Separate dependency approval before any install.'
+    ],
+    flexibility: 'Completed Jira verification can accept missing evidence only with human risk notes. Implementation workers remain locked unless explicit rework exists.',
+    risks: [
+      'Jira Done may not mean merged or released.',
+      'Git commits may not prove tests passed.',
+      'Older ODT artifacts from another task must remain historical and not drive this verification.'
+    ]
+  } : {
     title: planTitle,
     assignmentId,
     scope: design.scope || signals.keyBehaviors || ['Assessment Preview Enablement'],
@@ -2277,12 +3695,14 @@ function buildImplementationPlan({ assignmentId, design = {}, title = 'Standards
   statements.insertTestPlan.run(
     createId('testplan'),
     assignmentId,
-    'pre-implementation',
+    isVerificationMode ? 'completed-jira-verification' : 'pre-implementation',
     JSON.stringify({
       backend: plan.backendTasks,
       frontend: plan.frontendTasks,
       accessibility: plan.accessibilityTasks,
-      coverage: ['utility cases', 'edit flow', 'create flow', 'save success', 'save failure', 'publish success', 'publish failure', 'update payload scenarios'],
+      coverage: isVerificationMode
+        ? ['jira done status', 'commit evidence', 'branch or PR state', 'build/test evidence', 'accepted risk if evidence is missing']
+        : ['utility cases', 'edit flow', 'create flow', 'save success', 'save failure', 'publish success', 'publish failure', 'update payload scenarios'],
       targetedCommands: plan.testTasks
     }),
     'DRAFT',
@@ -2351,7 +3771,7 @@ function collectEvidence(assignmentId = 'assignment-local-mvp') {
 	    detailJson: parseJsonValue(row.detail, {})
 	  }));
 	  ensureRelayItemsForAssignment(assignmentId);
-	  const evidence = {
+		  const evidence = {
     assignment: getAssignment(assignmentId),
     requirements: statements.selectRequirementsByAssignment.all(assignmentId),
     repoAnalysis: statements.selectRepoAnalysisByAssignment.all(assignmentId).map((row) => attachJson(row, 'analysisJson')),
@@ -2374,14 +3794,19 @@ function collectEvidence(assignmentId = 'assignment-local-mvp') {
 		    agentWorkerRuns: statements.selectAgentWorkerRunsByAssignment.all(assignmentId).map(parseWorkerRun),
 		    agentRelayItems: statements.selectAgentRelayItemsByAssignment.all(assignmentId).map(parseAgentRelayItem)
 		  };
+  const freshness = splitEvidenceByFreshness(evidence);
+  evidence.current = freshness.current;
+  evidence.historical = freshness.historical;
   evidence.requirementSignals = parseRequirementSignals(evidence.requirements?.[0]?.rawText || '');
-  evidence.reviewCycleCloseout = deriveReviewCycleCloseout(evidence);
+  evidence.reviewCycleCloseout = deriveReviewCycleCloseout(scopedCurrentEvidence(evidence));
   evidence.workflowState = deriveWorkflowState(evidence);
   return evidence;
 }
 
 function getActiveStandardsFindings(evidence) {
-  return evidence.standardsChecks?.[0]?.findings || evidence.standardsFindings || [];
+  if (evidence.current) return evidence.current.standardsChecks?.[0]?.findings || [];
+  if (Array.isArray(evidence.standardsChecks)) return evidence.standardsChecks[0]?.findings || evidence.standardsFindings || [];
+  return evidence.standardsFindings || [];
 }
 
 function hasApprovedEvent(approvals, types, since = '') {
@@ -2462,10 +3887,23 @@ function getFailedImplementationTests(evidence) {
     .filter((test) => test.status === 'failed');
 }
 
+function getIncompleteImplementationTests(evidence) {
+  return (evidence.implementationEvidence || [])
+    .flatMap((record) => record.tests || [])
+    .filter((test) => ['not_run', 'unknown', ''].includes(String(test.status || '').toLowerCase()));
+}
+
 function hasAcceptedImplementationRisk(evidence) {
   return (evidence.reviewComments || []).some((comment) => (
     comment.status === 'accepted_risk'
     && ['implementation', 'pr'].includes(comment.targetType)
+  ));
+}
+
+function hasAcceptedVerificationRisk(evidence) {
+  return (evidence.reviewComments || []).some((comment) => (
+    comment.status === 'accepted_risk'
+    && ['review', 'implementation', 'pr'].includes(comment.targetType)
   ));
 }
 
@@ -2605,25 +4043,47 @@ function buildWorkflowDecisionTrail(evidence = {}) {
 }
 
 function deriveWorkflowState(evidence = {}) {
+  const jiraVerificationProfile = deriveJiraVerificationProfile(evidence);
+  const currentEvidence = scopedCurrentEvidence(evidence);
   const hasRequirement = Boolean(evidence.requirements?.length || evidence.assignment?.requirement);
-  const hasRepo = Boolean(evidence.repoAnalysis?.length);
-  const hasDesign = Boolean(evidence.technicalDesigns?.length);
-  const hasPlan = Boolean(evidence.implementationPlans?.length);
-  const latestCheck = evidence.standardsChecks?.[0] || null;
-  const postImplementationCheck = latestPostImplementationCheck(evidence);
-  const writeApproved = hasWriteApproval(evidence);
-  const unresolvedStandardsBlockers = getUnresolvedStandardsBlockers(evidence);
-  const openReviewBlockers = getOpenReviewBlockers(evidence);
-  const pendingDependencies = (evidence.dependencyRequests || []).filter((request) => request.status === 'pending');
-  const latestHandoff = (evidence.agentEvents || []).find((event) => event.eventType === 'handoff_prepared');
-  const latestImplementationEvidence = evidence.implementationEvidence?.[0] || null;
-  const latestPrReport = evidence.prReadinessReports?.[0]?.reportJson || null;
-  const reviewCycleCloseout = evidence.reviewCycleCloseout || deriveReviewCycleCloseout(evidence);
-  const failedTests = getFailedImplementationTests(evidence);
-  const acceptedImplementationRisk = hasAcceptedImplementationRisk(evidence);
-  const activeBlockDecision = latestDecisionEvent(evidence.approvals || [], ['block_implementation']);
+  const hasRepo = Boolean(currentEvidence.repoAnalysis?.length || jiraVerificationProfile?.repoPath);
+  const hasDesign = Boolean(currentEvidence.technicalDesigns?.length);
+  const hasPlan = Boolean(currentEvidence.implementationPlans?.length);
+  const latestCheck = currentEvidence.standardsChecks?.[0] || null;
+  const postImplementationCheck = latestPostImplementationCheck(currentEvidence);
+  const writeApproved = hasWriteApproval(currentEvidence);
+  const unresolvedStandardsBlockers = getUnresolvedStandardsBlockers(currentEvidence);
+  const openReviewBlockers = getOpenReviewBlockers(currentEvidence);
+  const pendingDependencies = (currentEvidence.dependencyRequests || []).filter((request) => request.status === 'pending');
+  const latestHandoff = (currentEvidence.agentEvents || []).find((event) => event.eventType === 'handoff_prepared');
+  const latestImplementationEvidence = currentEvidence.implementationEvidence?.[0] || null;
+  const latestPrReport = currentEvidence.prReadinessReports?.[0]?.reportJson || null;
+  const latestPrRecord = currentEvidence.prReadinessReports?.[0] || null;
+  const reviewCycleCloseout = deriveReviewCycleCloseout(currentEvidence);
+  const jiraImportedAt = timeMillis(jiraVerificationProfile?.createdAt || 0);
+  const latestImplementationEvidenceAfterJira = Boolean(
+    latestImplementationEvidence
+    && (!jiraImportedAt || timeMillis(latestImplementationEvidence.createdAt || latestImplementationEvidence.updatedAt) >= jiraImportedAt)
+  );
+  const latestPrReportAfterJira = Boolean(
+    latestPrRecord
+    && (!jiraImportedAt || timeMillis(latestPrRecord.createdAt) >= jiraImportedAt)
+  );
+  const completedJiraNeedsVerification = Boolean(jiraVerificationProfile && !latestImplementationEvidenceAfterJira && !latestPrReportAfterJira);
+  const failedTests = getFailedImplementationTests(currentEvidence);
+  const incompleteTests = getIncompleteImplementationTests(currentEvidence);
+  const acceptedImplementationRisk = hasAcceptedImplementationRisk(currentEvidence);
+  const acceptedVerificationRisk = hasAcceptedVerificationRisk(currentEvidence);
+  const passedTests = (currentEvidence.implementationEvidence || [])
+    .flatMap((record) => record.tests || [])
+    .filter((test) => String(test.status || '').toLowerCase() === 'passed');
+  const reviewableBuildVerifierRuns = (currentEvidence.agentWorkerRuns || [])
+    .filter((run) => run.workerRole === 'build-verifier' && workerHasReviewableOutput(run));
+  const completedJiraBuildReady = !jiraVerificationProfile || passedTests.length > 0 || reviewableBuildVerifierRuns.length > 0 || acceptedVerificationRisk;
+  const activeBlockDecision = latestDecisionEvent(currentEvidence.approvals || [], ['block_implementation']);
   const blockedByDecision = Boolean(activeBlockDecision && !writeApproved);
 
+  const prReportAppliesToCurrentWork = !jiraVerificationProfile || latestPrReportAfterJira;
   const blockedReasons = [
     ...unresolvedStandardsBlockers.map((finding) => ({
       category: 'standards',
@@ -2643,7 +4103,7 @@ function deriveWorkflowState(evidence = {}) {
       action: 'Review Standards or approve a newer write decision.',
       page: 'standards'
     }] : []),
-    ...(latestPrReport?.status === 'BLOCKED' ? (latestPrReport.blockingItems || []).map((item) => ({
+    ...(prReportAppliesToCurrentWork && latestPrReport?.status === 'BLOCKED' ? (latestPrReport.blockingItems || []).map((item) => ({
       category: item.category || 'pr-readiness',
       message: item.message,
       action: item.requiredAction,
@@ -2653,6 +4113,12 @@ function deriveWorkflowState(evidence = {}) {
       category: 'testing',
       message: `${failedTests.length} failed test result(s) need action.`,
       action: 'Fix failed tests or accept implementation risk with review notes.',
+      page: 'review'
+    }] : []),
+    ...(incompleteTests.length && !acceptedVerificationRisk ? [{
+      category: 'testing',
+      message: `${incompleteTests.length} test result(s) are not run or have unknown status.`,
+      action: 'Run the tests, replace pending evidence with passed/failed output, or accept verification risk with review notes.',
       page: 'review'
     }] : [])
   ];
@@ -2706,7 +4172,7 @@ function deriveWorkflowState(evidence = {}) {
     label = 'Implementing';
     nextAction = { label: 'Record Implementation Evidence', detail: 'Capture changed files, commands, and test outcomes.', page: 'review' };
   }
-  if (latestImplementationEvidence) {
+  if (latestImplementationEvidenceAfterJira || (!jiraVerificationProfile && latestImplementationEvidence)) {
     state = 'IMPLEMENTATION_EVIDENCE_RECORDED';
     stage = 'test';
     label = 'Implementation Evidence Recorded';
@@ -2726,11 +4192,22 @@ function deriveWorkflowState(evidence = {}) {
     label = 'Review Cycle Closeout';
     nextAction = reviewCycleCloseout.nextAction || { label: 'Continue Review Cycle', detail: 'Complete rework, review, verification, and PR-ready evidence.', page: 'review' };
   }
-  if (latestPrReport?.status === 'PR_READY_REVIEW' && !blockedReasons.length) {
+  if (latestPrReportAfterJira && latestPrReport?.status === 'PR_READY_REVIEW' && !blockedReasons.length) {
     state = 'PR_READY';
     stage = 'pr';
     label = 'Ready For PR Review';
     nextAction = { label: 'Copy PR Markdown', detail: 'Review and copy the generated PR package.', page: 'pr' };
+  }
+  if (completedJiraNeedsVerification && !blockedReasons.length) {
+    state = 'JIRA_COMPLETED_VERIFICATION';
+    stage = 'review';
+    label = 'Completed Jira Verification';
+    nextAction = {
+      label: 'Launch Reviewer',
+      detail: `${jiraVerificationProfile.summary} Use Reviewer first, then capture build/test evidence before PR readiness.`,
+      page: 'team',
+      targetWorkerRole: 'reviewer'
+    };
   }
   if (blockedReasons.length) {
     state = 'BLOCKED';
@@ -2751,9 +4228,9 @@ function deriveWorkflowState(evidence = {}) {
     standardsCheck: Boolean(latestCheck),
     writeApproval: writeApproved,
     agentHandoff: Boolean(latestHandoff),
-    implementationEvidence: Boolean(latestImplementationEvidence),
+    implementationEvidence: Boolean(latestImplementationEvidenceAfterJira || (!jiraVerificationProfile && latestImplementationEvidence)),
     postImplementationCheck: Boolean(postImplementationCheck),
-    prPack: Boolean(latestPrReport)
+    prPack: Boolean(latestPrReportAfterJira || (!jiraVerificationProfile && latestPrReport))
   };
 
   return {
@@ -2763,15 +4240,17 @@ function deriveWorkflowState(evidence = {}) {
     stage,
     status: blockedReasons.length ? 'blocked' : state === 'PR_READY' ? 'ready' : 'in_progress',
     nextAction,
+    verificationProfile: jiraVerificationProfile,
     blockedReasons,
     completed,
     decisionTrail: buildWorkflowDecisionTrail(evidence),
     allowedActions: {
-      canRunStandardsCheck: hasPlan,
+      canRunStandardsCheck: Boolean(hasPlan || jiraVerificationProfile),
       canApproveWrite: Boolean(latestCheck && !openReviewBlockers.length && !writeApproved),
-      canDelegateWrite: Boolean(writeApproved && !blockedByDecision && !unresolvedStandardsBlockers.length && !openReviewBlockers.length),
-      canRecordImplementationEvidence: Boolean((writeApproved || latestHandoff) && !blockedByDecision && !unresolvedStandardsBlockers.length && !openReviewBlockers.length),
-      canPreparePr: Boolean(latestImplementationEvidence && !blockedByDecision && !pendingDependencies.length && (!failedTests.length || acceptedImplementationRisk) && (!reviewCycleCloseout.requiresCloseout || reviewCycleCloseout.readyForPrPack)),
+      canDelegateWrite: Boolean(!completedJiraNeedsVerification && writeApproved && !blockedByDecision && !unresolvedStandardsBlockers.length && !openReviewBlockers.length),
+      canLaunchVerification: Boolean(jiraVerificationProfile && !blockedByDecision && !openReviewBlockers.length),
+      canRecordImplementationEvidence: Boolean((completedJiraNeedsVerification || writeApproved || latestHandoff) && !blockedByDecision && !unresolvedStandardsBlockers.length && !openReviewBlockers.length),
+      canPreparePr: Boolean((latestImplementationEvidenceAfterJira || (!jiraVerificationProfile && latestImplementationEvidence)) && completedJiraBuildReady && !blockedByDecision && !pendingDependencies.length && (!failedTests.length || acceptedImplementationRisk) && (!incompleteTests.length || acceptedVerificationRisk) && (!reviewCycleCloseout.requiresCloseout || reviewCycleCloseout.readyForPrPack)),
       dependencyInstallsRequireSeparateApproval: true
     },
     counts: {
@@ -2779,6 +4258,7 @@ function deriveWorkflowState(evidence = {}) {
       reviewBlockers: openReviewBlockers.length,
       pendingDependencies: pendingDependencies.length,
       failedTests: failedTests.length,
+      incompleteTests: incompleteTests.length,
       prBlockingItems: latestPrReport?.blockingItems?.length || 0
     },
     latest: {
@@ -2965,7 +4445,8 @@ function deriveReviewCycleCloseout(evidence = {}) {
 }
 
 function dependencyContractRows(evidence, status) {
-  return (evidence.dependencyRequests || [])
+  const scoped = scopedCurrentEvidence(evidence);
+  return (scoped.dependencyRequests || [])
     .filter((request) => request.status === status)
     .map((request) => ({
       id: request.id,
@@ -3719,8 +5200,15 @@ function prepareAgentDelegation({ assignmentId = 'assignment-local-mvp', executi
   const runId = createId('run');
   const { evidence, contract } = buildCurrentAgentContract(assignmentId, selectedAgent, { workerRoleId });
   const latestCheckId = evidence.standardsChecks[0]?.id || '';
+  const selectedRole = workerRoleId ? getAgentWorkerRole(workerRoleId) : null;
+  const jiraVerificationProfile = deriveJiraVerificationProfile(evidence);
+  const implementationWorkerIds = new Set(['fullstack-dev', 'backend-dev', 'frontend-dev']);
+  const activeReworkForSelectedRole = selectedRole ? getActiveReworkRelayItemsForWorker(evidence, selectedRole.id).length > 0 : false;
   const blockedReasons = [];
   const warnings = [];
+  if (jiraVerificationProfile && selectedRole && implementationWorkerIds.has(selectedRole.id) && !activeReworkForSelectedRole) {
+    blockedReasons.push(`${jiraVerificationProfile.issueKey} is already completed in Jira with repo evidence. Run Reviewer or Build Verifier first; use implementation workers only for explicit rework.`);
+  }
   if (requireWriteApproved && contract.mode !== 'write-approved') {
     blockedReasons.push(contract.standards.unresolvedBlockers?.length
       ? 'Unresolved standards blockers remain.'
@@ -5752,18 +7240,39 @@ function enrichIntakeAsset({ assetId, assignmentId = 'assignment-local-mvp', pro
 
 function preparePrReadinessReport({ assignmentId, linkedJira = '', notes = '' }) {
   const evidence = collectEvidence(assignmentId);
-  const latestCheck = evidence.standardsChecks[0];
-  const unresolvedBlockers = getUnresolvedStandardsBlockers(evidence);
-  const openReviewBlockers = getOpenReviewBlockers(evidence);
-  const pendingDependencies = evidence.dependencyRequests.filter((request) => request.status === 'pending');
-  const latestImplementationEvidence = evidence.implementationEvidence?.[0] || null;
-  const reviewCycleCloseout = evidence.reviewCycleCloseout || deriveReviewCycleCloseout(evidence);
-  const allTests = (evidence.implementationEvidence || []).flatMap((record) => record.tests || []);
+  const currentEvidence = scopedCurrentEvidence(evidence);
+  const jiraVerificationProfile = deriveJiraVerificationProfile(evidence);
+  const effectiveLinkedJira = String(linkedJira || jiraVerificationProfile?.issueKey || '').trim();
+  const latestCheck = currentEvidence.standardsChecks[0];
+  const unresolvedBlockers = getUnresolvedStandardsBlockers(currentEvidence);
+  const openReviewBlockers = getOpenReviewBlockers(currentEvidence);
+  const pendingDependencies = currentEvidence.dependencyRequests.filter((request) => request.status === 'pending');
+  const latestImplementationEvidence = currentEvidence.implementationEvidence?.[0] || null;
+  const reviewCycleCloseout = deriveReviewCycleCloseout(currentEvidence);
+  const allTests = (currentEvidence.implementationEvidence || []).flatMap((record) => record.tests || []);
+  const allCommands = (currentEvidence.implementationEvidence || []).flatMap((record) => record.commands || []);
+  const workerRuns = currentEvidence.agentWorkerRuns || [];
+  const reviewableReviewerRuns = workerRuns.filter((run) => run.workerRole === 'reviewer' && workerHasReviewableOutput(run));
+  const reviewableBuildVerifierRuns = workerRuns.filter((run) => run.workerRole === 'build-verifier' && workerHasReviewableOutput(run));
+  const passedTests = allTests.filter((test) => String(test.status || '').toLowerCase() === 'passed');
   const failedTests = allTests.filter((test) => test.status === 'failed');
-  const acceptedImplementationRisk = (evidence.reviewComments || []).some((comment) => (
+  const incompleteTests = allTests.filter((test) => ['not_run', 'unknown', ''].includes(String(test.status || '').toLowerCase()));
+  const acceptedImplementationRisk = (currentEvidence.reviewComments || []).some((comment) => (
     comment.status === 'accepted_risk'
     && ['implementation', 'pr'].includes(comment.targetType)
   ));
+  const acceptedVerificationRisk = (currentEvidence.reviewComments || []).some((comment) => (
+    comment.status === 'accepted_risk'
+    && ['review', 'implementation', 'pr'].includes(comment.targetType)
+  ));
+  const latestEvidenceText = [
+    latestImplementationEvidence?.summary || '',
+    ...(latestImplementationEvidence?.commands || []),
+    ...(latestImplementationEvidence?.tests || []).map((test) => `${test.name || ''} ${test.command || ''} ${test.status || ''} ${test.notes || ''}`)
+  ].join(' ').toLowerCase();
+  const manualReviewerEvidence = Boolean(latestImplementationEvidence && /(reviewer|human review|reviewed jira|review evidence|risk review)/i.test(latestEvidenceText));
+  const completedJiraReviewerReady = !jiraVerificationProfile || reviewableReviewerRuns.length > 0 || manualReviewerEvidence;
+  const completedJiraBuildReady = !jiraVerificationProfile || passedTests.length > 0 || reviewableBuildVerifierRuns.length > 0;
   const blockingItems = [
     ...unresolvedBlockers.map((finding) => ({
       category: 'standards',
@@ -5782,13 +7291,32 @@ function preparePrReadinessReport({ assignmentId, linkedJira = '', notes = '' })
     })),
     ...(!latestImplementationEvidence ? [{
       category: 'implementation-evidence',
-      message: 'No implementation evidence has been recorded.',
-      requiredAction: 'Record changed files, commands, tests, and implementation notes after agent work.'
+      message: jiraVerificationProfile
+        ? 'No completed-Jira verification evidence has been recorded.'
+        : 'No implementation evidence has been recorded.',
+      requiredAction: jiraVerificationProfile
+        ? 'Launch Reviewer, capture build/test verification evidence, or accept the missing evidence as reviewed risk before PR readiness.'
+        : 'Record changed files, commands, tests, and implementation notes after agent work.'
+    }] : []),
+    ...(jiraVerificationProfile && latestImplementationEvidence && !completedJiraReviewerReady && !acceptedVerificationRisk ? [{
+      category: 'reviewer-verification',
+      message: 'Completed-Jira PR readiness has no ingested Reviewer output or reviewer-specific evidence.',
+      requiredAction: 'Launch/ingest Reviewer output, record reviewer proof in Review, or accept the missing reviewer evidence as risk.'
+    }] : []),
+    ...(jiraVerificationProfile && latestImplementationEvidence && !completedJiraBuildReady && !acceptedVerificationRisk ? [{
+      category: 'build-test-verification',
+      message: 'Completed-Jira PR readiness has no passed build/test verification or ingested Build Verifier output.',
+      requiredAction: 'Record passed test/build evidence, ingest Build Verifier output, or accept the missing build/test evidence as risk.'
     }] : []),
     ...(failedTests.length && !acceptedImplementationRisk ? [{
       category: 'testing',
       message: `${failedTests.length} failed test result(s) are recorded without accepted risk.`,
       requiredAction: 'Fix failed tests or accept risk with explicit review notes.'
+    }] : []),
+    ...(incompleteTests.length && !acceptedVerificationRisk ? [{
+      category: 'testing',
+      message: `${incompleteTests.length} test result(s) are not run or have unknown status.`,
+      requiredAction: 'Run the tests, replace pending evidence with passed/failed output, or accept risk with explicit review notes.'
     }] : []),
     ...(reviewCycleCloseout.requiresCloseout && !reviewCycleCloseout.readyForPrPack ? [{
       category: 'review-cycle',
@@ -5802,12 +7330,16 @@ function preparePrReadinessReport({ assignmentId, linkedJira = '', notes = '' })
     { label: 'Technical design prepared', checked: Boolean(evidence.technicalDesigns?.length) },
     { label: 'Implementation plan prepared', checked: Boolean(evidence.implementationPlans?.length) },
     { label: 'Standards check completed', checked: Boolean(latestCheck) },
-    { label: 'Implementation evidence recorded', checked: Boolean(latestImplementationEvidence) },
-    { label: 'Commands and test outcomes recorded', checked: Boolean(allTests.length || latestImplementationEvidence?.commands?.length) },
+    { label: jiraVerificationProfile ? 'Completed Jira verification evidence recorded' : 'Implementation evidence recorded', checked: Boolean(latestImplementationEvidence) },
+    ...(jiraVerificationProfile ? [
+      { label: 'Reviewer verification captured', checked: Boolean(completedJiraReviewerReady || acceptedVerificationRisk) },
+      { label: 'Build/test verification passed or accepted', checked: Boolean(completedJiraBuildReady || acceptedVerificationRisk) }
+    ] : []),
+    { label: 'Commands and test outcomes recorded', checked: Boolean(passedTests.length || reviewableBuildVerifierRuns.length || (acceptedVerificationRisk && (allTests.length || allCommands.length))) },
     { label: 'No unresolved standards blockers', checked: !unresolvedBlockers.length },
     { label: 'No open review blockers', checked: !openReviewBlockers.length },
     { label: 'Dependency decisions resolved', checked: !pendingDependencies.length },
-    { label: 'Failed tests fixed or accepted as risk', checked: !failedTests.length || acceptedImplementationRisk },
+    { label: 'Failed/incomplete tests fixed or accepted as risk', checked: !(failedTests.length || incompleteTests.length) || acceptedVerificationRisk || acceptedImplementationRisk },
     ...(reviewCycleCloseout.requiresCloseout ? reviewCycleCloseout.steps.map((step) => ({
       label: step.label,
       checked: step.status === 'complete' || (step.id === 'pr-ready-pack' && reviewCycleCloseout.readyForPrPack)
@@ -5816,22 +7348,27 @@ function preparePrReadinessReport({ assignmentId, linkedJira = '', notes = '' })
   ];
   const evidenceSummary = {
     requirements: evidence.requirements?.length || 0,
-    repoAnalyses: evidence.repoAnalysis?.length || 0,
-    technicalDesigns: evidence.technicalDesigns?.length || 0,
-    implementationPlans: evidence.implementationPlans?.length || 0,
-    standardsChecks: evidence.standardsChecks?.length || 0,
-    implementationEvidence: evidence.implementationEvidence?.length || 0,
-    reviewComments: evidence.reviewComments?.length || 0,
+    repoAnalyses: currentEvidence.repoAnalysis?.length || 0,
+    technicalDesigns: currentEvidence.technicalDesigns?.length || 0,
+    implementationPlans: currentEvidence.implementationPlans?.length || 0,
+    standardsChecks: currentEvidence.standardsChecks?.length || 0,
+    implementationEvidence: currentEvidence.implementationEvidence?.length || 0,
+    reviewComments: currentEvidence.reviewComments?.length || 0,
     reviewCycleStatus: reviewCycleCloseout.status,
-    approvals: evidence.approvals?.length || 0,
-    dependencyRequests: evidence.dependencyRequests?.length || 0,
-    testResults: allTests.length
+    approvals: currentEvidence.approvals?.length || 0,
+    dependencyRequests: currentEvidence.dependencyRequests?.length || 0,
+    testResults: allTests.length,
+    passedTests: passedTests.length,
+    reviewerOutputs: reviewableReviewerRuns.length,
+    buildVerifierOutputs: reviewableBuildVerifierRuns.length
   };
   const report = {
     title: `PR Readiness Pack: ${evidence.assignment?.title || assignmentId}`,
-    prTitle: `${linkedJira ? `${linkedJira}: ` : ''}${evidence.assignment?.title || 'ODT governed implementation'}`,
-    linkedJira,
-    summary: 'Prepared governed evidence for requirement, repo analysis, standards review, implementation evidence, approvals, dependency decisions, tests, risks, and rollback.',
+    prTitle: `${effectiveLinkedJira ? `${effectiveLinkedJira}: ` : ''}${evidence.assignment?.title || 'ODT governed implementation'}`,
+    linkedJira: effectiveLinkedJira,
+    summary: jiraVerificationProfile
+      ? `Prepared governed verification evidence for completed Jira work ${jiraVerificationProfile.issueKey}.`
+      : 'Prepared governed evidence for requirement, repo analysis, standards review, implementation evidence, approvals, dependency decisions, tests, risks, and rollback.',
     status: blockingItems.length ? 'BLOCKED' : 'PR_READY_REVIEW',
     standardsStatus: latestCheck?.status || 'NOT_RUN',
     blockingItems,
@@ -5840,10 +7377,17 @@ function preparePrReadinessReport({ assignmentId, linkedJira = '', notes = '' })
     acceptanceMapping: [
       'Requirement analysis captured or ready for review.',
       'Standards review evidence is attached.',
-      latestImplementationEvidence ? 'Implementation evidence records changed files, commands, and test outcomes.' : 'Implementation evidence is required before PR readiness.',
+      latestImplementationEvidence
+        ? jiraVerificationProfile
+          ? 'Verification evidence records reviewer/build/test proof for completed Jira work.'
+          : 'Implementation evidence records changed files, commands, and test outcomes.'
+        : jiraVerificationProfile
+          ? 'Completed Jira verification evidence is required before PR readiness.'
+          : 'Implementation evidence is required before PR readiness.',
       'Approval/dependency decisions are auditable.',
       'Testing and accessibility notes are included or flagged.'
     ],
+    jiraVerification: jiraVerificationProfile,
     implementationEvidence: latestImplementationEvidence ? {
       id: latestImplementationEvidence.id,
       status: latestImplementationEvidence.status,
@@ -5854,7 +7398,7 @@ function preparePrReadinessReport({ assignmentId, linkedJira = '', notes = '' })
     } : null,
     reviewCycleCloseout,
     testing: {
-      planned: evidence.testPlans[0]?.planJson || {},
+      planned: currentEvidence.testPlans[0]?.planJson || {},
       recorded: allTests,
       failedTests,
       acceptedRisk: acceptedImplementationRisk
@@ -6095,9 +7639,31 @@ function guideList(items = [], fallback = 'None captured.', limit = 6) {
 }
 
 function guideSourceList(sources = []) {
-  return sources.length
-    ? sources.slice(0, 4).map((source, index) => `${index + 1}. ${source.title} (${source.type})`).join('\n')
+  const metadata = guideSourceMetadata(sources, 4);
+  return metadata.length
+    ? metadata.map((source, index) => `${index + 1}. ${source.title} (${source.type}, ${source.id})`).join('\n')
     : '1. Local ODT baseline workflow';
+}
+
+function guideSourcePath(value = '') {
+  const text = String(value || '');
+  if (!text) return 'local';
+  return text.startsWith(appRoot) ? text.slice(appRoot.length + 1) : text;
+}
+
+function guideSourceMetadata(sources = [], limit = 6) {
+  return (sources || []).slice(0, limit).map((source) => {
+    const safeSource = guideSourcePath(source.source || source.title || 'local');
+    const chunk = source.chunk ? `#${source.chunk}` : '';
+    return {
+      id: `${guideShortId(source.type || 'source')}:${guideShortId(safeSource)}${chunk}`,
+      title: source.title || safeSource || 'ODT source',
+      type: source.type || 'evidence',
+      source: safeSource,
+      chunk: source.chunk || null,
+      score: Number(source.score || 0)
+    };
+  });
 }
 
 const platformPageGuides = [
@@ -6481,21 +8047,22 @@ function answerCasualGuide(input, ctx) {
 function buildGuideContext(evidence = {}, snapshot = {}) {
   const assignment = evidence.assignment || snapshot.assignments?.[0] || {};
   const workflow = evidence.workflowState || assignment.workflowState || {};
-  const latestRepo = evidence.repoAnalysis?.[0]?.analysisJson || {};
-  const latestPlan = evidence.implementationPlans?.[0]?.planJson || {};
-  const latestDesign = evidence.technicalDesigns?.[0]?.designJson || {};
-  const latestCheck = evidence.standardsChecks?.[0] || null;
-  const latestPrRow = evidence.prReadinessReports?.[0] || null;
+  const currentEvidence = scopedCurrentEvidence(evidence);
+  const latestRepo = currentEvidence.repoAnalysis?.[0]?.analysisJson || {};
+  const latestPlan = currentEvidence.implementationPlans?.[0]?.planJson || {};
+  const latestDesign = currentEvidence.technicalDesigns?.[0]?.designJson || {};
+  const latestCheck = currentEvidence.standardsChecks?.[0] || null;
+  const latestPrRow = currentEvidence.prReadinessReports?.[0] || null;
   const latestPr = latestPrRow?.reportJson || latestPrRow || null;
-  const latestImplementation = evidence.implementationEvidence?.[0] || null;
-  const workerRuns = evidence.agentWorkerRuns || [];
+  const latestImplementation = currentEvidence.implementationEvidence?.[0] || null;
+  const workerRuns = currentEvidence.agentWorkerRuns || [];
   const latestWorker = workerRuns[0] || null;
-  const reviewComments = evidence.reviewComments || [];
+  const reviewComments = currentEvidence.reviewComments || [];
   const openReviewComments = reviewComments.filter((comment) => comment.status === 'open');
   const standardsFindings = latestCheck?.findings || evidence.standardsFindings || [];
-  const unresolvedStandards = getUnresolvedStandardsBlockers(evidence);
-  const pendingDependencies = (evidence.dependencyRequests || []).filter((request) => request.status === 'pending');
-  const allTests = (evidence.implementationEvidence || []).flatMap((record) => record.tests || []);
+  const unresolvedStandards = getUnresolvedStandardsBlockers(currentEvidence);
+  const pendingDependencies = (currentEvidence.dependencyRequests || []).filter((request) => request.status === 'pending');
+  const allTests = (currentEvidence.implementationEvidence || []).flatMap((record) => record.tests || []);
   const failedTests = allTests.filter((test) => test.status === 'failed');
   const passedTests = allTests.filter((test) => test.status === 'passed');
   const reviewCycleCloseout = evidence.reviewCycleCloseout || deriveReviewCycleCloseout(evidence);
@@ -6968,10 +8535,12 @@ function answerHowToUseGuide(ctx, input) {
   ].join('\n');
 }
 
-function answerFromLocalRag(input, snapshot, assignmentId = 'assignment-local-mvp') {
+function answerFromLocalRag(input, snapshot, assignmentId = 'assignment-local-mvp', options = {}) {
   const evidence = collectEvidence(assignmentId);
-  const corpus = buildKnowledgeCorpus(assignmentId);
-  const sources = rankKnowledge(input, corpus, 6);
+  const sources = options.rankedSources || rankKnowledge(input, buildKnowledgeCorpus(assignmentId), 6);
+  if (options.sourceSink) {
+    options.sourceSink.sources = guideSourceMetadata(sources);
+  }
   const ctx = buildGuideContext(evidence, snapshot);
   const intent = inferGuideIntent(input);
   if (intent === 'casual') {
@@ -7008,13 +8577,13 @@ function answerFromLocalRag(input, snapshot, assignmentId = 'assignment-local-mv
   ].join('\n');
 }
 
-function localProviderContent(requestType, input, snapshot, assignmentId = 'assignment-local-mvp') {
+function localProviderContent(requestType, input, snapshot, assignmentId = 'assignment-local-mvp', options = {}) {
   const text = String(input || '');
   const lower = text.toLowerCase();
   if (requestType === 'chat') {
     if (!text.trim()) return 'Hi. Ask me anything about using ODT, the active task, today’s date, workflow blockers, standards gates, worker runs, tests, artifacts, or PR readiness.';
     if (aiConfig.ragEnabled) {
-      return answerFromLocalRag(text, snapshot, assignmentId);
+      return answerFromLocalRag(text, snapshot, assignmentId, options);
     }
     if (lower.includes('plan') || lower.includes('implement')) {
       return 'Recommended path: capture the request in Intake, generate a draft plan, review risks and tests, approve write scope, then run implementation through Codex/Cline with ODT recording events and evidence.';
@@ -7085,6 +8654,7 @@ async function handleAiRequest(response, requestType, body) {
   const startedAt = Date.now();
   const input = extractInput(body);
   const assignmentId = body.assignmentId || null;
+  const activeAssignmentId = assignmentId || 'assignment-local-mvp';
   const sessionId = body.sessionId || 'local-session';
   const provider = createGenAiProvider(aiConfig);
   const model = requestType === 'embed'
@@ -7095,6 +8665,9 @@ async function handleAiRequest(response, requestType, body) {
   let responseModel = model;
   let fallbackUsed = provider.id === 'local';
   let providerError = null;
+  let retrievedContext = [];
+  let retrievedRawSources = [];
+  let retrievedSources = [];
 
   try {
     assertInputLimit(input);
@@ -7107,23 +8680,33 @@ async function handleAiRequest(response, requestType, body) {
       status: providerStatus.message
     }, assignmentId);
     const snapshot = await buildSnapshot();
-    let providerResult = null;
-    if (requestType === 'chat' && provider.id !== 'local' && providerStatus.ready) {
-      const rag = buildProviderContext(input, assignmentId || 'assignment-local-mvp', 6);
+    if (requestType === 'chat' && aiConfig.ragEnabled) {
+      const rag = buildProviderContext(input, activeAssignmentId, 6);
+      retrievedContext = rag.context;
+      retrievedRawSources = rag.sources;
+      retrievedSources = guideSourceMetadata(rag.sources);
       createRunEvent(runId, 'rag_context_retrieved', 'ok', {
         requestId,
-        sourceCount: rag.sources.length,
-        sources: rag.sources.slice(0, 4).map((source) => source.title)
+        sourceCount: retrievedSources.length,
+        sources: retrievedSources.slice(0, 6).map((source) => ({
+          id: source.id,
+          title: source.title,
+          type: source.type
+        }))
       }, assignmentId);
+    }
+    let providerResult = null;
+    if (requestType === 'chat' && provider.id !== 'local' && providerStatus.ready) {
       try {
         providerResult = await provider.chat({
           question: input,
-          context: rag.context,
-          sources: rag.sources,
+          context: retrievedContext,
+          sources: retrievedRawSources,
           snapshot,
-          assignmentId: assignmentId || 'assignment-local-mvp',
+          assignmentId: activeAssignmentId,
           requestType
         });
+        providerResult.sources = providerResult.sources || retrievedSources;
       } catch (error) {
         providerError = error;
         fallbackUsed = true;
@@ -7145,7 +8728,12 @@ async function handleAiRequest(response, requestType, body) {
       }, assignmentId);
     }
 
-    const content = providerResult?.content || localProviderContent(requestType, input, snapshot, assignmentId || 'assignment-local-mvp');
+    const sourceSink = { sources: retrievedSources };
+    const content = providerResult?.content || localProviderContent(requestType, input, snapshot, activeAssignmentId, {
+      rankedSources: retrievedRawSources,
+      sourceSink
+    });
+    retrievedSources = providerResult?.sources || sourceSink.sources || retrievedSources;
     selectedProvider = providerResult?.provider || (requestType === 'chat' && !providerError ? provider.id : 'local');
     responseModel = providerResult?.model || (providerError || requestType !== 'chat' ? localModelForRequest(requestType) : model);
     fallbackUsed = providerResult ? Boolean(providerResult.fallbackUsed) : true;
@@ -7174,6 +8762,7 @@ async function handleAiRequest(response, requestType, body) {
       'ok',
       providerError?.message || null,
       fallbackUsed ? 1 : 0,
+      JSON.stringify(retrievedSources),
       new Date().toISOString()
     );
 
@@ -7188,9 +8777,21 @@ async function handleAiRequest(response, requestType, body) {
       provider: selectedProvider,
       model: responseModel,
       latencyMs,
-      fallbackUsed
+      fallbackUsed,
+      sourceCount: retrievedSources.length,
+      sources: retrievedSources.slice(0, 4).map((source) => ({
+        id: source.id,
+        title: source.title,
+        type: source.type
+      }))
     }, assignmentId);
-    createRunEvent(runId, 'usage_logged', 'ok', { requestId, totalTokens: usage.totalTokens, provider: selectedProvider, model: responseModel }, assignmentId);
+    createRunEvent(runId, 'usage_logged', 'ok', {
+      requestId,
+      totalTokens: usage.totalTokens,
+      provider: selectedProvider,
+      model: responseModel,
+      sourceCount: retrievedSources.length
+    }, assignmentId);
 
     sendJson(response, 200, {
       provider: selectedProvider,
@@ -7202,6 +8803,7 @@ async function handleAiRequest(response, requestType, body) {
       requestId,
       runId,
       fallbackUsed,
+      sources: retrievedSources,
       error: providerError?.message || null
     });
   } catch (error) {
@@ -7224,6 +8826,7 @@ async function handleAiRequest(response, requestType, body) {
       'error',
       error.message,
       fallbackUsed ? 1 : 0,
+      '[]',
       new Date().toISOString()
     );
     createRunEvent(runId, 'request_failed', 'error', { requestId, requestType, error: error.message, latencyMs }, assignmentId);
@@ -7383,6 +8986,29 @@ function buildOpenApiSchema() {
           responses: {
             200: { description: 'Asset enrichment readiness or fallback result.', content: jsonContent({ type: 'object' }) },
             404: { description: 'Asset not found.', content: jsonContent({ type: 'object' }) }
+          }
+        }
+      },
+      '/api/intake/import-jira': {
+        post: {
+          operationId: 'importJiraIssueForIntake',
+          summary: 'Import Jira issue into Intake',
+          description: 'Reads a Jira issue through the backend-only connector, classifies whether the work is active or already completed, checks optional repo references, and stores requirement evidence. Secrets and raw env-file values are never returned.',
+          requestBody: {
+            required: true,
+            content: jsonContent({
+              type: 'object',
+              properties: {
+                assignmentId: { type: 'string', description: 'Assignment id for evidence storage.' },
+                issueKey: { type: 'string', description: 'Jira issue key, for example JOURNEY-25366.' },
+                repoPath: { type: 'string', description: 'Optional local repo path for read-only Jira-key checks in git history and tracked files.' }
+              },
+              required: ['issueKey']
+            })
+          },
+          responses: {
+            200: { description: 'Imported Jira issue and requirement evidence.', content: jsonContent({ type: 'object' }) },
+            403: { description: 'Jira connector is not ready or credentials are missing.', content: jsonContent({ type: 'object' }) }
           }
         }
       },
@@ -8038,6 +9664,41 @@ function buildOpenApiSchema() {
           responses: { 200: { description: 'AI usage event list and summary.', content: jsonContent({ type: 'object' }) } }
         }
       },
+      '/api/monitoring/error-log': {
+        get: {
+          operationId: 'listMonitoringErrorLog',
+          summary: 'List workbench error and health log',
+          description: 'Aggregates backend failures, blocked workflow events, connector issues, standards findings, review comments, dependency requests, worker problems, relay items, and validation failures into one operator-facing monitoring log.',
+          parameters: [{ name: 'assignmentId', in: 'query', required: false, schema: { type: 'string' }, description: 'Assignment id to scope workflow/governance health items.' }],
+          responses: { 200: { description: 'Monitoring error and health log.', content: jsonContent({ type: 'object' }) } }
+        }
+      },
+      '/api/validation/runs': {
+        get: {
+          operationId: 'listValidationRuns',
+          summary: 'List ODT validation runs',
+          description: 'Returns recent ODT self-validation runs, including UI smoke status, screenshot paths, and captured command output.',
+          responses: { 200: { description: 'Validation run history.', content: jsonContent({ type: 'object' }) } }
+        }
+      },
+      '/api/validation/ui-smoke': {
+        post: {
+          operationId: 'runUiSmokeValidation',
+          summary: 'Run ODT UI smoke validation',
+          description: 'Runs the local ODT UI smoke validation script with a fixed local app/API scope and records the result as run evidence.',
+          requestBody: {
+            required: false,
+            content: jsonContent({
+              type: 'object',
+              properties: {
+                assignmentId: { type: 'string', description: 'Assignment id to validate.' },
+                expectedIssue: { type: 'string', description: 'Expected Jira key for verification-mode validation.' }
+              }
+            })
+          },
+          responses: { 200: { description: 'UI smoke validation result.', content: jsonContent({ type: 'object' }) } }
+        }
+      },
       '/api/settings': {
         get: {
           operationId: 'getSafeSettings',
@@ -8102,7 +9763,7 @@ function buildOpenApiSchema() {
         post: {
           operationId: 'queryConnector',
           summary: 'Query optional connector',
-          description: 'Placeholder connector gateway. Reads require configured connectors; writes require approval; destructive actions are blocked.',
+          description: 'Governed connector gateway. Jira read-only issue lookup can return safe issue fields; writes require approval; destructive actions are blocked.',
           requestBody: {
             required: true,
             content: jsonContent({
@@ -8111,6 +9772,8 @@ function buildOpenApiSchema() {
                 connectorId: { type: 'string', description: 'Connector id such as jira, knowledge, or git.' },
                 action: { type: 'string', description: 'Requested connector action.' },
                 mode: { type: 'string', description: 'read, write, or delete/destructive.' },
+                issueKey: { type: 'string', description: 'Jira issue key for jira get-issue/read-issue actions.' },
+                query: { type: 'string', description: 'Optional connector query value. For Jira issue reads this may contain an issue key.' },
                 approved: { type: 'boolean', description: 'Human approval flag for write actions.' }
               },
               required: ['connectorId', 'action', 'mode']
@@ -8220,30 +9883,86 @@ function getStoredSetting(key, fallback) {
 async function handleConnectorQuery(response, body) {
   const connector = listConnectors().find((item) => item.id === body.connectorId);
   const action = String(body.action || '').trim();
+  const normalizedAction = action.toLowerCase();
   const mode = String(body.mode || 'read').toLowerCase();
   const now = new Date().toISOString();
+  const eventAssignmentId = body.assignmentId || 'assignment-local-mvp';
   if (!connector || !connector.enabled) {
     const reason = connector?.readinessDetail || 'Connector is disabled or not configured.';
-    statements.insertConnectorEvent.run(createId('connector'), body.connectorId || 'unknown', action, mode, 'blocked', reason, now);
+    statements.insertConnectorEvent.run(createId('connector'), body.connectorId || 'unknown', action, mode, 'blocked', JSON.stringify({ reason, assignmentId: eventAssignmentId }), now);
     sendJson(response, 403, { status: 'blocked', reason, connector });
     return;
   }
   if (mode.includes('delete') || mode.includes('destructive')) {
-    statements.insertConnectorEvent.run(createId('connector'), connector.id, action, mode, 'blocked', 'Destructive actions are blocked by default.', now);
+    statements.insertConnectorEvent.run(createId('connector'), connector.id, action, mode, 'blocked', JSON.stringify({ reason: 'Destructive actions are blocked by default.', assignmentId: eventAssignmentId }), now);
     sendJson(response, 403, { status: 'blocked', reason: 'Destructive actions are blocked by default.', connector });
     return;
   }
   if (mode.includes('write') && connector.requireWriteApproval && !body.approved) {
-    statements.insertConnectorEvent.run(createId('connector'), connector.id, action, mode, 'approval_required', 'Write actions require human approval.', now);
+    statements.insertConnectorEvent.run(createId('connector'), connector.id, action, mode, 'approval_required', JSON.stringify({ reason: 'Write actions require human approval.', assignmentId: eventAssignmentId }), now);
     sendJson(response, 403, { status: 'approval_required', reason: 'Write actions require human approval.', connector });
     return;
   }
-  statements.insertConnectorEvent.run(createId('connector'), connector.id, action, mode, 'ok', 'Placeholder connector gateway response.', now);
+
+  if (connector.id === 'jira' && ['get-issue', 'read-issue', 'issue', 'get-ticket', 'read-ticket'].includes(normalizedAction)) {
+    const issueKey = normalizeJiraIssueKey(body.issueKey || body.ticketKey || body.query);
+    if (!issueKey) {
+      const reason = 'A Jira issue key such as JOURNEY-25366 is required for this read action.';
+      statements.insertConnectorEvent.run(createId('connector'), connector.id, action, mode, 'blocked', JSON.stringify({ reason, assignmentId: eventAssignmentId }), now);
+      sendJson(response, 400, { status: 'blocked', reason, connector });
+      return;
+    }
+
+    const credentials = loadJiraConnectorCredentials(connector);
+    if (!credentials.ready) {
+      const reason = 'Jira read credentials are not available server-side. Configure JIRA_URL plus a token/password through environment or Codex MCP env-file.';
+      statements.insertConnectorEvent.run(createId('connector'), connector.id, action, mode, 'blocked', JSON.stringify({ reason, assignmentId: eventAssignmentId, issueKey }), now);
+      sendJson(response, 403, { status: 'blocked', reason, connector });
+      return;
+    }
+
+    try {
+      const issue = await fetchJiraIssue(issueKey, credentials);
+      const note = `Read-only Jira lookup succeeded for ${issueKey}. ODT returned safe issue fields only.`;
+      statements.insertConnectorEvent.run(createId('connector'), connector.id, action, mode, 'ok', JSON.stringify({ note, assignmentId: eventAssignmentId, issueKey }), now);
+      sendJson(response, 200, {
+        status: 'ok',
+        connector,
+        issue,
+        results: [issue],
+        metadata: {
+          credentialSource: credentials.source,
+          authMode: credentials.authMode,
+          safeFieldsOnly: true
+        },
+        note
+      });
+    } catch (err) {
+      const reason = err.message || 'Unable to read Jira issue.';
+      const detail = {
+        reason,
+        upstreamStatus: err.upstreamStatus || null,
+        upstreamContentType: err.upstreamContentType || '',
+        upstreamResponseKind: err.upstreamResponseKind || '',
+        upstreamPreview: err.upstreamPreview || '',
+        assignmentId: eventAssignmentId,
+        issueKey
+      };
+      statements.insertConnectorEvent.run(createId('connector'), connector.id, action, mode, 'error', JSON.stringify(detail), now);
+      sendJson(response, err.httpStatus || 502, { status: 'error', reason, detail, connector });
+    }
+    return;
+  }
+
+  const okNote = connector.configurationSource === 'codex-config'
+    ? `Codex MCP server ${connector.serverName} is detected. ODT read gate is ready; direct Jira MCP query transport is the next adapter layer.`
+    : 'Connector gateway is wired for governance. Actual MCP transport is an extension point.';
+  statements.insertConnectorEvent.run(createId('connector'), connector.id, action, mode, 'ok', JSON.stringify({ note: okNote, assignmentId: eventAssignmentId }), now);
   sendJson(response, 200, {
     status: 'ok',
     connector,
     results: [],
-    note: 'Connector gateway is wired for governance. Actual MCP transport is an extension point.'
+    note: okNote
   });
 }
 
@@ -8342,6 +10061,20 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    if (request.method === 'POST' && url.pathname === '/api/intake/import-jira') {
+      try {
+        const body = await readBody(request);
+        sendJson(response, 200, await importJiraIssueForIntake({
+          assignmentId: body.assignmentId || 'assignment-local-mvp',
+          issueKey: body.issueKey || body.ticketKey || body.query || '',
+          repoPath: body.repoPath || ''
+        }));
+      } catch (err) {
+        sendJson(response, err.statusCode || err.httpStatus || 400, { error: err.message || 'Unable to import Jira issue.' });
+      }
+      return;
+    }
+
     if (request.method === 'POST' && url.pathname === '/api/intake/analyze') {
       const body = await readBody(request);
       const assignmentId = body.assignmentId || 'assignment-local-mvp';
@@ -8390,8 +10123,9 @@ const server = createServer(async (request, response) => {
     if (request.method === 'POST' && url.pathname === '/api/design/draft') {
       const body = await readBody(request);
       const assignmentId = body.assignmentId || 'assignment-local-mvp';
-      const requirement = body.requirement || statements.selectRequirementsByAssignment.all(assignmentId)[0] || {};
-      const latestRepo = statements.selectRepoAnalysisByAssignment.all(assignmentId)[0];
+      const currentEvidence = collectEvidence(assignmentId);
+      const requirement = body.requirement || currentEvidence.requirements?.[0] || {};
+      const latestRepo = currentEvidence.current?.repoAnalysis?.[0] || statements.selectRepoAnalysisByAssignment.all(assignmentId)[0];
       const repoAnalysis = body.repoAnalysis || parseJsonValue(latestRepo?.analysisJson, {});
       const design = buildTechnicalDesign({
         assignmentId,
@@ -8406,7 +10140,8 @@ const server = createServer(async (request, response) => {
     if (request.method === 'POST' && url.pathname === '/api/plan/draft') {
       const body = await readBody(request);
       const assignmentId = body.assignmentId || 'assignment-local-mvp';
-      const latestDesign = statements.selectTechnicalDesignsByAssignment.all(assignmentId)[0];
+      const currentEvidence = collectEvidence(assignmentId);
+      const latestDesign = currentEvidence.current?.technicalDesigns?.[0] || statements.selectTechnicalDesignsByAssignment.all(assignmentId)[0];
       const design = body.design || parseJsonValue(latestDesign?.designJson, {});
       const plan = buildImplementationPlan({
         assignmentId,
@@ -8435,10 +10170,11 @@ const server = createServer(async (request, response) => {
       const body = await readBody(request);
       const assignmentId = body.assignmentId || 'assignment-local-mvp';
       const assignment = getAssignment(assignmentId) || {};
+      const currentEvidence = collectEvidence(assignmentId);
       const artifact = body.artifact || {
         assignment,
-        latestDesign: parseJsonValue(statements.selectTechnicalDesignsByAssignment.all(assignmentId)[0]?.designJson, {}),
-        latestPlan: parseJsonValue(statements.selectImplementationPlansByAssignment.all(assignmentId)[0]?.planJson, {}),
+        latestDesign: currentEvidence.current?.technicalDesigns?.[0]?.designJson || {},
+        latestPlan: currentEvidence.current?.implementationPlans?.[0]?.planJson || {},
         standardsNote: 'Requirement repo impacted files accessibility WCAG VPAT Section 508 security validation testing branch coverage statement coverage function coverage line coverage dependency policy no new dependency Redwood loading empty error states performance maintainable existing pattern approve for write.'
       };
       const review = runStandardsReview({
@@ -8690,6 +10426,7 @@ const server = createServer(async (request, response) => {
         assignmentId: body.assignmentId || 'assignment-local-mvp',
         executionAgent: body.executionAgent || getStoredSetting('executionAgent', 'codex'),
         requireWriteApproved: body.requireWriteApproved !== false,
+        workerRoleId: body.workerRoleId || body.workerRole || '',
         notes: body.notes || ''
       });
       sendJson(response, delegation.status === 'prepared' ? 200 : 409, delegation);
@@ -8934,8 +10671,30 @@ const server = createServer(async (request, response) => {
     }
 
     if (request.method === 'GET' && url.pathname === '/api/monitoring/ai-usage') {
-      const events = statements.selectAiUsage.all();
+      const events = statements.selectAiUsage.all().map(hydrateAiUsageEvent);
       sendJson(response, 200, { summary: summarizeUsage(events), events });
+      return;
+    }
+
+    if (request.method === 'GET' && url.pathname === '/api/monitoring/error-log') {
+      sendJson(response, 200, buildMonitoringErrorLog({
+        assignmentId: url.searchParams.get('assignmentId') || 'assignment-local-mvp'
+      }));
+      return;
+    }
+
+    if (request.method === 'GET' && url.pathname === '/api/validation/runs') {
+      sendJson(response, 200, { runs: listValidationRuns() });
+      return;
+    }
+
+    if (request.method === 'POST' && url.pathname === '/api/validation/ui-smoke') {
+      const body = await readBody(request);
+      const result = await runUiSmokeScript({
+        assignmentId: body.assignmentId || 'assignment-local-mvp',
+        expectedIssue: body.expectedIssue || ''
+      });
+      sendJson(response, 200, result);
       return;
     }
 

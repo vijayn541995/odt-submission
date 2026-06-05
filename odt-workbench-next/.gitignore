@@ -5,3 +5,4 @@ data/*.sqlite-*
 logs/
 workspaces/
 .playwright-cli/
+output/
