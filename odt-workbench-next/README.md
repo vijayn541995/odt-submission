@@ -82,6 +82,84 @@ ODT Guide uses a lightweight local evidence corpus for Q&A in the MVP. It retrie
 
 This is not the future enterprise RAG layer. Oracle DB 23ai/26ai vector search remains the enterprise extension point, while the local corpus gives practical, grounded answers during local development.
 
+## GenAI Provider Configuration
+
+ODT keeps provider selection backend-owned. The frontend only receives safe status such as provider name, model label, readiness, and fallback usage.
+
+Default local deterministic mode:
+
+```bash
+export GENAI_PROVIDER=local
+```
+
+OCI GenAI through an OpenAI-compatible backend endpoint:
+
+```bash
+export GENAI_PROVIDER=oci
+# ODT appends /chat/completions only when needed.
+export OCI_GENAI_OPENAI_BASE_URL="https://inference.generativeai.<region>.oci.oraclecloud.com/openai/v1"
+# or:
+# export OCI_GENAI_OPENAI_BASE_URL="https://inference.generativeai.<region>.oci.oraclecloud.com/20231130/actions/v1"
+export OCI_GENAI_BEARER_TOKEN="<server-side-token>"
+export OCI_COMPARTMENT_OCID="<compartment-ocid>"
+export GENAI_MODEL="<model-name-or-ocid>"
+export OCI_GENAI_OPENAI_COMPATIBLE=true
+```
+
+OpenAI-compatible provider:
+
+```bash
+export GENAI_PROVIDER=openai
+export OPENAI_BASE_URL="https://api.openai.com/v1"
+export OPENAI_API_KEY="<server-side-api-key>"
+export GENAI_MODEL="gpt-4o-mini"
+```
+
+Ollama local model:
+
+```bash
+export GENAI_PROVIDER=ollama
+export OLLAMA_BASE_URL="http://localhost:11434"
+export GENAI_MODEL="llama3.1"
+```
+
+All modes follow the same request flow: retrieve ODT handbook/evidence context, call the configured provider if ready, fall back to local deterministic RAG if unavailable, and log provider/model/tokens/latency/fallback evidence.
+
+Useful OCI service expansion path:
+
+- OCI Generative AI Chat Completions for ODT Guide and specialist reviews.
+- OCI Generative AI Responses, conversations, files, vector stores, and containers for future managed agentic workflows.
+- OCI embeddings and rerank for enterprise RAG over ODT standards, evidence, Jira, Confluence, repo history, and PR packs.
+- OCI Vision or document/image analysis services for screenshot, mockup, diagram, and document enrichment.
+- OCI Speech and text-to-speech options for future voice intake and accessibility.
+
+Internal connector expansion path:
+
+- Jira SD MCP for intake and issue/request context.
+- Bitbucket and SCM MCP for repo/branch/PR/diff analysis, approved comments, and approved PR actions.
+- Build Service MCP for validation logs, artifacts, and approved build triggers.
+- DevOps MCP for runbooks, operational context, alarms, logs, regions, and release/security context.
+- memory-service for persistent project memory, cross-agent relay, and evidence context.
+- SKS and Ask Oracle Knowledge Collections for internal standards, architecture, SDLC, and knowledge retrieval.
+
+Internal references provided by the product owner:
+
+- MCP servers available with Codex: `https://confluence.oraclecorp.com/confluence/pages/viewpage.action?pageId=20650909983`
+- Ask Oracle Knowledge Collections: `https://confluence.oraclecorp.com/confluence/pages/viewpage.action?pageId=17328629254`
+
+Suggested internal setup reading order:
+
+1. `https://confluence.oraclecorp.com/confluence/pages/viewpage.action?pageId=20059334493` - MCP servers available with Codex.
+2. `https://confluence.oraclecorp.com/confluence/pages/viewpage.action?pageId=20059110863` - Codex OCI Dev Platform Gateway MCP.
+3. `https://confluence.oraclecorp.com/confluence/pages/viewpage.action?pageId=20123320016` - MCP Gateway Setup SOP for Mac/Codex/Oracle MCP.
+4. `https://confluence.oraclecorp.com/confluence/pages/viewpage.action?pageId=6125311809` - OCI Document Understanding setup.
+5. `https://confluence.oraclecorp.com/confluence/pages/viewpage.action?pageId=6088317392` - OCI Vision setup.
+6. `https://confluence.oraclecorp.com/confluence/pages/viewpage.action?pageId=6086874487` - OCI Speech setup.
+7. `https://confluence.oraclecorp.com/confluence/pages/viewpage.action?pageId=20203043271` - Enterprise AI Agents getting started.
+8. `https://confluence.oraclecorp.com/confluence/pages/viewpage.action?pageId=20095744696` - Agent Lifecycle Configuration.
+
+Detailed OCI/AI setup notes are preserved in [docs/ODT-Oracle-AI-Services-Setup-Reference.md](docs/ODT-Oracle-AI-Services-Setup-Reference.md).
+
 ## Developer Workflow Direction
 
 The governance architecture is captured in [docs/ODT-Governance-Architecture.md](docs/ODT-Governance-Architecture.md).

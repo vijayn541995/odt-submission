@@ -24,9 +24,17 @@ Main workplan implementation update, 2026-06-05: warning/blocker review comments
 
 Review-cycle closeout update, 2026-06-05: ODT now derives a **Review Cycle Closeout** state from evidence. When a rework relay exists, PR readiness requires rework implementation evidence, a newer Reviewer rerun, a newer Build Verifier rerun, and then a PR-ready package. The Review page shows the closeout sequence and can open Agent Team with the correct next worker lane selected. `GET /api/review/cycle/:assignmentId/closeout` exposes the derived closeout state for tools and future provider adapters.
 
+Modern AI IDE pattern adoption, 2026-06-05: ODT should learn from modern AI coding tools such as Codex-style agents, Cursor-like repo context, Claude/Anthropic-style plan-first reasoning, and agentic IDE review loops without copying any single product. The ODT pattern is: assemble requirement/repo/assets context, produce a reviewable plan, gate writes through standards and human approval, delegate to a governed worker, stream/log execution evidence, ingest output, run reviewer/build-verifier loops, and prepare PR evidence. ODT's differentiator is enterprise traceability: standards checks, approvals, dependency decisions, relay items, file assets, worker logs, and PR readiness are durable evidence rather than transient chat.
+
+Product positioning update, 2026-06-05: ODT's advantage should be stated clearly in the app and guide: modern AI coding tools help produce work; ODT helps govern, prove, and safely operationalize that work. The platform should support team-specific policy customization for standards, dependency rules, approval gates, worker lanes, model/provider adapters, and PR-readiness criteria. Policy flexibility must not weaken traceability: every override, approval, dependency decision, worker run, and standards result remains auditable evidence.
+
+Policy customization implementation direction, 2026-06-05: the current local path is config-driven customization through `server/standards/odt-standards.json` plus canonical Markdown source documents. Future enterprise ODT should add a Policy Admin UI with role-based access, config validation, impact preview, version publishing, and audit events. Team-level customizations should be allowed for accessibility topics, dependency preferences, testing expectations, UX guidance, approval gates, worker lanes, model/provider adapters, and PR readiness. Hard safety rules such as frontend secrets, destructive actions, unapproved installs, unapproved writes, and external writes should remain protected by explicit policy ownership and audit.
+
 Future intake connector direction: ODT should add governed Jira2/Jira MCP and GitHub MCP intake sources after the current local workbench and relay flow stabilize. These connectors should be read-only by default for intake: pull ticket/issue/PR title, description, acceptance criteria, comments, labels, branch/PR metadata, check status, and attachment metadata into ODT evidence. Any write-back to Jira, GitHub, branches, comments, labels, or PRs must require a separate human approval gate and connector policy review.
 
 Future DB awareness direction: ODT should detect local database configuration from repo files such as `database.yml`, `.env.example`, `config/database.*`, Prisma, Sequelize, Knex, Rails, Spring, or similar configuration files. The first implementation must be metadata-only by default: identify connection candidates, schemas, tables, columns, indexes, constraints, migrations, and safe row-count summaries where approved. Credentials must stay server-side and must not be shown in the frontend or injected into worker prompts. Arbitrary business-data queries, exports, DDL, migrations, INSERT/UPDATE/DELETE, and production-like connections require explicit human approval and a separate DB safety policy.
+
+Future identity and access-control direction: ODT should add enterprise identity after the local MVP stabilizes. The local MVP can continue using OS/local user identity for evidence labels, but production should use SSO/OIDC/SAML or an approved enterprise identity provider. ODT should not store user passwords. AuthN belongs to the provider; ODT stores safe user profile metadata, roles, groups, and audit events. AuthZ belongs to ODT policy: who can approve write scope, override blockers, approve dependencies, launch worker lanes, view sensitive context assets, configure adapters, run DB introspection, or prepare PR packs. All approvals must capture user id, time, role, notes, and assignment id.
 
 Current worker lane target:
 
@@ -517,6 +525,57 @@ Completed in the current development pass:
 - Phase 3 verification evidence runner: `POST /odt/verify/run`, `verify-results.json/.md`, dashboard Run Verification action, and cycle-level verification artifacts.
 - Phase 3 review-cycle scoreboard: persisted `cycle-history.json/.md`, `/odt/cycle-history`, readiness trend, finding counts, decisions, and verification status in FEDIT.
 - Phase 3 focused rework delegation: `POST /odt/rework/launch` clears stale delegated-agent state and opens the selected Main Developer agent with the prepared Review Cycle rework prompt.
+- ODT Workbench Next now treats ODT Guide as a handbook/evidence-aware assistant and has a backend-owned GenAI provider direction: local deterministic fallback, OCI/OpenAI/Ollama-ready provider config, safe frontend status, and provider/fallback evidence logging.
+
+## ODT 2.0 Oracle AI Implementation Stages
+
+Use these stages when continuing ODT 2.0 after context loss:
+
+1. **Provider Foundation**
+   - Backend-owned provider factory.
+   - `GENAI_PROVIDER=local|oci|openai|ollama`.
+   - Support OCI setup aliases such as `OCI_GENAI_REGION`, `OCI_GENAI_BASE_URL`, and `OCI_GENAI_API_KEY`.
+   - Local deterministic RAG remains default/fallback.
+   - OCI GenAI Chat Completions powers Guide when endpoint/model/auth are configured.
+   - Monitoring shows provider/model/tokens/latency/fallback.
+   - Preserve detailed setup notes in `docs/ODT-Oracle-AI-Services-Setup-Reference.md`.
+
+2. **Enterprise RAG**
+   - Add embeddings and rerank.
+   - Index handbook, standards, Jira, Confluence excerpts, repo summaries, worker output, review evidence, and PR packs.
+   - Use Oracle DB 23ai/26ai vector search for enterprise mode.
+
+3. **Specialist Agent Intelligence**
+   - Agent Foundry domains call the provider client.
+   - Outputs remain evidence with findings, risks, missing information, standards impact, and next actions.
+   - Human review remains mandatory before write/delegate.
+
+4. **Asset Intelligence**
+   - Enrich PDFs, DOCX, XLSX/PPTX, screenshots, diagrams, and mockups.
+   - Use OCI Document Understanding for PDFs, scanned docs, tables, and forms where approved.
+   - Use OCI Vision/document analysis where approved.
+   - Use OCI Speech for future voice or meeting-note intake.
+   - Preserve fallback to stored metadata/manual review.
+
+5. **Managed Agentic Execution**
+   - Evaluate OCI Responses/conversations/files/vector stores/containers/managed agents.
+   - Evaluate OCI Generative AI Agents for planner, standards, review, and PR-ready agent-as-tool flows.
+   - Keep Codex CLI and Cline/manual adapters.
+   - Gate tool use, repo writes, dependency installs, terminal actions, and external writes.
+
+6. **Enterprise Controls**
+   - Add SSO/OIDC/SAML and role-based authorization.
+   - Add Policy Admin UI for configurable standards/governance.
+   - Add Jira/GitHub/Confluence/MCP connectors and DB-aware adapters as read-first, approval-gated capabilities.
+   - Add OCI API Gateway plus Functions/OKE as the governed deployment boundary.
+   - Add Object Storage/DB audit storage for artifacts, prompts, outputs, approvals, logs, and PR packages.
+   - Add memory-service for project memory, relay context, handoffs, and reusable evidence.
+   - Add future enterprise config assets:
+     - `server/config/oci-genai.json`
+     - `server/config/oci-ai-services.json`
+     - `server/policies/model-adapters.json`
+     - `server/policies/worker-lanes.json`
+     - `server/policies/pr-readiness.json`
 
 ## Frozen Technical Direction
 

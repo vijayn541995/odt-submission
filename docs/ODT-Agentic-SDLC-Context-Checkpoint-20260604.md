@@ -2,7 +2,190 @@
 
 Created: 2026-06-04 20:13 IST
 
+Last updated: 2026-06-05 06:55 IST
+
 This checkpoint captures the current ODT Workbench direction, implementation state, important user decisions, and next steps. Use it to resume work if Codex context is lost after migration.
+
+## Latest Update - 2026-06-05
+
+ODT 2.0 has moved from the earlier 40/100 agentic checkpoint to roughly:
+
+- **76-78/100 for demo-grade ODT 2.0**
+- **45-50/100 for full Oracle-internal production-grade ODT**
+
+The product direction is now more precise:
+
+> ODT 2.0 is an Oracle-internal-ready governed agentic SDLC control plane. It should combine modern AI developer workflows with enterprise governance, configurable policy, auditable evidence, provider flexibility, Oracle AI services, and internal MCP/tool connectors.
+
+### Latest Chat Backup Refresh - 2026-06-05 06:55 IST
+
+This section captures the newest state after the Oracle AI, MCP connector, guide/RAG, intake UX, and backup-continuity discussions. The user specifically asked to keep this backup current because a Codex migration may lose the live chat context.
+
+Current product intent:
+
+- Build ODT 2.0 as a production-quality, Oracle-internal-ready agentic SDLC workbench.
+- ODT should orchestrate specialist workers and external tools, not act as a loose chatbot.
+- Agent work should be sequential by default, with relay context passed from one worker to the next.
+- Parallel work is future-safe only when ODT can partition file scope and prevent conflicting edits.
+- The practical write-capable implementation lane is a senior IC4-style **Senior Full Stack Dev** agent. Backend/Frontend split remains available for large, separable work.
+- ODT should be model/provider-flexible: Codex CLI first, Cline/manual/OCI GenAI/OCA/Ollama/OpenAI/OpenAI-compatible APIs as adapter-ready paths.
+- ODT Guide should behave like a training handbook chatbot for the ODT platform, with local RAG grounding first and optional GenAI enhancement when a backend provider is configured.
+- Every AI/model/tool output must remain evidence-backed. ODT owns workflow state, approvals, policy, evidence, logs, and PR readiness.
+
+Current technical status:
+
+- Frontend: `http://127.0.0.1:5189`
+- Backend API: `http://127.0.0.1:5190`
+- API was restarted and listening on port `5190`.
+- `node --check server/index.js` passed.
+- `npm run build` passed after the latest connector/intake/guide/provider edits.
+- `/api/settings` returned 8 connector definitions with readiness and missing config metadata.
+- `POST /api/connectors/query` for Jira returned a safe blocked response listing missing config:
+  - `ENABLE_MCP`
+  - `ENABLE_JIRA_MCP`
+  - `JIRA_MCP_SERVER_NAME`
+- Browser DOM check confirmed the Settings Connector Hub content exists:
+  - Connector Hub
+  - Jira SD MCP
+  - Missing config
+  - Test Read Gate
+  - Writes approval-gated
+- Remaining UI caveat: visually scroll Settings and click one `Test Read Gate` button to confirm the lower Connector Hub card layout and notice behavior in the browser.
+
+Newest roadmap decisions to preserve:
+
+- Oracle AI can improve ODT in multiple places:
+  - ODT Guide answers and handbook training
+  - requirement analysis and clarification prompts
+  - specialist Agent Foundry reviews
+  - retrieval/rerank over ODT evidence and internal knowledge
+  - uploaded PDF/Excel/image/mockup understanding
+  - worker prompt grounding
+  - review summary and PR-readiness packaging
+- Provider behavior must stay safe:
+  - no provider configured -> local deterministic answer only
+  - provider configured -> model receives retrieved ODT context plus user question
+  - always log selected provider, model label, fallback status, latency, token/usage metadata where available
+  - never expose provider secrets in frontend, prompts, screenshots, docs, or `/api/settings`
+- Internal MCP/tool connector direction:
+  - Jira SD MCP for intake tickets
+  - Bitbucket/SCM MCP for repo, branch, PR, diff, and comments
+  - Build Service MCP for build/log/artifact evidence
+  - DevOps MCP for service, alarm, runbook, and operational context
+  - memory-service for durable task/team context
+  - SKS and Ask Oracle Knowledge for standards and internal documentation
+  - all writes remain approval-gated; read-only import is the default
+- Future DB awareness is required:
+  - detect `database.yml`, `.env.example`, Prisma, Sequelize, Knex, Rails, Spring, and similar config files
+  - metadata/schema-only introspection after approval
+  - credentials stay backend-only and masked
+  - business-data queries, exports, DDL, migrations, and mutations require separate DB safety approval
+- Future enterprise identity is required:
+  - use SSO/OIDC/SAML or approved enterprise identity provider
+  - ODT does not store passwords
+  - ODT stores safe user metadata, roles, groups, and audit events
+  - approvals, blocker overrides, adapter config, worker launch, dependency approval, DB introspection, and sensitive asset viewing must be role-aware
+- Policy customization should be a first-class future capability:
+  - teams can customize standards, dependency policy, approval gates, worker lanes, provider adapters, testing expectations, and PR-readiness criteria
+  - hard safety controls remain protected by explicit policy ownership and audit
+
+Immediate next actions from this refreshed checkpoint:
+
+1. Finish visual validation of the Settings Connector Hub by scrolling the Settings page and testing one read gate.
+2. Update ODT Guide/Handbook with connector behavior if the UI text needs sharper training language.
+3. Move into Stage B: retrieval-source evidence, stronger guide/RAG ranking, and active-requirement-specific answers.
+4. When real OCI endpoint/model/auth are provided, test `GENAI_PROVIDER=oci` and confirm local fallback still works.
+5. Keep this checkpoint refreshed hourly via automation and manually before risky work or context migration.
+
+Latest implemented / in-progress changes:
+
+- ODT Guide is now a handbook/evidence-aware assistant with casual chatbot responses and local RAG fallback.
+- Backend GenAI provider foundation has started:
+  - `GENAI_PROVIDER=local|oci|openai|ollama`
+  - local deterministic fallback remains default
+  - OCI/OpenAI-compatible/Ollama adapters are backend-owned
+  - frontend exposes only safe provider readiness, model label, fallback status, and no secrets
+  - usage logging records provider, model, latency, tokens, and fallback
+- OCI setup aliases were added:
+  - `OCI_GENAI_REGION`
+  - `OCI_GENAI_BASE_URL`
+  - `OCI_GENAI_API_KEY`
+  - existing explicit aliases such as `OCI_GENAI_OPENAI_BASE_URL` and `OCI_GENAI_BEARER_TOKEN` still work
+- ODT Guide now answers Oracle AI/MCP questions with a specific map for:
+  - OCI GenAI Chat Completions
+  - OCI Responses / Conversations / Files / Vector Stores / Containers
+  - embeddings and rerank
+  - Document Understanding
+  - Vision
+  - Speech / text-to-speech
+  - API Gateway, Functions/OKE, Object Storage, DB audit store
+  - Jira SD, Bitbucket, SCM, Build Service, DevOps, memory-service, SKS, Ask Oracle
+- Internal and public source links were captured in:
+  - `/Users/vn105957/Desktop/odt-submission/odt-workbench-next/docs/ODT-Platform-Handbook.md`
+  - `/Users/vn105957/Desktop/odt-submission/odt-workbench-next/docs/ODT-Oracle-AI-Services-Setup-Reference.md`
+- A separate detailed OCI/AI setup reference was created:
+  - `/Users/vn105957/Desktop/odt-submission/odt-workbench-next/docs/ODT-Oracle-AI-Services-Setup-Reference.md`
+- README now documents:
+  - provider configuration
+  - OCI/OpenAI/Ollama examples
+  - internal connector expansion path
+  - suggested internal setup reading order
+- Large roadmap and frozen plan now include staged Oracle AI/GenAI roadmap:
+  - Stage A: provider foundation
+  - Stage B: embeddings/rerank enterprise RAG
+  - Stage C: OCI-enhanced specialist reviews
+  - Stage D: asset intelligence
+  - Stage E: managed agentic adapter
+  - Stage F: enterprise identity, policy, connectors, DB awareness
+- Intake page was redesigned from cramped two-column cards into a vertical numbered intake journey:
+  - Project workspace
+  - Work request
+  - Context files
+  - Repository signals
+  - Extracted structure
+  - Clarification prompts
+- Connector Hub work is mostly implemented and backend/API validated:
+  - backend connector readiness metadata has been improved
+  - Settings UI has been upgraded from a plain table to connector cards with readiness and a safe Test Read Gate action
+  - API smoke confirmed safe blocked behavior when connector config is missing
+  - browser DOM check confirmed Connector Hub content is present
+  - still needs final visual scroll/click verification in Settings before calling it fully complete
+- An hourly automation was created:
+  - automation id: `hourly-odt-2-0-context-backup`
+  - purpose: refresh ODT 2.0 continuity backup hourly
+  - workspace: `/Users/vn105957/Desktop/odt-submission/odt-workbench-next`
+
+Current active app URLs:
+
+```text
+Frontend: http://127.0.0.1:5189
+Backend:  http://127.0.0.1:5190
+```
+
+Current backend screen/session pattern:
+
+```bash
+cd /Users/vn105957/Desktop/odt-submission/odt-workbench-next
+PATH=/Users/vn105957/.nvm/versions/node/v24.15.0/bin:$PATH npm run api
+PATH=/Users/vn105957/.nvm/versions/node/v24.15.0/bin:$PATH npm run dev
+```
+
+Latest validation before this update:
+
+```bash
+PATH=/Users/vn105957/.nvm/versions/node/v24.15.0/bin:$PATH node --check server/index.js
+PATH=/Users/vn105957/.nvm/versions/node/v24.15.0/bin:$PATH npm run build
+```
+
+Both passed after the latest Intake, OCI reference, provider, guide, and Connector Hub edits. API smoke for `/api/settings` and `/api/connectors/query` also passed. Final browser visual validation of the lower Settings Connector Hub remains the main unfinished check.
+
+Immediate next implementation steps:
+
+1. Browser-scroll Settings and visually verify the Connector Hub layout.
+2. Click one `Test Read Gate` button and confirm the notice/blocked state is clear.
+3. Add connector readiness/test-read behavior to the handbook if needed.
+4. Move next into Stage B groundwork: retrieval-source evidence and stronger Guide/RAG ranking.
+5. When the user provides real OCI endpoint/model/auth, test live `GENAI_PROVIDER=oci` with local fallback preserved.
 
 ## Why This Exists
 
@@ -21,7 +204,12 @@ The most important correction made during this chat:
 
 Idea score: 88/100.
 
-Current product progress: approximately 40/100.
+Current product progress as of 2026-06-05:
+
+- Demo-grade ODT 2.0: approximately 76-78/100.
+- Oracle-internal production-grade ODT: approximately 45-50/100.
+
+Historical progress at checkpoint creation on 2026-06-04 was approximately 40/100.
 
 Reason:
 
@@ -31,7 +219,8 @@ Reason:
 - Codex worker launch path exists.
 - Worker lane model is being added.
 - Durable worker queue and output ingestion are now partially implemented.
-- The full orchestration brain is still incomplete.
+- ODT Guide, local RAG, provider abstraction, Oracle AI roadmap, internal connector catalog, and Intake UX have materially improved.
+- The full orchestration brain, enterprise RAG, live OCI provider validation, production auth/roles, real MCP transport, and policy admin UI are still incomplete.
 
 ## Important Paths
 
@@ -458,4 +647,3 @@ Build:
 - Parallel work requires file partitioning first.
 - Dependency installs are never implicit.
 - Target repo should not be modified during ODT validation unless a real write-approved worker launch is intentionally triggered.
-

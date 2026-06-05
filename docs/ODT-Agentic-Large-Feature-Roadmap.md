@@ -20,9 +20,13 @@ Main workplan update, 2026-06-05: ODT now supports review findings as first-clas
 
 Review-cycle closeout update, 2026-06-05: ODT now has an evidence-derived closeout sequence for rework cycles: Senior Full Stack Dev rework evidence, Reviewer rerun, Build Verifier rerun, and then PR-ready pack. The Review surface shows the closeout state and can open Agent Team with the required next lane selected. PR readiness treats incomplete closeout as a blocker instead of letting a rework cycle silently skip review or verification.
 
+Modern AI IDE pattern update, 2026-06-05: ODT should explicitly adopt the strongest workflow ideas from modern AI development tools while preserving enterprise governance. The repeatable loop is context assembly, repo-aware analysis, plan-first reasoning, human approval, worker execution, live/logged evidence, review, rework, verification, and PR packaging. Cursor-like repo context, Codex-style terminal delegation, Claude/Anthropic-style structured plans, and IDE-agent review loops are useful references. ODT should improve on them with standards gates, approval events, dependency policy, asset evidence, relay items, and PR-ready audit reports.
+
 Future connector update, 2026-06-04: large-feature intake should later support governed Jira2/Jira MCP and GitHub MCP sources. The first version should be read-only: import Jira ticket data, GitHub issues/PR metadata, branches, check summaries, comments, labels, and attachment metadata into ODT evidence. External writes such as Jira comments/status changes, GitHub comments, branch creation, PR updates, labels, or checks must stay behind explicit human approval and connector policy gates.
 
 Future DB awareness update, 2026-06-04: ODT should include governed local database awareness for repositories that expose database config through `database.yml`, `.env.example`, Rails/Spring config, Prisma, Sequelize, Knex, or similar files. The first capability should detect DB configuration candidates and perform metadata-only schema introspection after approval: schemas, tables, columns, indexes, constraints, migrations, and approved row-count summaries. Credentials stay server-side and masked. Business-data queries, exports, DDL, migrations, INSERT/UPDATE/DELETE, and non-local/prod-like connections require explicit approval and DB safety policy checks.
+
+Future identity and access-control update, 2026-06-05: production ODT should support SSO/OIDC/SAML or an approved enterprise identity provider rather than local passwords. The local workbench can continue with local user mode, but enterprise ODT needs role-aware authorization for write approvals, dependency approvals, blocker overrides, worker launch, adapter configuration, DB introspection, sensitive asset viewing, and PR readiness. ODT stores safe identity metadata, roles, and audit events; it must not store provider secrets or user passwords.
 
 ## Purpose
 
@@ -523,3 +527,113 @@ For large tasks, ODT should not promise "AI writes all the code." The stronger p
 > ODT gives developers a monitored AI delivery team that clarifies the requirement, splits the work, controls scope, executes safely, reviews itself, and brings the human back only when there is reviewable evidence.
 
 That is the advanced agentic version of Oracle Developer Twin.
+
+## ODT 2.0 Oracle AI / GenAI Upgrade Roadmap
+
+ODT 2.0 should be positioned as an Oracle-internal-ready agentic SDLC control plane. Oracle AI services should improve analysis, retrieval, guide quality, specialist reviews, asset understanding, and managed agent execution, while ODT remains the authority for workflow state, governance, approvals, evidence, and PR readiness.
+
+### Stage A: Unified Provider Client
+
+Status: in progress in ODT Workbench Next.
+
+Scope:
+
+- Backend-owned `GENAI_PROVIDER=local|oci|openai|ollama`.
+- Support OCI setup aliases such as `OCI_GENAI_REGION`, `OCI_GENAI_BASE_URL`, and `OCI_GENAI_API_KEY`.
+- Local deterministic RAG remains default and fallback.
+- OCI GenAI Chat Completions can power ODT Guide when endpoint, model, compartment, and backend auth are configured.
+- OpenAI-compatible and Ollama adapters follow the same interface.
+- Frontend shows only safe provider readiness and fallback status.
+- Monitoring logs provider, model, latency, tokens, error, and fallback evidence.
+- Preserve detailed setup notes in `docs/ODT-Oracle-AI-Services-Setup-Reference.md`.
+
+Success criteria:
+
+- ODT Guide works without any remote provider.
+- When OCI is configured, ODT retrieves handbook/evidence context and sends it with the user question.
+- If OCI fails, ODT answers locally and records fallback evidence.
+
+### Stage B: Enterprise RAG With Embeddings And Rerank
+
+Scope:
+
+- Replace keyword-only ranking with embedding search and rerank.
+- Index ODT handbook, standards, assignment evidence, worker output, PR packs, Jira text, repo summaries, Confluence excerpts, uploaded text assets, and historical review evidence.
+- Use SQLite/local index for development and Oracle DB 23ai/26ai vector search for enterprise mode.
+- Use OCI Generative AI embeddings and rerank where configured.
+
+Success criteria:
+
+- ODT Guide and Agent Foundry answers become requirement-specific instead of generic.
+- Evidence answers cite the most relevant ODT artifact, requirement, repo analysis, standards finding, or worker output.
+- Retrieval source lists are stored with AI usage evidence.
+
+### Stage C: OCI-Enhanced Specialist Domain Reviews
+
+Scope:
+
+- Agent Foundry domains use the provider client for richer Requirements, UX, Product, Architecture, Development, Code Review, Compliance, CI/CD, QA, and Operations reviews.
+- Missing information and clarification questions become first-class evidence/relay items.
+- Human review remains required before write/delegate actions.
+
+Success criteria:
+
+- Full SDLC and focused-domain reviews are more requirement-specific.
+- Standards impact, recommendations, risks, and required approvals are traceable.
+- No specialist output silently unlocks implementation.
+
+### Stage D: Context Asset Intelligence
+
+Scope:
+
+- Use approved parsers and Oracle AI services to enrich PDFs, DOCX, XLSX/PPTX, screenshots, diagrams, mockups, and audio/video-derived transcripts.
+- OCI Document Understanding can extract text, tables, forms, and structured fields from PDFs and scanned/document-heavy intake.
+- OCI Vision or approved image/document analysis can describe UI mockups, extract OCR-like text, and identify accessibility or layout risks.
+- OCI Speech can support future audio/meeting-note intake.
+- Text-to-speech can support accessibility-oriented walkthroughs.
+- OCI GenAI Files and Vector Stores can hold extracted context for provider-backed retrieval where approved.
+
+Success criteria:
+
+- Uploaded assets produce role, summary, extracted text/visual notes, requirement links, and risk flags.
+- Failed enrichment falls back to stored metadata and manual review.
+- No asset is sent to a provider without configured policy and user/tenant approval.
+
+### Stage E: Managed Agentic Adapter
+
+Scope:
+
+- Evaluate OCI Generative AI Responses, conversations, files, vector stores, containers, and managed agent/tool patterns.
+- Evaluate OCI Generative AI Agents for planner, standards, review, and PR-ready agent-as-tool flows.
+- Keep Codex CLI/Cline/manual adapters available.
+- Add adapter-level approvals for tool use, repo writes, dependency installs, external calls, and terminal actions.
+
+Success criteria:
+
+- ODT can choose Codex CLI, Cline/manual, OCI managed agent, Ollama/local, OpenAI-compatible, or another approved execution adapter.
+- Worker tasks run sequentially or in safe parallel lanes according to the task graph and file-ownership plan.
+- Relay context from Planner, Developer, Reviewer, Verifier, and Rework flows is passed to the next worker.
+
+### Stage F: Enterprise Identity, Policy, Connectors, And DB Awareness
+
+Scope:
+
+- Add SSO/OIDC/SAML integration and role-based authorization.
+- Govern who can approve write scope, override blockers, approve dependencies, edit policy, launch workers, inspect DBs, and perform external writes.
+- Add Jira/GitHub/Confluence/MCP connectors as read-first, approval-gated adapters.
+- Add database awareness from safe local config discovery and approved DB introspection.
+- Add OCI API Gateway plus Functions/OKE as the governed deployment boundary for ODT APIs.
+- Add OCI Object Storage and DB-backed audit storage for raw artifacts, prompts, outputs, approvals, logs, and PR packages.
+- Add memory-service integration for project memory, handoffs, ACL-scoped context, and reusable evidence.
+- Add policy/config assets for enterprise operation:
+  - `server/config/oci-genai.json`
+  - `server/config/oci-ai-services.json`
+  - `server/policies/model-adapters.json`
+  - `server/policies/worker-lanes.json`
+  - `server/policies/pr-readiness.json`
+
+Success criteria:
+
+- ODT records who approved what, under which role and policy version.
+- Team policy can be customized without code changes.
+- External connector writes and DB actions require explicit approval and audit evidence.

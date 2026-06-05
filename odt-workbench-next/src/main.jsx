@@ -360,8 +360,8 @@ function Sidebar({ activePage, onNavigate }) {
       <div className="governance-badge">
         <span className="governance-icon"><HumanGateIcon /></span>
         <span>
-          <strong>Governance Mode</strong>
-          <span>Human-gated. Writes require approval.</span>
+          <strong>Enterprise Governance</strong>
+          <span>Human-approved writes. Audit-ready controls.</span>
         </span>
       </div>
     </aside>
@@ -636,10 +636,28 @@ function IntakePage({ setActivePage, data }) {
       });
       setUploadResult(response);
       setSelectedFiles([]);
-      setNotice(`${response.stored.length} context file(s) copied into the ODT workspace. The target repo was not modified.`);
+      const enrichmentPending = response.stored.filter((asset) => asset.analysisJson?.aiEnrichment?.recommended).length;
+      setNotice(`${response.stored.length} context file(s) copied and analyzed into the ODT workspace. ${enrichmentPending ? `${enrichmentPending} file(s) can use optional AI/parser enrichment later with local fallback.` : 'Local extraction/metadata is enough for these files.'} The target repo was not modified.`);
       await data.refresh();
     } catch (err) {
       setNotice(err.message || 'Upload failed.');
+    } finally {
+      setBusy('');
+    }
+  }
+
+  async function enrichAsset(asset) {
+    setBusy(`enrich:${asset.id}`);
+    setNotice('');
+    try {
+      const response = await postJson(`/api/intake/assets/${asset.id}/enrich`, {
+        assignmentId: 'assignment-local-mvp'
+      });
+      setUploadResult((current) => ({ ...(current || {}), latestEnrichment: response }));
+      setNotice(`${asset.originalName}: ${titleCase(response.status)}. ${response.nextAction}`);
+      await data.refresh();
+    } catch (err) {
+      setNotice(err.message || 'Unable to check asset enrichment.');
     } finally {
       setBusy('');
     }
@@ -674,6 +692,14 @@ function IntakePage({ setActivePage, data }) {
           baseBranch,
           workScope,
           intakeAssets: storedAssets.map((asset) => asset.originalName),
+          intakeAssetEvidence: storedAssets.map((asset) => ({
+            name: asset.originalName,
+            fileType: asset.fileType,
+            role: asset.analysisJson?.role || assetRoleLabel(asset),
+            extractionStatus: asset.analysisJson?.localExtraction?.status || 'not_analyzed',
+            aiEnrichmentStatus: asset.analysisJson?.aiEnrichment?.status || 'not_required',
+            localExcerpt: asset.analysisJson?.localExtraction?.excerpt || ''
+          })),
           plan: plan.plan
         }
       });
@@ -693,12 +719,16 @@ function IntakePage({ setActivePage, data }) {
         eyebrow="Intake"
         title="Capture requirement, Jira, and repo context"
         copy="ODT should not jump directly to coding. It first understands the work, analyzes the repository, identifies gaps, asks clarification questions, and drafts the design and test strategy."
-        actions={<button type="button" className="primary-button" onClick={extract} disabled={Boolean(busy)}>{busy === 'extract' ? 'Analyzing' : 'Extract Structure'}</button>}
       />
       {notice ? <div className="info-banner" role="status">{notice}</div> : null}
-      <div className="two-column wide-left">
-        <Panel title="Project Setup" eyebrow="Start Workspace">
-          <div className="form-grid two">
+      <div className="intake-journey" aria-label="Intake workflow">
+        <IntakeStep
+          number="1"
+          eyebrow="Start Workspace"
+          title="Project workspace"
+          copy="Choose the target repository or project folder first. ODT uses this context in read-only mode until write approval is captured."
+        >
+          <div className="form-grid intake-repo-form">
             <label className="field">
               <span>Repository or project folder</span>
               <div className="field-with-action">
@@ -744,16 +774,39 @@ function IntakePage({ setActivePage, data }) {
             </button>
             <button className="secondary-button" type="button" onClick={analyzeRepo} disabled={busy === 'repo' || !repoPath.trim()}>{busy === 'repo' ? 'Analyzing Repo' : 'Analyze Repo Read-only'}</button>
           </div>
-        </Panel>
-        <Panel title="Repository Signals" eyebrow="Read-only Analysis">
-          <JsonBlock value={repoResult || data.evidence?.repoAnalysis?.[0]?.analysisJson || {
-            status: 'waiting',
-            message: 'Detected framework, package manager, scripts, test tools, folder structure, patterns, and likely impacted files will appear here.'
-          }} />
-        </Panel>
-      </div>
-      <div className="two-column wide-left">
-        <Panel title="Context Vault" eyebrow="Attachments">
+        </IntakeStep>
+
+        <IntakeStep
+          number="2"
+          eyebrow="Requirement Input"
+          title="Work request"
+          copy="Paste the Jira story, requirement, acceptance criteria, API notes, constraints, and expected validation."
+        >
+          <label className="field" htmlFor="work-request-input">
+            <span>Requirement, Jira details, acceptance criteria, constraints, and expectations</span>
+            <textarea
+              id="work-request-input"
+              className="large-input intake-request-input"
+              value={text}
+              onChange={(event) => setText(event.target.value)}
+              placeholder="What do you want to build or change? Include Jira details, target repo path, branch, acceptance criteria, API samples, screenshots, accessibility/security/performance expectations, and any known frontend/backend scope."
+            />
+          </label>
+          <div className="chip-row">
+            {['Requirement', 'Repo Path', 'Jira', 'Frontend', 'Backend', 'Accessibility', 'Security', 'Testing', '3PL'].map((chip) => <span className="chip" key={chip}>{chip}</span>)}
+          </div>
+          <div className="button-row">
+            <button className="secondary-button" type="button" onClick={extract} disabled={Boolean(busy)}>{busy === 'extract' ? 'Analyzing' : 'Extract Structure'}</button>
+            <button className="secondary-button" type="button" onClick={generatePlan} disabled={Boolean(busy)}>{busy === 'plan' ? 'Generating Plan' : 'Generate Plan'}</button>
+          </div>
+        </IntakeStep>
+
+        <IntakeStep
+          number="3"
+          eyebrow="Attachments"
+          title="Context files"
+          copy="Attach supporting mockups, screenshots, documents, spreadsheets, API samples, logs, or notes. ODT copies them into workspace storage as evidence."
+        >
           <div className="upload-policy">
             <StatusBadge label={`Max ${policy.maxFilesPerRequest || 10} files`} tone="info" />
             <StatusBadge label={`${formatBytes(policy.maxFileBytes)} per file`} tone="info" />
@@ -770,67 +823,106 @@ function IntakePage({ setActivePage, data }) {
             />
           </label>
           <p className="muted-copy">Allowed: {(policy.allowedExtensions || []).join(', ') || 'PNG, PDF, DOCX, XLSX, CSV, JSON, YAML, Markdown, and text files'}. Files are copied into ODT workspace storage, not into the selected repo.</p>
-          <SimpleTable
-            columns={['Selected File', 'Size', 'Type']}
-            rows={selectedFiles.map((file) => [file.name, formatBytes(file.size), file.type || 'unknown'])}
-            empty="No files selected yet."
-          />
-          <div className="button-row">
-            <button className="secondary-button" type="button" onClick={uploadFiles} disabled={busy === 'upload' || !selectedFiles.length}>{busy === 'upload' ? 'Copying Files' : 'Copy to ODT Workspace'}</button>
-          </div>
-        </Panel>
-        <Panel title="Stored Context" eyebrow="Evidence">
-          <SimpleTable
-            columns={['File', 'Type', 'Size', 'Action']}
-            rows={storedAssets.map((asset) => [
-              asset.originalName,
-              titleCase(asset.fileType),
-              formatBytes(asset.bytes),
-              <a className="table-button" href={assetFileUrl(asset.id)} target="_blank" rel="noreferrer">Open File</a>
-            ])}
-            empty="No context files copied yet."
-          />
-          {uploadResult?.workspacePath ? <p className="muted-copy">Workspace copy: {uploadResult.workspacePath}</p> : null}
-        </Panel>
-      </div>
-      <div className="two-column wide-left">
-        <Panel title="Work Request" eyebrow="Input">
-          <label className="field" htmlFor="work-request-input">
-            <span>Requirement, Jira details, acceptance criteria, constraints, and expectations</span>
-            <textarea
-              id="work-request-input"
-              className="large-input"
-              value={text}
-              onChange={(event) => setText(event.target.value)}
-              placeholder="What do you want to build or change? Include Jira details, target repo path, branch, acceptance criteria, API samples, screenshots, accessibility/security/performance expectations, and any known frontend/backend scope."
+          <div className="intake-subsection">
+            <div className="section-heading">
+              <strong>Selected files</strong>
+              <span className="muted-copy">Review the local selection before copying files into the ODT workspace.</span>
+            </div>
+            <SimpleTable
+              columns={['Selected File', 'Size', 'Type']}
+              rows={selectedFiles.map((file) => [file.name, formatBytes(file.size), file.type || 'unknown'])}
+              empty="No files selected yet."
             />
-          </label>
-          <div className="chip-row">
-            {['Requirement', 'Repo Path', 'Jira', 'Frontend', 'Backend', 'Accessibility', 'Security', 'Testing', '3PL'].map((chip) => <span className="chip" key={chip}>{chip}</span>)}
+            <div className="button-row">
+              <button className="secondary-button" type="button" onClick={uploadFiles} disabled={busy === 'upload' || !selectedFiles.length}>{busy === 'upload' ? 'Copying Files' : 'Copy to ODT Workspace'}</button>
+            </div>
           </div>
-          <div className="button-row">
-            <button className="secondary-button" type="button" onClick={extract} disabled={Boolean(busy)}>{busy === 'extract' ? 'Analyzing' : 'Extract Structure'}</button>
-            <button className="secondary-button" type="button" onClick={generatePlan} disabled={Boolean(busy)}>{busy === 'plan' ? 'Generating Plan' : 'Generate Plan'}</button>
+          <div className="intake-subsection">
+            <div className="section-heading">
+              <strong>Stored context evidence</strong>
+              <span className="muted-copy">Copied files and enrichment status appear here for review and agent handoff.</span>
+            </div>
+            <SimpleTable
+              columns={['File', 'Context Role', 'Extraction', 'AI/Parser', 'Size', 'Actions']}
+              rows={storedAssets.map((asset) => [
+                asset.originalName,
+                assetRoleLabel(asset),
+                <StatusBadge label={assetExtractionLabel(asset)} tone={assetExtractionTone(asset)} />,
+                <StatusBadge label={assetAiEnrichmentLabel(asset)} tone={assetAiEnrichmentTone(asset)} />,
+                formatBytes(asset.bytes),
+                <div className="button-row">
+                  <a className="table-button" href={assetFileUrl(asset.id)} target="_blank" rel="noreferrer">Open File</a>
+                  <button className="table-button" type="button" onClick={() => enrichAsset(asset)} disabled={busy === `enrich:${asset.id}`}>
+                    {busy === `enrich:${asset.id}` ? 'Checking' : 'Check Enrichment'}
+                  </button>
+                </div>
+              ])}
+              empty="No context files copied yet."
+            />
+            {uploadResult?.workspacePath ? <p className="muted-copy">Workspace copy: {uploadResult.workspacePath}</p> : null}
+            {uploadResult?.latestEnrichment ? <JsonBlock value={uploadResult.latestEnrichment} /> : null}
           </div>
-        </Panel>
-        <Panel title="Extracted Structure" eyebrow="AI Suggestion">
+        </IntakeStep>
+
+        <IntakeStep
+          number="4"
+          eyebrow="Read-only Analysis"
+          title="Repository signals"
+          copy="ODT summarizes framework, package manager, scripts, tests, folder structure, patterns, and likely impacted areas without modifying the repo."
+        >
+          <JsonBlock value={repoResult || data.evidence?.repoAnalysis?.[0]?.analysisJson || {
+            status: 'waiting',
+            message: 'Detected framework, package manager, scripts, test tools, folder structure, patterns, and likely impacted files will appear here.'
+          }} />
+        </IntakeStep>
+
+        <IntakeStep
+          number="5"
+          eyebrow="AI Suggestion"
+          title="Extracted structure"
+          copy="After extraction, ODT shows structured scope, risks, dependencies, acceptance criteria, and clarification gaps for human review."
+        >
           <JsonBlock value={result || {
             status: 'waiting',
             message: 'Extracted scope, risks, dependencies, and acceptance criteria will appear here.'
           }} />
-        </Panel>
+        </IntakeStep>
+
+        <IntakeStep
+          number="6"
+          eyebrow="Gap Analysis"
+          title="Clarification prompts"
+          copy="Use these as quality checks before planning or delegating work."
+        >
+          <ActionList
+            items={[
+              ['Requirement behavior', 'Should the action be synchronous or asynchronous? What happens on partial failure?'],
+              ['Roles and audit', 'Which roles can perform this action, and is audit history required?'],
+              ['UI states', 'What should loading, empty, validation, success, warning, and error states say?'],
+              ['Compliance', 'Does this feature affect VPAT/WCAG/Section 508 reporting, security review, or dependency approval?']
+            ]}
+          />
+        </IntakeStep>
       </div>
-      <Panel title="Clarification Examples" eyebrow="Gap Analysis">
-        <ActionList
-          items={[
-            ['Requirement behavior', 'Should the action be synchronous or asynchronous? What happens on partial failure?'],
-            ['Roles and audit', 'Which roles can perform this action, and is audit history required?'],
-            ['UI states', 'What should loading, empty, validation, success, warning, and error states say?'],
-            ['Compliance', 'Does this feature affect VPAT/WCAG/Section 508 reporting, security review, or dependency approval?']
-          ]}
-        />
-      </Panel>
     </div>
+  );
+}
+
+function IntakeStep({ number, eyebrow, title, copy, children }) {
+  return (
+    <section className="intake-step">
+      <div className="intake-step-head">
+        <span className="intake-step-number">{number}</span>
+        <div>
+          <span className="eyebrow">{eyebrow}</span>
+          <h3>{title}</h3>
+          {copy ? <p>{copy}</p> : null}
+        </div>
+      </div>
+      <div className="intake-step-body">
+        {children}
+      </div>
+    </section>
   );
 }
 
@@ -1089,6 +1181,8 @@ function StandardsPage({ setActivePage, data }) {
   const failedRecordedTests = implementationEvidence.flatMap((record) => record.tests || []).filter((test) => test.status === 'failed');
   const prReports = evidence.prReadinessReports || [];
   const flexibility = data.standards?.flexibility;
+  const standardsSources = data.standards?.registry?.sources || [];
+  const standardsConfigSource = standardsSources.find((source) => source.id === 'standards-config');
   const effectiveGateStatus = gate.implementationBlocked
     ? 'BLOCKED_BY_REVIEW'
     : writeApproved && !blockers.length
@@ -1321,9 +1415,13 @@ function StandardsPage({ setActivePage, data }) {
               ['Warnings', flexibility?.nonCriticalWarningsCanBeApprovedWithNotes ? 'Approve with notes' : 'Resolve only'],
               ['Blockers', hardSafetyBlockers.length ? `${hardSafetyBlockers.length} hard safety blocker(s)` : reviewedBlockers.length ? gate.blockerOverride ? 'Reviewed override captured' : 'Review or override required' : 'None open'],
               ['Review decision', gate.implementationBlocked ? 'Implementation blocked' : 'No active block'],
-              ['Standards version', data.standards?.registry?.standardsVersion || 'odt-baseline-1.0']
+              ['Standards version', data.standards?.registry?.standardsVersion || 'odt-baseline-1.0'],
+              ['Policy source', standardsConfigSource?.path || 'server/standards/odt-standards.json'],
+              ['Source documents', standardsSources.length || 0],
+              ['Customization path', 'Config now, Admin UI later']
             ]}
           />
+          <p className="muted-copy">Teams can tune standards through the standards registry and source documents, then rerun Standards Check. Policy changes should be versioned, reviewed, and auditable; hard safety blockers still require code/policy changes, not casual overrides.</p>
           <label className="field" htmlFor="standards-approval-notes">
             <span>Approval or override notes</span>
             <textarea
@@ -2322,6 +2420,10 @@ function AgentTeamPage({ setActivePage, data }) {
 	                ['Created', formatTime(selectedWorkerRun.createdAt)]
 	              ]}
 	            />
+            <div className="worker-detail-summary">
+              <span className="eyebrow">Worker Evidence Summary</span>
+              <WorkerRunOutput run={selectedWorkerRun} />
+            </div>
             <SimpleTable
               columns={['Artifact', 'Path']}
               rows={[
@@ -3250,10 +3352,12 @@ function ArtifactsPage({ data }) {
       <Panel title={selectedArtifact.title} eyebrow="Artifact Detail">
         {selectedArtifact.title === 'Context Vault' && assets.length ? (
           <SimpleTable
-            columns={['File', 'Type', 'Size', 'Action']}
+            columns={['File', 'Context Role', 'Extraction', 'AI/Parser', 'Size', 'Action']}
             rows={assets.map((asset) => [
               asset.originalName,
-              titleCase(asset.fileType),
+              assetRoleLabel(asset),
+              <StatusBadge label={assetExtractionLabel(asset)} tone={assetExtractionTone(asset)} />,
+              <StatusBadge label={assetAiEnrichmentLabel(asset)} tone={assetAiEnrichmentTone(asset)} />,
               formatBytes(asset.bytes),
               <a className="table-button" href={assetFileUrl(asset.id)} target="_blank" rel="noreferrer">Open File</a>
             ])}
@@ -3273,7 +3377,7 @@ function ArtifactsPage({ data }) {
 function GuidePage({ setActivePage, data }) {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: 'I can summarize ODT work, extract structure, generate tests, find risks, and explain what is safe to run next.' }
+    { role: 'assistant', content: 'Hi, I am your ODT platform coach. I can answer quick everyday questions, explain how to use ODT, and use workbench evidence when you ask about the active SDLC task.' }
   ]);
   const [busy, setBusy] = useState(false);
   const latestUsage = data.usage.events?.[0];
@@ -3292,7 +3396,16 @@ function GuidePage({ setActivePage, data }) {
         sessionId: 'odt-guide-ui',
         assignmentId: 'assignment-local-mvp'
       });
-      setMessages((current) => [...current, { role: 'assistant', content: String(response.content || '') }]);
+      setMessages((current) => [...current, {
+        role: 'assistant',
+        content: String(response.content || ''),
+        meta: {
+          provider: response.provider || 'local',
+          model: response.model || 'local-guide-model',
+          fallbackUsed: Boolean(response.fallbackUsed),
+          error: response.error || null
+        }
+      }]);
       await data.refresh();
     } catch (err) {
       setMessages((current) => [...current, { role: 'assistant', content: `I could not reach the guide backend: ${err.message}` }]);
@@ -3305,8 +3418,8 @@ function GuidePage({ setActivePage, data }) {
     <div className="page-stack">
       <PageHeader
         eyebrow="ODT Guide"
-        title="Ask, reason, summarize, and act carefully"
-        copy="The guide uses backend-governed AI. Responses are logged for usage, latency, provider, model, and fallback visibility."
+        title="Platform coach and evidence guide"
+        copy="Ask how to use ODT, what a button does, why a workflow is gated, or what the active assignment needs next."
       />
       <div className="guide-layout">
         <section className="chat-panel">
@@ -3320,11 +3433,17 @@ function GuidePage({ setActivePage, data }) {
               <div className={`message ${message.role}`} key={`${message.role}-${index}`}>
                 <span>{message.role === 'user' ? 'You' : 'ODT Guide'}</span>
                 <p>{message.content}</p>
+                {message.meta ? (
+                  <div className="message-meta">
+                    <small>{message.meta.provider} / {message.meta.model}</small>
+                    {message.meta.fallbackUsed ? <StatusBadge label="Fallback" tone="warning" /> : <StatusBadge label="Provider" tone="success" />}
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>
           <form className="chat-input" onSubmit={(event) => { event.preventDefault(); send(); }}>
-            <input aria-label="Ask ODT Guide" value={input} onChange={(event) => setInput(event.target.value)} placeholder="Ask ODT Guide..." />
+            <input aria-label="Ask ODT Guide" value={input} onChange={(event) => setInput(event.target.value)} placeholder="Ask how to use ODT, what a button does, or what is blocking this task..." />
             <button className="primary-button" type="submit" disabled={busy || !input.trim()}>{busy ? 'Thinking' : 'Send'}</button>
           </form>
         </section>
@@ -3332,11 +3451,15 @@ function GuidePage({ setActivePage, data }) {
           <Panel title="Current Context" eyebrow="Guide Context">
             <InfoList
               items={[
-                ['Provider', data.snapshot?.ai?.provider || 'local'],
+                ['Configured provider', data.snapshot?.ai?.provider || 'local'],
+                ['Provider ready', data.snapshot?.ai?.providerReady ? 'Ready' : 'Local fallback'],
+                ['Active model', data.snapshot?.ai?.model || 'local-guide-model'],
+                ['Guide mode', 'Handbook + evidence-aware'],
                 ['Prompt template', 'guide-chat-v1'],
                 ['Requests today', data.usage.summary?.requestsToday || 0],
                 ['Latest tokens', latestUsage?.totalTokens || 0],
-                ['Latest latency', latestUsage ? `${latestUsage.latencyMs} ms` : 'No requests yet']
+                ['Latest latency', latestUsage ? `${latestUsage.latencyMs} ms` : 'No requests yet'],
+                ['Latest fallback', latestUsage?.fallbackUsed ? 'Yes' : 'No']
               ]}
             />
             <div className="button-row vertical">
@@ -3407,7 +3530,7 @@ function MonitoringPage({ data }) {
       </div>
       <Panel title="Usage Events" eyebrow="Audit">
         <SimpleTable
-          columns={['Time', 'Type', 'Provider', 'Model', 'Tokens', 'Latency', 'Status']}
+          columns={['Time', 'Type', 'Provider', 'Model', 'Tokens', 'Latency', 'Fallback', 'Status']}
           rows={events.map((event) => [
             formatTime(event.createdAt),
             event.requestType,
@@ -3415,6 +3538,7 @@ function MonitoringPage({ data }) {
             event.model,
             event.totalTokens,
             `${event.latencyMs} ms`,
+            event.fallbackUsed ? <StatusBadge label="Yes" tone="warning" /> : <StatusBadge label="No" tone="success" />,
             <StatusBadge label={titleCase(event.status)} tone={toneFor(event.status)} />
           ])}
           empty="No AI usage events yet. Ask ODT Guide a question to create one."
@@ -3428,6 +3552,39 @@ function SettingsPage({ data }) {
   const ai = data.settings?.ai || data.snapshot?.ai || {};
   const connectors = data.settings?.connectors || [];
   const executionAgent = getStoredSetting(data, 'executionAgent', 'codex');
+  const [connectorNotice, setConnectorNotice] = useState('');
+  const [busyConnector, setBusyConnector] = useState('');
+  const readyConnectors = connectors.filter((connector) => connector.enabled).length;
+  const configuredConnectors = connectors.filter((connector) => connector.featureEnabled || connector.serverConfigured).length;
+
+  async function testConnectorRead(connector) {
+    setBusyConnector(connector.id);
+    setConnectorNotice('');
+    try {
+      const response = await fetch(`${API_BASE}/api/connectors/query`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          connectorId: connector.id,
+          action: 'readiness-test',
+          mode: 'read',
+          assignmentId: 'assignment-local-mvp'
+        })
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        setConnectorNotice(`${connector.label}: ${result.reason || 'Read gate blocked.'}`);
+      } else {
+        setConnectorNotice(`${connector.label}: read gate passed. ${result.note || 'Connector gateway is governed.'}`);
+      }
+      await data.refresh();
+    } catch (err) {
+      setConnectorNotice(`${connector.label}: ${err.message || 'Unable to test connector.'}`);
+    } finally {
+      setBusyConnector('');
+    }
+  }
+
   return (
     <div className="page-stack">
       <PageHeader
@@ -3440,9 +3597,16 @@ function SettingsPage({ data }) {
           <InfoList
             items={[
               ['Mode', ai.provider || 'local'],
+              ['Provider ready', ai.providerReady ? 'Ready' : 'Local fallback'],
+              ['Provider status', ai.providerStatus || 'Local deterministic RAG is active.'],
+              ['Active model', ai.model || 'local-guide-model'],
               ['OCI region', ai.region || 'not configured'],
               ['GenAI endpoint', ai.genAiEndpointConfigured ? 'Configured' : 'Missing'],
               ['Compartment', ai.compartmentConfigured ? 'Configured server-side' : 'Missing'],
+              ['OCI auth', ai.ociAuthConfigured ? 'Configured server-side' : 'Missing'],
+              ['OCI OpenAI-compatible', ai.ociOpenAiCompatible ? 'Enabled' : 'Not enabled'],
+              ['OpenAI key', ai.openAiApiKeyConfigured ? 'Configured server-side' : 'Missing'],
+              ['Ollama endpoint', ai.ollamaBaseUrlConfigured ? 'Configured server-side' : 'Missing'],
               ['Chat model', ai.chatModelConfigured ? 'Configured server-side' : 'Local fallback'],
               ['Embed model', ai.embedModelConfigured ? 'Configured server-side' : 'Local placeholder'],
               ['Agent endpoint', ai.agentEndpointConfigured ? 'Configured' : 'Disabled'],
@@ -3476,17 +3640,54 @@ function SettingsPage({ data }) {
         />
         <p className="muted-copy">{data.uploadPolicy?.storageNote || 'Uploaded context is copied into the ODT workspace and target repos remain untouched.'}</p>
       </Panel>
-      <Panel title="MCP Integrations" eyebrow="Optional Connectors">
-        <SimpleTable
-          columns={['Connector', 'Status', 'Mode', 'Write Actions', 'Destructive Actions']}
-          rows={connectors.map((connector) => [
-            connector.label,
-            <StatusBadge label={connector.enabled ? 'Enabled' : 'Disabled'} tone={connector.enabled ? 'success' : 'neutral'} />,
-            connector.readOnly ? 'Read-only' : 'Read/write',
-            connector.requireWriteApproval ? 'Approval required' : 'Not allowed',
-            connector.destructiveBlocked ? 'Blocked' : 'Allowed'
-          ])}
-        />
+      <Panel title="Connector Hub" eyebrow="Oracle Internal Readiness">
+        <div className="connector-summary">
+          <StatusBadge label={`${readyConnectors}/${connectors.length} ready`} tone={readyConnectors ? 'success' : 'warning'} />
+          <StatusBadge label={`${configuredConnectors} partially configured`} tone={configuredConnectors ? 'info' : 'neutral'} />
+          <StatusBadge label="Writes approval-gated" tone="warning" />
+          <StatusBadge label="Destructive blocked" tone="danger" />
+        </div>
+        <p className="muted-copy">ODT treats internal connectors as read-first SDLC evidence sources. A connector is ready only when global MCP, the connector flag, and its server name are configured. Write-capable actions still require human approval.</p>
+        {connectorNotice ? <div className="info-banner" role="status">{connectorNotice}</div> : null}
+        <div className="connector-hub-grid">
+          {connectors.map((connector) => (
+            <section className="connector-card" key={connector.id}>
+              <div className="connector-card-head">
+                <div>
+                  <span className="eyebrow">{connector.phaseFit || 'Governed connector'}</span>
+                  <h4>{connector.label}</h4>
+                </div>
+                <StatusBadge label={connector.enabled ? 'Ready' : titleCase(connector.readiness || 'Disabled')} tone={connector.enabled ? 'success' : 'warning'} />
+              </div>
+              <p>{connector.description || 'Governed internal connector.'}</p>
+              <InfoList
+                items={[
+                  ['Global MCP', connector.mcpEnabled ? 'Enabled' : 'Missing ENABLE_MCP'],
+                  ['Connector flag', connector.featureEnabled ? 'Enabled' : 'Missing connector flag'],
+                  ['Server', connector.serverConfigured ? 'Configured' : 'Missing server name'],
+                  ['Mode', connector.readOnly ? 'Read-only' : 'Read/write'],
+                  ['Write actions', connector.requireWriteApproval ? 'Approval required' : 'Not allowed']
+                ]}
+              />
+              {connector.missingConfig?.length ? (
+                <div className="missing-config">
+                  <strong>Missing config</strong>
+                  <span>{connector.missingConfig.join(', ')}</span>
+                </div>
+              ) : null}
+              <div className="button-row">
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => testConnectorRead(connector)}
+                  disabled={busyConnector === connector.id}
+                >
+                  {busyConnector === connector.id ? 'Testing' : 'Test Read Gate'}
+                </button>
+              </div>
+            </section>
+          ))}
+        </div>
       </Panel>
     </div>
   );
@@ -3518,10 +3719,21 @@ function MetricCard({ label, value, detail, tone }) {
 
 function WorkerRunOutput({ run }) {
   const questions = Array.isArray(run.questions) ? run.questions : [];
-  const summary = run.output?.summary || run.responseFile || 'Waiting for worker output.';
+  const chips = workerEvidenceChips(run);
+  const summary = cleanWorkerSummary(run.output?.summary || run.responseFile || 'Waiting for worker output.');
   return (
     <div className="worker-output-cell">
       <p>{summary}</p>
+      {chips.length ? (
+        <div className="worker-evidence-chip-row" aria-label={`${run.workerRoleLabel || 'Worker'} evidence summary`}>
+          {chips.map((chip) => (
+            <span className={`worker-evidence-chip ${chip.tone || 'neutral'}`} key={`${run.id}-${chip.label}`}>
+              <strong>{chip.label}</strong>
+              {chip.value}
+            </span>
+          ))}
+        </div>
+      ) : null}
       {questions.length ? (
         <ul>
           {questions.slice(0, 3).map((item, index) => (
@@ -3533,6 +3745,65 @@ function WorkerRunOutput({ run }) {
       ) : null}
     </div>
   );
+}
+
+function cleanWorkerSummary(value = '') {
+  const text = String(value || '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\*\*/g, '')
+    .replace(/^#+\s*/gm, '')
+    .replace(/\s*[-*]\s+/g, ' - ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return text.length > 520 ? `${text.slice(0, 520).trim()}...` : text;
+}
+
+function workerEvidenceChips(run = {}) {
+  const output = run.output || {};
+  const questions = Array.isArray(run.questions) ? run.questions : [];
+  const reviewerFindings = Array.isArray(output.reviewerFindings) ? output.reviewerFindings : [];
+  const blockerFindings = reviewerFindings.filter((finding) => ['blocker', 'warning'].includes(finding.severity));
+  const chips = [];
+  if (output.responseBytes || output.rawText) {
+    chips.push({
+      label: 'Response',
+      value: output.responseBytes ? formatBytes(output.responseBytes) : 'Captured',
+      tone: 'success'
+    });
+  }
+  if (output.logBytes || output.logTail) {
+    chips.push({
+      label: 'Log',
+      value: output.logBytes ? formatBytes(output.logBytes) : 'Tail captured',
+      tone: 'info'
+    });
+  }
+  if (reviewerFindings.length) {
+    chips.push({
+      label: 'Review',
+      value: blockerFindings.length ? `${blockerFindings.length} action item${blockerFindings.length === 1 ? '' : 's'}` : `${reviewerFindings.length} note${reviewerFindings.length === 1 ? '' : 's'}`,
+      tone: blockerFindings.length ? 'warning' : 'info'
+    });
+  }
+  if (questions.length) {
+    chips.push({
+      label: 'Relay',
+      value: `${questions.length} question${questions.length === 1 ? '' : 's'}`,
+      tone: 'warning'
+    });
+  }
+  if (output.rawTextTruncated) {
+    chips.push({
+      label: 'View',
+      value: 'Compacted preview',
+      tone: 'neutral'
+    });
+  }
+  if (!chips.length && ['completed', 'response_ready', 'needs_input'].includes(String(run.status || '').toLowerCase())) {
+    chips.push({ label: 'Evidence', value: 'Ready to ingest', tone: 'info' });
+  }
+  return chips;
 }
 
 function CurrentWorkBrief({ data, onNavigate, compact = false }) {
@@ -4153,19 +4424,20 @@ function isClarificationOpen(item) {
 function contextualGuidePrompts(brief) {
   if (brief?.hasRealWork && /assessment preview/i.test(brief.title)) {
     return [
-      'Summarize the Assessment Preview implementation plan',
+      'How do I use ODT for this task?',
+      'What does Launch Worker do?',
+      'Where are we now?',
+      'What is still blocking PR readiness?',
       'Explain the persisted DB preview rule',
-      'List update API payload edge cases',
-      'Generate targeted Jest test steps',
-      'What can Codex implement next safely?'
+      'What tests were run?'
     ];
   }
   return [
-    'Summarize this requirement',
-    'Extract API contract',
-    'Generate test cases',
-    'Find risks',
-    'Create implementation checklist'
+    'How do I use ODT?',
+    'What are the SDLC steps?',
+    'What does Launch Worker do?',
+    'Why is Delegate disabled?',
+    'What does Standards page do?'
   ];
 }
 
@@ -4349,6 +4621,51 @@ function buildStandardsRow(label, findings, categories, fallbackDetail) {
     ? matches.map((finding) => finding.message).join(' ')
     : fallbackDetail;
   return { label, status, detail };
+}
+
+function assetRoleLabel(asset) {
+  const role = asset?.analysisJson?.role || '';
+  if (role) return role.split('.')[0];
+  const map = {
+    'mockup-image': 'Visual mockup',
+    pdf: 'Requirement document',
+    document: 'Requirement document',
+    spreadsheet: 'Structured data',
+    'api-sample': 'API sample',
+    notes: 'Notes',
+    presentation: 'Presentation',
+    'context-file': 'Context file'
+  };
+  return map[asset?.fileType] || titleCase(asset?.fileType || 'Context file');
+}
+
+function assetExtractionLabel(asset) {
+  const status = asset?.analysisJson?.localExtraction?.status || 'not_analyzed';
+  if (status === 'extracted') return 'Local Excerpt';
+  if (status === 'empty') return 'Empty';
+  if (status === 'not_extracted') return 'Stored Only';
+  return titleCase(status);
+}
+
+function assetExtractionTone(asset) {
+  const status = asset?.analysisJson?.localExtraction?.status || 'not_analyzed';
+  if (status === 'extracted') return 'success';
+  if (status === 'not_extracted') return 'warning';
+  return 'neutral';
+}
+
+function assetAiEnrichmentLabel(asset) {
+  const enrichment = asset?.analysisJson?.aiEnrichment || {};
+  if (!enrichment.recommended) return 'Not Required';
+  if (enrichment.status === 'optional_not_run') return 'Optional';
+  return titleCase(enrichment.status || 'Optional');
+}
+
+function assetAiEnrichmentTone(asset) {
+  const enrichment = asset?.analysisJson?.aiEnrichment || {};
+  if (!enrichment.recommended) return 'neutral';
+  if (enrichment.status === 'not_required') return 'success';
+  return 'info';
 }
 
 function formatBytes(value) {

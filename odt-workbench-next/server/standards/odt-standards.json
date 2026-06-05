@@ -47,6 +47,31 @@
     "overridableAreas": ["theme", "page titles", "UI wording", "test commands", "coverage thresholds", "review templates"],
     "hardBlockers": ["frontend secrets", "destructive actions", "unapproved dependency installs", "unknown or disallowed licenses", "write actions without approval"]
   },
+  "policyCustomization": {
+    "supportedToday": "Edit standards registry JSON and source Markdown documents, then rerun Standards Check.",
+    "futureAdminUi": true,
+    "versioningRequired": true,
+    "reviewRequired": true,
+    "auditableChangesRequired": true,
+    "customizableAreas": [
+      "accessibility required topics",
+      "dependency license preferences",
+      "security checks",
+      "testing expectations",
+      "UX guidance",
+      "override policy",
+      "approval gates",
+      "worker lanes",
+      "PR readiness checklist"
+    ],
+    "nonOverridableSafetyRules": [
+      "no frontend secrets",
+      "no destructive actions",
+      "no dependency installs without package-specific approval",
+      "no write actions without approval",
+      "no external writes without approval"
+    ]
+  },
   "agentPolicy": {
     "defaultMode": "read-only",
     "requireApprovalBeforeWrite": true,

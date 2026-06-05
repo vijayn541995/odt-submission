@@ -1,5 +1,6 @@
 import { createServer } from 'node:http';
 import { execFile, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { chmodSync, existsSync, mkdirSync, openSync, closeSync, readSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -43,16 +44,51 @@ const uploadPolicy = {
   ]
 };
 
+function parseBooleanEnv(value, fallback = false) {
+  if (value === undefined || value === null || value === '') return fallback;
+  return ['1', 'true', 'yes', 'on'].includes(String(value).trim().toLowerCase());
+}
+
+function normalizeGenAiProvider(value) {
+  const normalized = String(value || 'local').trim().toLowerCase();
+  if (['openai', 'oci', 'ollama', 'local'].includes(normalized)) return normalized;
+  if (['oci-genai', 'oracle', 'oracle-genai', 'oca'].includes(normalized)) return 'oci';
+  if (['none', 'mock', 'deterministic'].includes(normalized)) return 'local';
+  return 'local';
+}
+
+const genAiProvider = normalizeGenAiProvider(process.env.GENAI_PROVIDER || process.env.ODT_AI_PROVIDER || 'local');
+const configuredChatModel = process.env.GENAI_MODEL
+  || process.env.ODT_AI_MODEL
+  || process.env.OPENAI_MODEL
+  || process.env.OCI_GENAI_CHAT_MODEL_ID
+  || process.env.OLLAMA_MODEL
+  || '';
+
 const aiConfig = {
-  provider: process.env.ODT_AI_PROVIDER || 'local',
+  provider: genAiProvider,
   environment: process.env.ODT_ENVIRONMENT || 'Local Dev',
-  region: process.env.OCI_REGION || '',
-  genAiEndpointConfigured: Boolean(process.env.OCI_GENAI_ENDPOINT),
-  compartmentConfigured: Boolean(process.env.OCI_COMPARTMENT_ID),
-  chatModelConfigured: Boolean(process.env.OCI_GENAI_CHAT_MODEL_ID),
-  embedModelConfigured: Boolean(process.env.OCI_GENAI_EMBED_MODEL_ID),
+  model: configuredChatModel || (genAiProvider === 'local' ? 'local-guide-model' : ''),
+  region: process.env.OCI_GENAI_REGION || process.env.OCI_REGION || '',
+  genAiEndpoint: process.env.OCI_GENAI_ENDPOINT || process.env.OCI_GENAI_BASE_URL || process.env.ODT_OCI_GENAI_ENDPOINT || '',
+  ociOpenAiBaseUrl: process.env.OCI_GENAI_OPENAI_BASE_URL
+    || process.env.OCI_GENAI_BASE_URL
+    || process.env.OCI_OPENAI_BASE_URL
+    || process.env.OCI_GENAI_ENDPOINT
+    || process.env.ODT_OCI_GENAI_ENDPOINT
+    || '',
+  compartmentId: process.env.OCI_COMPARTMENT_OCID || process.env.OCI_COMPARTMENT_ID || '',
+  openAiBaseUrl: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
+  openAiApiKey: process.env.OPENAI_API_KEY || '',
+  ollamaBaseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
+  ociBearerToken: process.env.OCI_GENAI_BEARER_TOKEN || process.env.OCI_GENAI_API_KEY || process.env.OCI_BEARER_TOKEN || '',
+  ociOpenAiCompatible: parseBooleanEnv(process.env.OCI_GENAI_OPENAI_COMPATIBLE || process.env.OCI_OPENAI_COMPATIBLE, false),
+  genAiEndpointConfigured: Boolean(process.env.OCI_GENAI_ENDPOINT || process.env.ODT_OCI_GENAI_ENDPOINT),
+  compartmentConfigured: Boolean(process.env.OCI_COMPARTMENT_OCID || process.env.OCI_COMPARTMENT_ID),
+  chatModelConfigured: Boolean(configuredChatModel),
+  embedModelConfigured: Boolean(process.env.OCI_GENAI_EMBED_MODEL_ID || process.env.GENAI_EMBED_MODEL),
   authMode: process.env.OCI_AUTH_MODE || 'not configured',
-  configProfileConfigured: Boolean(process.env.OCI_CONFIG_PROFILE),
+  configProfileConfigured: Boolean(process.env.OCI_CONFIG_PROFILE || process.env.OCI_CONFIG_FILE),
   agentEndpointConfigured: Boolean(process.env.OCI_GENAI_AGENT_ENDPOINT),
   ragEnabled: process.env.ODT_RAG_ENABLED !== 'false',
   ragMode: 'local-keyword-rag',
@@ -60,35 +96,105 @@ const aiConfig = {
   limits
 };
 
+function optionalMcpConnector({
+  id,
+  label,
+  enabledEnv,
+  readOnlyEnv,
+  serverNameEnv,
+  phaseFit,
+  description
+}) {
+  return {
+    id,
+    label,
+    enabledEnv,
+    readOnlyEnv,
+    serverNameEnv,
+    enabled: process.env[enabledEnv] === 'true',
+    readOnly: process.env[readOnlyEnv] !== 'false',
+    serverName: process.env[serverNameEnv] || '',
+    phaseFit,
+    description,
+    requireWriteApproval: process.env.MCP_REQUIRE_APPROVAL_FOR_WRITE !== 'false',
+    destructiveBlocked: true
+  };
+}
+
 const connectorConfig = {
   mcpEnabled: process.env.ENABLE_MCP === 'true',
-  jira: {
+  jira: optionalMcpConnector({
     id: 'jira',
-    label: 'Jira MCP',
-    enabled: process.env.ENABLE_JIRA_MCP === 'true',
-    readOnly: process.env.JIRA_MCP_READ_ONLY !== 'false',
-    serverName: process.env.JIRA_MCP_SERVER_NAME || '',
-    requireWriteApproval: process.env.MCP_REQUIRE_APPROVAL_FOR_WRITE !== 'false',
-    destructiveBlocked: true
-  },
-  knowledge: {
-    id: 'knowledge',
-    label: 'Knowledge MCP',
-    enabled: process.env.ENABLE_KNOWLEDGE_MCP === 'true',
-    readOnly: process.env.KNOWLEDGE_MCP_READ_ONLY !== 'false',
-    serverName: process.env.KNOWLEDGE_MCP_SERVER_NAME || '',
-    requireWriteApproval: process.env.MCP_REQUIRE_APPROVAL_FOR_WRITE !== 'false',
-    destructiveBlocked: true
-  },
-  git: {
-    id: 'git',
-    label: 'Git/File MCP',
-    enabled: process.env.ENABLE_GIT_MCP === 'true',
-    readOnly: process.env.GIT_MCP_READ_ONLY !== 'false',
-    serverName: process.env.GIT_MCP_SERVER_NAME || '',
-    requireWriteApproval: process.env.MCP_REQUIRE_APPROVAL_FOR_WRITE !== 'false',
-    destructiveBlocked: true
-  },
+    label: 'Jira SD MCP',
+    enabledEnv: 'ENABLE_JIRA_MCP',
+    readOnlyEnv: 'JIRA_MCP_READ_ONLY',
+    serverNameEnv: 'JIRA_MCP_SERVER_NAME',
+    phaseFit: 'Intake, clarify, review',
+    description: 'Issue/request details, queues, SLA, attachments, and requirement context.'
+  }),
+  bitbucket: optionalMcpConnector({
+    id: 'bitbucket',
+    label: 'Bitbucket MCP',
+    enabledEnv: 'ENABLE_BITBUCKET_MCP',
+    readOnlyEnv: 'BITBUCKET_MCP_READ_ONLY',
+    serverNameEnv: 'BITBUCKET_MCP_SERVER_NAME',
+    phaseFit: 'Analyze, ingest, review, PR',
+    description: 'Repo/branch/PR browsing, diffs, comments, PR creation, merge/decline where approved.'
+  }),
+  scm: optionalMcpConnector({
+    id: 'scm',
+    label: 'SCM MCP',
+    enabledEnv: 'ENABLE_SCM_MCP',
+    readOnlyEnv: 'SCM_MCP_READ_ONLY',
+    serverNameEnv: 'SCM_MCP_SERVER_NAME',
+    phaseFit: 'Analyze, delegate, review',
+    description: 'Local git and SCM actions for branch/file analysis, implementation support, and PR comments.'
+  }),
+  buildservice: optionalMcpConnector({
+    id: 'buildservice',
+    label: 'Build Service MCP',
+    enabledEnv: 'ENABLE_BUILDSERVICE_MCP',
+    readOnlyEnv: 'BUILDSERVICE_MCP_READ_ONLY',
+    serverNameEnv: 'BUILDSERVICE_MCP_SERVER_NAME',
+    phaseFit: 'Verify, ingest, PR readiness',
+    description: 'Build status, logs, artifacts, and approved build triggers.'
+  }),
+  devops: optionalMcpConnector({
+    id: 'devops',
+    label: 'DevOps MCP',
+    enabledEnv: 'ENABLE_DEVOPS_MCP',
+    readOnlyEnv: 'DEVOPS_MCP_READ_ONLY',
+    serverNameEnv: 'DEVOPS_MCP_SERVER_NAME',
+    phaseFit: 'Govern, operate, release',
+    description: 'Operational context such as alarms, logs, runbooks, services, regions, and release metadata.'
+  }),
+  memory: optionalMcpConnector({
+    id: 'memory',
+    label: 'Memory Service MCP',
+    enabledEnv: 'ENABLE_MEMORY_MCP',
+    readOnlyEnv: 'MEMORY_MCP_READ_ONLY',
+    serverNameEnv: 'MEMORY_MCP_SERVER_NAME',
+    phaseFit: 'Clarify, plan, relay, evidence',
+    description: 'Shared persistent context, namespaces, ACLs, handoffs, and project memory.'
+  }),
+  sks: optionalMcpConnector({
+    id: 'sks',
+    label: 'SKS Knowledge MCP',
+    enabledEnv: 'ENABLE_SKS_MCP',
+    readOnlyEnv: 'SKS_MCP_READ_ONLY',
+    serverNameEnv: 'SKS_MCP_SERVER_NAME',
+    phaseFit: 'Analyze, govern, guide',
+    description: 'Internal standards, architecture, SDLC, and knowledge retrieval.'
+  }),
+  askoracle: optionalMcpConnector({
+    id: 'askoracle',
+    label: 'Ask Oracle Knowledge',
+    enabledEnv: 'ENABLE_ASK_ORACLE',
+    readOnlyEnv: 'ASK_ORACLE_READ_ONLY',
+    serverNameEnv: 'ASK_ORACLE_SERVER_NAME',
+    phaseFit: 'Clarify, design, guide',
+    description: 'Ask Oracle knowledge collections for internal context retrieval.'
+  }),
   maxResults: Number(process.env.MCP_MAX_RESULTS || 10),
   timeoutMs: Number(process.env.MCP_TIMEOUT_MS || 30000)
 };
@@ -335,6 +441,7 @@ db.exec(`
     file_type TEXT NOT NULL,
     bytes INTEGER NOT NULL,
     source_kind TEXT NOT NULL,
+    analysis_json TEXT NOT NULL DEFAULT '{}',
     status TEXT NOT NULL,
     created_at TEXT NOT NULL
   );
@@ -403,6 +510,15 @@ db.exec(`
 		    resolved_at TEXT
 		  );
 		`);
+
+function ensureColumn(tableName, columnName, definition) {
+  const columns = db.prepare(`PRAGMA table_info(${tableName})`).all().map((column) => column.name);
+  if (!columns.includes(columnName)) {
+    db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`);
+  }
+}
+
+ensureColumn('intake_assets', 'analysis_json', "TEXT NOT NULL DEFAULT '{}'");
 
 const statements = {
   insertAssignment: db.prepare(`
@@ -694,13 +810,14 @@ const statements = {
   insertIntakeAsset: db.prepare(`
     INSERT INTO intake_assets (
       id, assignment_id, original_name, stored_name, stored_path, mime_type, file_type, bytes,
-      source_kind, status, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      source_kind, analysis_json, status, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `),
   selectIntakeAssetsByAssignment: db.prepare(`
     SELECT id, assignment_id AS assignmentId, original_name AS originalName,
       stored_name AS storedName, stored_path AS storedPath, mime_type AS mimeType,
-      file_type AS fileType, bytes, source_kind AS sourceKind, status, created_at AS createdAt
+      file_type AS fileType, bytes, source_kind AS sourceKind, analysis_json AS analysisJson,
+      status, created_at AS createdAt
     FROM intake_assets
     WHERE assignment_id = ?
     ORDER BY created_at DESC
@@ -708,8 +825,14 @@ const statements = {
   selectIntakeAssetById: db.prepare(`
     SELECT id, assignment_id AS assignmentId, original_name AS originalName,
       stored_name AS storedName, stored_path AS storedPath, mime_type AS mimeType,
-      file_type AS fileType, bytes, source_kind AS sourceKind, status, created_at AS createdAt
+      file_type AS fileType, bytes, source_kind AS sourceKind, analysis_json AS analysisJson,
+      status, created_at AS createdAt
     FROM intake_assets
+    WHERE id = ?
+  `),
+  updateIntakeAssetAnalysis: db.prepare(`
+    UPDATE intake_assets
+    SET analysis_json = ?
     WHERE id = ?
   `),
   insertAgentFoundryRun: db.prepare(`
@@ -975,15 +1098,25 @@ async function buildSnapshot() {
 }
 
 function safeAiConfig() {
+  const provider = createGenAiProvider(aiConfig);
   return {
     provider: aiConfig.provider,
+    activeProvider: provider.id,
     executionAgent: getStoredSetting('executionAgent', 'codex'),
     environment: aiConfig.environment,
+    model: provider.model,
     region: aiConfig.region || 'not configured',
     genAiEndpointConfigured: aiConfig.genAiEndpointConfigured,
     compartmentConfigured: aiConfig.compartmentConfigured,
+    openAiBaseUrlConfigured: Boolean(aiConfig.openAiBaseUrl),
+    openAiApiKeyConfigured: Boolean(aiConfig.openAiApiKey),
+    ollamaBaseUrlConfigured: Boolean(aiConfig.ollamaBaseUrl),
+    ociAuthConfigured: provider.id === 'oci' ? provider.isConfigured().configuredAuth : Boolean(aiConfig.ociBearerToken),
+    ociOpenAiCompatible: aiConfig.ociOpenAiCompatible,
     chatModelConfigured: aiConfig.chatModelConfigured,
     embedModelConfigured: aiConfig.embedModelConfigured,
+    providerReady: provider.isConfigured().ready,
+    providerStatus: provider.isConfigured().message,
     authMode: aiConfig.authMode,
     configProfileConfigured: aiConfig.configProfileConfigured,
     agentEndpointConfigured: aiConfig.agentEndpointConfigured,
@@ -995,15 +1128,49 @@ function safeAiConfig() {
 }
 
 function listConnectors() {
-  return [connectorConfig.jira, connectorConfig.knowledge, connectorConfig.git].map((connector) => ({
-    id: connector.id,
-    label: connector.label,
-    enabled: connectorConfig.mcpEnabled && connector.enabled,
-    readOnly: connector.readOnly,
-    serverConfigured: Boolean(connector.serverName),
-    requireWriteApproval: connector.requireWriteApproval,
-    destructiveBlocked: connector.destructiveBlocked
-  }));
+  return [
+    connectorConfig.jira,
+    connectorConfig.bitbucket,
+    connectorConfig.scm,
+    connectorConfig.buildservice,
+    connectorConfig.devops,
+    connectorConfig.memory,
+    connectorConfig.sks,
+    connectorConfig.askoracle
+  ].map((connector) => {
+    const missingConfig = [
+      connectorConfig.mcpEnabled ? '' : 'ENABLE_MCP',
+      connector.enabled ? '' : connector.enabledEnv,
+      connector.serverName ? '' : connector.serverNameEnv
+    ].filter(Boolean);
+    const ready = missingConfig.length === 0;
+    const readiness = ready
+      ? 'READY'
+      : !connectorConfig.mcpEnabled
+        ? 'MCP_DISABLED'
+        : !connector.enabled
+          ? 'CONNECTOR_DISABLED'
+          : 'SERVER_MISSING';
+    const readinessDetail = ready
+      ? 'Connector is ready for governed read checks. Write actions still require approval.'
+      : `Missing ${missingConfig.join(', ')}. Connector remains blocked until configured.`;
+    return {
+      id: connector.id,
+      label: connector.label,
+      enabled: ready,
+      featureEnabled: connector.enabled,
+      mcpEnabled: connectorConfig.mcpEnabled,
+      readOnly: connector.readOnly,
+      serverConfigured: Boolean(connector.serverName),
+      phaseFit: connector.phaseFit,
+      description: connector.description,
+      readiness,
+      readinessDetail,
+      missingConfig,
+      requireWriteApproval: connector.requireWriteApproval,
+      destructiveBlocked: connector.destructiveBlocked
+    };
+  });
 }
 
 function summarizeUsage(events) {
@@ -1079,6 +1246,320 @@ function createId(prefix) {
 
 function estimateTokens(value) {
   return Math.max(1, Math.ceil(String(value || '').length / 4));
+}
+
+function localModelForRequest(requestType) {
+  if (requestType === 'embed') return 'local-placeholder-embed';
+  if (requestType === 'chat') return 'local-guide-model';
+  return `local-${requestType}-model`;
+}
+
+function normalizeBaseUrl(value = '') {
+  return String(value || '').replace(/\/+$/, '');
+}
+
+function joinUrl(base, path) {
+  return `${normalizeBaseUrl(base)}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
+function chatCompletionsUrl(baseUrl) {
+  const normalized = normalizeBaseUrl(baseUrl);
+  return normalized.endsWith('/chat/completions') ? normalized : joinUrl(normalized, '/chat/completions');
+}
+
+function safeModelLabel(value, fallback) {
+  return String(value || '').trim() || fallback;
+}
+
+function createTimeoutSignal(timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return { signal: controller.signal, clear: () => clearTimeout(timer) };
+}
+
+function parseProviderText(data) {
+  if (!data) return '';
+  if (typeof data === 'string') return data;
+  if (typeof data.output_text === 'string') return data.output_text;
+  if (typeof data.response === 'string') return data.response;
+  if (typeof data.message === 'string') return data.message;
+  if (typeof data.content === 'string') return data.content;
+  const choice = Array.isArray(data.choices) ? data.choices[0] : null;
+  if (choice?.message?.content) {
+    const content = choice.message.content;
+    if (typeof content === 'string') return content;
+    if (Array.isArray(content)) {
+      return content
+        .map((item) => item.text || item.content || '')
+        .filter(Boolean)
+        .join('\n');
+    }
+  }
+  if (choice?.text) return choice.text;
+  if (Array.isArray(data.output)) {
+    return data.output
+      .flatMap((item) => item.content || [])
+      .map((item) => item.text || item.content || '')
+      .filter(Boolean)
+      .join('\n');
+  }
+  return '';
+}
+
+function normalizeProviderUsage(data, input, output) {
+  const usage = data?.usage || {};
+  const promptTokens = Number(usage.prompt_tokens || usage.input_tokens || usage.promptTokens || estimateTokens(input));
+  const completionTokens = Number(usage.completion_tokens || usage.output_tokens || usage.completionTokens || estimateTokens(output));
+  return {
+    promptTokens,
+    completionTokens,
+    totalTokens: Number(usage.total_tokens || usage.totalTokens || promptTokens + completionTokens)
+  };
+}
+
+function buildProviderPrompt({ question, context = [], requestType = 'chat' }) {
+  return [
+    'You are ODT Guide inside Oracle Developer Twin Workbench.',
+    'Answer as a helpful enterprise SDLC workbench coach.',
+    'Use only the supplied ODT context and general safe reasoning.',
+    'Do not approve write actions, dependency installs, blocker overrides, or external updates.',
+    'If information is missing, say what is missing and which ODT page or gate should capture it.',
+    'Keep responses practical and evidence-aware.',
+    '',
+    `Request type: ${requestType}`,
+    '',
+    'Retrieved ODT context:',
+    context.length ? context.map((item, index) => `Context ${index + 1}:\n${item}`).join('\n\n') : 'No retrieved context.',
+    '',
+    `User question:\n${question}`
+  ].join('\n');
+}
+
+function buildProviderContext(question, assignmentId = 'assignment-local-mvp', limit = 6) {
+  const corpus = buildKnowledgeCorpus(assignmentId);
+  const sources = rankKnowledge(question, corpus, limit);
+  const context = sources.map((source) => [
+    `Title: ${source.title}`,
+    `Type: ${source.type}`,
+    `Source: ${source.source}`,
+    source.content
+  ].join('\n'));
+  return { context, sources };
+}
+
+class LocalDeterministicProvider {
+  constructor(config) {
+    this.id = 'local';
+    this.model = 'local-guide-model';
+    this.config = config;
+  }
+
+  isConfigured() {
+    return {
+      ready: true,
+      configuredAuth: false,
+      message: 'Local deterministic RAG is active. No remote provider is required.'
+    };
+  }
+
+  async chat({ question, snapshot, assignmentId }) {
+    const content = localProviderContent('chat', question, snapshot, assignmentId);
+    return {
+      provider: this.id,
+      model: this.model,
+      content,
+      usage: {
+        promptTokens: estimateTokens(question),
+        completionTokens: estimateTokens(content),
+        totalTokens: estimateTokens(question) + estimateTokens(content)
+      },
+      fallbackUsed: true,
+      sources: []
+    };
+  }
+}
+
+class OpenAICompatibleProvider {
+  constructor(config, options = {}) {
+    this.id = options.id || 'openai';
+    this.label = options.label || this.id;
+    this.baseUrl = normalizeBaseUrl(options.baseUrl || config.openAiBaseUrl);
+    this.apiKey = options.apiKey || config.openAiApiKey;
+    this.model = safeModelLabel(options.model || config.model, this.id === 'oci' ? 'oci-configured-model' : 'configured-chat-model');
+    this.timeoutMs = config.limits.requestTimeoutMs;
+    this.maxOutputTokens = config.limits.maxOutputTokens;
+    this.extraHeaders = options.extraHeaders || {};
+  }
+
+  isConfigured() {
+    const missing = [];
+    if (!this.baseUrl) missing.push('base URL');
+    if (!this.apiKey) missing.push('API key or bearer token');
+    if (!this.model) missing.push('model');
+    return {
+      ready: missing.length === 0,
+      configuredAuth: Boolean(this.apiKey),
+      message: missing.length
+        ? `${this.label} is missing ${missing.join(', ')}. ODT will use local deterministic RAG.`
+        : `${this.label} provider is ready behind the backend adapter.`
+    };
+  }
+
+  async chat({ question, context = [], requestType = 'chat' }) {
+    const status = this.isConfigured();
+    if (!status.ready) throw new Error(status.message);
+    const prompt = buildProviderPrompt({ question, context, requestType });
+    const { signal, clear } = createTimeoutSignal(this.timeoutMs);
+    try {
+      const response = await fetch(chatCompletionsUrl(this.baseUrl), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.apiKey}`,
+          ...this.extraHeaders
+        },
+        body: JSON.stringify({
+          model: this.model,
+          messages: [
+            {
+              role: 'system',
+              content: 'You are ODT Guide. Ground answers in retrieved ODT evidence and preserve governance gates.'
+            },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.2,
+          max_tokens: this.maxOutputTokens
+        }),
+        signal
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(`${this.label} request failed with HTTP ${response.status}${data?.error?.message ? `: ${data.error.message}` : ''}`);
+      }
+      const content = parseProviderText(data).trim();
+      if (!content) throw new Error(`${this.label} returned an empty response.`);
+      return {
+        provider: this.id,
+        model: this.model,
+        content,
+        usage: normalizeProviderUsage(data, prompt, content),
+        fallbackUsed: false
+      };
+    } finally {
+      clear();
+    }
+  }
+}
+
+class OllamaProvider {
+  constructor(config) {
+    this.id = 'ollama';
+    this.baseUrl = normalizeBaseUrl(config.ollamaBaseUrl);
+    this.model = safeModelLabel(config.model, 'llama3.1');
+    this.timeoutMs = config.limits.requestTimeoutMs;
+    this.maxOutputTokens = config.limits.maxOutputTokens;
+  }
+
+  isConfigured() {
+    const missing = [];
+    if (!this.baseUrl) missing.push('base URL');
+    if (!this.model) missing.push('model');
+    return {
+      ready: missing.length === 0,
+      configuredAuth: false,
+      message: missing.length
+        ? `Ollama is missing ${missing.join(', ')}. ODT will use local deterministic RAG.`
+        : 'Ollama local model provider is configured.'
+    };
+  }
+
+  async chat({ question, context = [], requestType = 'chat' }) {
+    const status = this.isConfigured();
+    if (!status.ready) throw new Error(status.message);
+    const prompt = buildProviderPrompt({ question, context, requestType });
+    const { signal, clear } = createTimeoutSignal(this.timeoutMs);
+    try {
+      const response = await fetch(joinUrl(this.baseUrl, '/api/chat'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: this.model,
+          messages: [
+            {
+              role: 'system',
+              content: 'You are ODT Guide. Ground answers in retrieved ODT evidence and preserve governance gates.'
+            },
+            { role: 'user', content: prompt }
+          ],
+          stream: false,
+          options: {
+            temperature: 0.2,
+            num_predict: this.maxOutputTokens
+          }
+        }),
+        signal
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(`Ollama request failed with HTTP ${response.status}${data?.error ? `: ${data.error}` : ''}`);
+      }
+      const content = parseProviderText(data.message || data).trim();
+      if (!content) throw new Error('Ollama returned an empty response.');
+      return {
+        provider: this.id,
+        model: this.model,
+        content,
+        usage: normalizeProviderUsage(data, prompt, content),
+        fallbackUsed: false
+      };
+    } finally {
+      clear();
+    }
+  }
+}
+
+class OCIProvider extends OpenAICompatibleProvider {
+  constructor(config) {
+    super(config, {
+      id: 'oci',
+      label: 'OCI GenAI',
+      baseUrl: config.ociOpenAiBaseUrl,
+      apiKey: config.ociBearerToken,
+      model: config.model,
+      extraHeaders: config.compartmentId ? { 'opc-compartment-id': config.compartmentId } : {}
+    });
+    this.compartmentId = config.compartmentId;
+    this.region = config.region;
+    this.openAiCompatible = config.ociOpenAiCompatible || Boolean(config.ociBearerToken);
+    this.configProfileConfigured = config.configProfileConfigured;
+  }
+
+  isConfigured() {
+    const missing = [];
+    if (!this.baseUrl) missing.push('OCI GenAI endpoint or OpenAI-compatible base URL');
+    if (!this.model) missing.push('GENAI_MODEL or OCI_GENAI_CHAT_MODEL_ID');
+    if (!this.apiKey) missing.push('OCI_GENAI_BEARER_TOKEN/OCI_GENAI_API_KEY for OpenAI-compatible HTTP');
+    return {
+      ready: missing.length === 0,
+      configuredAuth: Boolean(this.apiKey || this.configProfileConfigured),
+      message: missing.length
+        ? `OCI GenAI is missing ${missing.join(', ')}. Native OCI profile signing is a future adapter path; ODT will use local deterministic RAG for now.`
+        : 'OCI GenAI is ready through the backend OpenAI-compatible adapter.'
+    };
+  }
+}
+
+function createGenAiProvider(config) {
+  switch (config.provider) {
+    case 'openai':
+      return new OpenAICompatibleProvider(config);
+    case 'oci':
+      return new OCIProvider(config);
+    case 'ollama':
+      return new OllamaProvider(config);
+    default:
+      return new LocalDeterministicProvider(config);
+  }
 }
 
 function extractInput(body) {
@@ -1888,7 +2369,7 @@ function collectEvidence(assignmentId = 'assignment-local-mvp') {
     testPlans: statements.selectTestPlansByAssignment.all(assignmentId).map((row) => attachJson(row, 'planJson')),
     implementationEvidence: statements.selectImplementationEvidenceByAssignment.all(assignmentId).map(parseImplementationEvidence),
 	    prReadinessReports: statements.selectPrReportsByAssignment.all(assignmentId).map((row) => attachJson(row, 'reportJson')),
-		    intakeAssets: statements.selectIntakeAssetsByAssignment.all(assignmentId),
+		    intakeAssets: statements.selectIntakeAssetsByAssignment.all(assignmentId).map(parseIntakeAssetRow),
 		    agentFoundryRuns: statements.selectAgentFoundryRunsByAssignment.all(assignmentId).map(parseAgentFoundryRun),
 		    agentWorkerRuns: statements.selectAgentWorkerRunsByAssignment.all(assignmentId).map(parseWorkerRun),
 		    agentRelayItems: statements.selectAgentRelayItemsByAssignment.all(assignmentId).map(parseAgentRelayItem)
@@ -2978,6 +3459,48 @@ function parseImplementationEvidenceRow(row) {
   };
 }
 
+function parseIntakeAssetRow(row) {
+  if (!row) return null;
+  let analysisJson = typeof row.analysisJson === 'string'
+    ? parseJsonValue(row.analysisJson, {})
+    : row.analysisJson || {};
+  if (!analysisJson.version && row.storedPath && existsSync(row.storedPath)) {
+    try {
+      const bytes = readFileSync(row.storedPath);
+      analysisJson = analyzeIntakeAsset({
+        id: row.id,
+        assignmentId: row.assignmentId,
+        name: row.originalName,
+        storedPath: row.storedPath,
+        mimeType: row.mimeType || '',
+        fileType: row.fileType || classifyFileType(row.originalName, row.mimeType),
+        bytes
+      });
+      statements.updateIntakeAssetAnalysis.run(JSON.stringify(analysisJson), row.id);
+    } catch {
+      analysisJson = {
+        version: 'asset-analysis-1.0',
+        status: 'analysis_failed',
+        localExtraction: {
+          status: 'not_extracted',
+          method: 'fallback_metadata',
+          excerpt: '',
+          note: 'ODT could not read the copied file for analysis. Metadata remains available.'
+        },
+        aiEnrichment: {
+          status: 'optional_not_run',
+          recommended: true,
+          fallback: 'Manual review of the stored file may be required.'
+        }
+      };
+    }
+  }
+  return {
+    ...row,
+    analysisJson
+  };
+}
+
 function runPostImplementationStandardsCheck({ assignmentId = 'assignment-local-mvp', evidenceRecord } = {}) {
   const currentEvidence = collectEvidence(assignmentId);
   const implementationEvidence = evidenceRecord || currentEvidence.implementationEvidence?.[0];
@@ -3162,6 +3685,19 @@ function buildCurrentAgentContract(assignmentId, executionAgent = getStoredSetti
       repoAnalysis: evidence.repoAnalysis[0]?.analysisJson || {},
       technicalDesign: evidence.technicalDesigns[0]?.designJson || {},
       implementationPlan: evidence.implementationPlans[0]?.planJson || {},
+      intakeAssets: (evidence.intakeAssets || []).map((asset) => ({
+        id: asset.id,
+        name: asset.originalName,
+        fileType: asset.fileType,
+        storedPath: asset.storedPath,
+        bytes: asset.bytes,
+        checksumSha256: asset.analysisJson?.checksumSha256 || '',
+        role: asset.analysisJson?.role || '',
+        guidance: asset.analysisJson?.guidance || '',
+        extractionStatus: asset.analysisJson?.localExtraction?.status || 'not_analyzed',
+        excerpt: asset.analysisJson?.localExtraction?.excerpt || '',
+        aiEnrichment: asset.analysisJson?.aiEnrichment || {}
+      })),
       approvedDependencies,
       pendingDependencies,
       standards: {
@@ -3690,6 +4226,10 @@ function compactEvidenceForApi(evidence = {}) {
       ...row,
       planJson: compactJsonForApi(row.planJson || {}, { maxString: 2400, maxArray: 80, maxDepth: 6 })
     })),
+    intakeAssets: (evidence.intakeAssets || []).map((asset) => ({
+      ...asset,
+      analysisJson: compactJsonForApi(asset.analysisJson || {}, { maxString: 1800, maxArray: 40, maxDepth: 5 })
+    })),
     agentWorkerRuns: (evidence.agentWorkerRuns || []).map(compactWorkerRunForApi)
   };
 }
@@ -3900,6 +4440,86 @@ function createReviewCommentsForReviewerRun(run, responseText = '') {
   }).filter(Boolean);
 }
 
+function reviewerOutputIndicatesCleanCloseout(responseText = '', reviewerFindings = []) {
+  if ((reviewerFindings || []).some((finding) => ['blocker', 'warning'].includes(finding.severity))) return false;
+  const text = String(responseText || '').replace(/\s+/g, ' ').toLowerCase();
+  if (!text.trim()) return false;
+  const cleanSignals = [
+    /no (?:open |remaining |new )?(?:blockers?|critical findings?|high findings?|warnings?|review findings?|issues?)\b/,
+    /(?:previous|prior|earlier|reviewer) (?:findings?|blockers?|comments?|issues?).{0,80}(?:resolved|addressed|fixed|closed)/,
+    /(?:rework|implementation).{0,80}(?:addresses|resolved|fixed).{0,80}(?:review|blocker|finding|comment)/,
+    /(?:review|rerun|verification).{0,80}(?:passed|clean|clear)/,
+    /(?:ready|safe).{0,80}(?:build verifier|verification|pr pack|pr-ready|pr readiness)/
+  ];
+  return cleanSignals.some((pattern) => pattern.test(text));
+}
+
+function autoResolveReviewCommentsForReviewerRun(run, responseText = '', reviewerFindings = []) {
+  if (!run || run.workerRole !== 'reviewer') return [];
+  if (!reviewerOutputIndicatesCleanCloseout(responseText, reviewerFindings)) return [];
+  const now = new Date().toISOString();
+  const runTime = timeMillis(run.completedAt || run.updatedAt || run.createdAt || now);
+  const comments = statements.selectReviewCommentsByAssignment.all(run.assignmentId)
+    .filter((comment) => (
+      comment.status === 'open'
+      && ['blocker', 'warning'].includes(comment.severity)
+      && comment.targetType === 'implementation'
+      && timeMillis(comment.createdAt) <= runTime
+      && (
+        comment.createdBy === 'odt-reviewer-ingest'
+        || String(comment.resolutionNotes || '').includes('sourceWorkerRunId=')
+        || /^Reviewer\b/i.test(String(comment.comment || ''))
+      )
+    ));
+  if (!comments.length) return [];
+
+  const relayItems = statements.selectAgentRelayItemsByAssignment.all(run.assignmentId).map(parseAgentRelayItem);
+  const resolved = comments.map((comment) => {
+    const note = [
+      String(comment.resolutionNotes || '').trim(),
+      `Auto-resolved by reviewer rerun ${run.id}: reviewer output indicated prior blocker/warning findings were addressed.`
+    ].filter(Boolean).join('\n');
+    statements.updateReviewCommentStatus.run('resolved', now, note, comment.id);
+    relayItems
+      .filter((item) => item.context?.reviewCommentId === comment.id && ['open', 'assigned', 'answered'].includes(String(item.status || '').toLowerCase()))
+      .forEach((item) => {
+        statements.updateAgentRelayItem.run(
+          item.targetWorkerRole || '',
+          item.targetLane || '',
+          'resolved',
+          item.severity || comment.severity,
+          JSON.stringify({
+            ...(item.decision || {}),
+            action: 'auto_resolve',
+            decision: `Resolved after reviewer rerun ${run.id} confirmed the finding was addressed.`,
+            decidedBy: 'odt-reviewer-ingest',
+            decidedAt: now
+          }),
+          now,
+          now,
+          item.id
+        );
+      });
+    return statements.selectReviewCommentById.get(comment.id);
+  });
+
+  createRunEvent(run.runId || createId('run'), 'review_comments_auto_resolved', 'ok', {
+    assignmentId: run.assignmentId,
+    workerRunId: run.id,
+    resolvedComments: resolved.length,
+    commentIds: resolved.map((comment) => comment.id)
+  }, run.assignmentId);
+  createAgentEvent(run.assignmentId, 'odt-review', 'review_comments_auto_resolved', 'resolved', {
+    workerRunId: run.id,
+    resolvedComments: resolved.map((comment) => ({
+      id: comment.id,
+      severity: comment.severity,
+      targetId: comment.targetId
+    }))
+  });
+  return resolved;
+}
+
 function upsertAgentWorkerRunRecord({ id, assignmentId, runId, role, executionAgent, mode, sandboxMode, status, launchMode, bundlePaths, manualCommand, output = {}, questions = [], completedAt = null, sequenceIndex = null }) {
   const now = new Date().toISOString();
   statements.upsertAgentWorkerRun.run(
@@ -3984,6 +4604,7 @@ function ingestWorkerOutput({ assignmentId = 'assignment-local-mvp', workerRunId
   const updatedRun = parseAgentWorkerRun(statements.selectAgentWorkerRunById.get(workerRunId));
   const relayItems = createRelayItemsForWorkerRun(updatedRun);
   const reviewerComments = createReviewCommentsForReviewerRun(updatedRun, responseText);
+  const autoResolvedReviewComments = autoResolveReviewCommentsForReviewerRun(updatedRun, responseText, reviewerFindings);
   if (relayItems.length) {
     createRunEvent(run.runId, 'agent_relay_items_created', 'ok', {
       assignmentId,
@@ -4003,6 +4624,14 @@ function ingestWorkerOutput({ assignmentId = 'assignment-local-mvp', workerRunId
       workerRunId,
       reviewComments: reviewerComments.map((item) => item.comment?.id || item.id || '').filter(Boolean)
     });
+  }
+  if (autoResolvedReviewComments.length) {
+    createRunEvent(run.runId, 'reviewer_clean_rerun_resolved_findings', 'ok', {
+      assignmentId,
+      workerRunId,
+      resolvedComments: autoResolvedReviewComments.length,
+      commentIds: autoResolvedReviewComments.map((comment) => comment.id)
+    }, assignmentId);
   }
   return updatedRun;
 }
@@ -4167,7 +4796,13 @@ function buildWorkerPrompt({ handoff, contract, evidence, bundlePaths, workerRol
   const intakeAssets = (evidence.intakeAssets || []).map((asset) => ({
     name: asset.originalName,
     type: asset.fileType,
-    storedPath: asset.storedPath
+    storedPath: asset.storedPath,
+    checksumSha256: asset.analysisJson?.checksumSha256 || '',
+    role: asset.analysisJson?.role || '',
+    guidance: asset.analysisJson?.guidance || '',
+    extractionStatus: asset.analysisJson?.localExtraction?.status || 'not_analyzed',
+    excerpt: asset.analysisJson?.localExtraction?.excerpt || '',
+    aiEnrichment: asset.analysisJson?.aiEnrichment || {}
   }));
   const openReviews = (evidence.reviewComments || [])
     .filter((comment) => comment.status === 'open')
@@ -4271,7 +4906,16 @@ function buildWorkerPrompt({ handoff, contract, evidence, bundlePaths, workerRol
     workerRelay.length ? '```' : '',
     '',
     '## Intake Assets',
-    intakeAssets.length ? intakeAssets.map((asset) => `- ${asset.name} (${asset.type}): ${asset.storedPath}`).join('\n') : '- No uploaded intake assets were attached.',
+    intakeAssets.length ? intakeAssets.map((asset) => [
+      `- ${asset.name} (${asset.type})`,
+      `  - Path: ${asset.storedPath}`,
+      asset.checksumSha256 ? `  - SHA-256: ${asset.checksumSha256}` : '',
+      asset.role ? `  - Role: ${asset.role}` : '',
+      asset.guidance ? `  - Use: ${asset.guidance}` : '',
+      `  - Extraction: ${asset.extractionStatus}`,
+      asset.aiEnrichment?.recommended ? `  - Optional enrichment: ${asset.aiEnrichment.status}; fallback to stored file/manual review if provider is offline.` : '',
+      asset.excerpt ? `  - Local excerpt:\n${asset.excerpt.split('\n').slice(0, 30).map((line) => `    ${line}`).join('\n')}` : ''
+    ].filter(Boolean).join('\n')).join('\n') : '- No uploaded intake assets were attached.',
     '',
     '## Required Final Response',
     'When finished, write a concise implementation report with:',
@@ -4824,6 +5468,134 @@ function classifyFileType(name, mimeType = '') {
   return 'context-file';
 }
 
+function assetRoleForType(fileType, ext = '') {
+  if (fileType === 'mockup-image') return 'Visual requirement, screenshot, UI state, or mockup reference.';
+  if (fileType === 'pdf') return 'Requirement, design, compliance, API, or business process document.';
+  if (fileType === 'document') return 'Requirement, design, acceptance criteria, or stakeholder notes document.';
+  if (fileType === 'spreadsheet') return ext === '.csv'
+    ? 'Structured data, mapping table, acceptance examples, or API/test matrix.'
+    : 'Workbook with structured requirements, mappings, test cases, or business rules.';
+  if (fileType === 'api-sample') return 'API contract, request/response sample, schema, configuration, or integration notes.';
+  if (fileType === 'notes') return 'Plain-text requirement notes, Markdown brief, logs, or implementation context.';
+  if (fileType === 'presentation') return 'Presentation deck with design, process, or stakeholder context.';
+  return 'General project context file.';
+}
+
+function guidanceForAsset(fileType, ext = '') {
+  if (fileType === 'mockup-image') {
+    return 'Use as visual reference for layout, states, labels, accessibility, and UX acceptance. Optional vision/OCR enrichment can describe UI details when configured.';
+  }
+  if (fileType === 'pdf' || fileType === 'document' || fileType === 'presentation') {
+    return 'Use as supporting requirement/design context. Optional document parser or model enrichment can extract text and summarize decisions when configured.';
+  }
+  if (fileType === 'spreadsheet') {
+    return ext === '.csv'
+      ? 'Use extracted CSV preview for mappings, examples, and test cases. Validate column meanings before implementation.'
+      : 'Use as supporting workbook context. Optional spreadsheet parser can extract sheets/tables when configured.';
+  }
+  if (fileType === 'api-sample') {
+    return 'Use extracted content for endpoint, payload, schema, validation, and integration planning.';
+  }
+  if (fileType === 'notes') {
+    return 'Use extracted text directly in planning, standards review, and worker handoff.';
+  }
+  return 'Use as supporting context and inspect manually if needed.';
+}
+
+function textExtractionForAsset(fileType, ext, bytes) {
+  const textCapable = fileType === 'notes' || fileType === 'api-sample' || ext === '.csv';
+  if (!textCapable) {
+    const parserKind = fileType === 'mockup-image'
+      ? 'vision_or_ocr'
+      : ['pdf', 'document', 'spreadsheet', 'presentation'].includes(fileType)
+        ? 'document_parser'
+        : 'manual_review';
+    return {
+      status: 'not_extracted',
+      method: parserKind,
+      excerpt: '',
+      note: fileType === 'mockup-image'
+        ? 'Image stored as evidence. Optional vision/OCR enrichment can run later with fallback to manual review.'
+        : 'Binary or packaged document stored as evidence. Optional parser/model enrichment can run later with fallback to manual review.'
+    };
+  }
+
+  const raw = bytes.toString('utf8').replace(/\u0000/g, '').trim();
+  const excerpt = truncateForApi(raw, 6000);
+  const analysis = {
+    status: raw ? 'extracted' : 'empty',
+    method: 'local_utf8_excerpt',
+    excerpt,
+    charCount: raw.length,
+    lineCount: raw ? raw.split(/\r?\n/).length : 0,
+    note: raw
+      ? 'Text excerpt extracted locally without AI.'
+      : 'File was text-capable, but no readable text was found.'
+  };
+  if (ext === '.csv') {
+    const lines = raw.split(/\r?\n/).filter(Boolean);
+    analysis.method = 'local_csv_excerpt';
+    analysis.previewRows = lines.slice(0, 8);
+    analysis.detectedColumns = lines[0]?.split(',').map((value) => value.trim()).filter(Boolean).slice(0, 30) || [];
+  }
+  if (['.json', '.yaml', '.yml'].includes(ext)) {
+    analysis.method = ext === '.json' ? 'local_json_excerpt' : 'local_yaml_excerpt';
+    if (ext === '.json') {
+      try {
+        const parsed = JSON.parse(raw);
+        analysis.topLevelKeys = parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+          ? Object.keys(parsed).slice(0, 30)
+          : [];
+      } catch {
+        analysis.parseWarning = 'JSON parse failed; stored excerpt is still available for manual/agent review.';
+      }
+    }
+  }
+  return analysis;
+}
+
+function analyzeIntakeAsset({ id, assignmentId, name, storedPath, mimeType = '', fileType, bytes }) {
+  const ext = fileExtension(name);
+  const checksumSha256 = createHash('sha256').update(bytes).digest('hex');
+  const localExtraction = textExtractionForAsset(fileType, ext, bytes);
+  const aiRecommended = ['mockup-image', 'pdf', 'document', 'spreadsheet', 'presentation'].includes(fileType);
+  const analysis = {
+    version: 'asset-analysis-1.0',
+    id,
+    assignmentId,
+    originalName: name,
+    storedPath,
+    extension: ext,
+    mimeType,
+    fileType,
+    bytes: bytes.length,
+    checksumSha256,
+    role: assetRoleForType(fileType, ext),
+    guidance: guidanceForAsset(fileType, ext),
+    localExtraction,
+    aiEnrichment: {
+      status: aiRecommended ? 'optional_not_run' : 'not_required',
+      recommended: aiRecommended,
+      adapter: fileType === 'mockup-image' ? 'vision-or-ocr-provider' : 'document-or-spreadsheet-parser',
+      fallback: 'Stored file metadata and local excerpts remain available even when model/parser enrichment is offline.',
+      runPolicy: 'Explicit governed enrichment action; upload does not call external models automatically.'
+    },
+    agentUse: {
+      includeInHandoff: true,
+      includeExcerpt: Boolean(localExtraction.excerpt),
+      instruction: guidanceForAsset(fileType, ext)
+    },
+    governance: {
+      copiedToOdtWorkspace: true,
+      targetRepoModified: false,
+      sensitiveReviewRecommended: bytes.length > 5 * 1024 * 1024 || ['pdf', 'document', 'spreadsheet', 'presentation'].includes(fileType),
+      dependencyRequiredForDeeperParsing: aiRecommended && fileType !== 'mockup-image'
+    },
+    createdAt: new Date().toISOString()
+  };
+  return analysis;
+}
+
 function validateUploadFile(file) {
   const name = sanitizeFileName(file.name);
   const ext = fileExtension(name);
@@ -4872,6 +5644,15 @@ function storeIntakeAssets({ assignmentId = 'assignment-local-mvp', files = [], 
     }
     writeFileSync(storedPath, bytes);
     const fileType = classifyFileType(file.name, file.mimeType);
+    const analysis = analyzeIntakeAsset({
+      id,
+      assignmentId,
+      name: file.name,
+      storedPath,
+      mimeType: file.mimeType || '',
+      fileType,
+      bytes
+    });
     statements.insertIntakeAsset.run(
       id,
       assignmentId,
@@ -4882,6 +5663,7 @@ function storeIntakeAssets({ assignmentId = 'assignment-local-mvp', files = [], 
       fileType,
       bytes.length,
       sourceKind,
+      JSON.stringify(analysis),
       'stored',
       now
     );
@@ -4895,11 +5677,18 @@ function storeIntakeAssets({ assignmentId = 'assignment-local-mvp', files = [], 
       fileType,
       bytes: bytes.length,
       sourceKind,
+      analysisJson: analysis,
       status: 'stored',
       createdAt: now
     };
   });
-  createRunEvent(createId('run'), 'intake_assets_stored', 'ok', { assignmentId, files: stored.length, totalBytes }, assignmentId);
+  createRunEvent(createId('run'), 'intake_assets_stored', 'ok', {
+    assignmentId,
+    files: stored.length,
+    totalBytes,
+    analyzed: stored.length,
+    aiEnrichmentPending: stored.filter((asset) => asset.analysisJson?.aiEnrichment?.recommended).length
+  }, assignmentId);
   return {
     assignmentId,
     stored,
@@ -4907,6 +5696,58 @@ function storeIntakeAssets({ assignmentId = 'assignment-local-mvp', files = [], 
     workspacePath: assetDir,
     note: 'Files are copied into the ODT workbench workspace. The target repo is not modified by intake uploads.'
   };
+}
+
+function enrichIntakeAsset({ assetId, assignmentId = 'assignment-local-mvp', provider = aiConfig.provider } = {}) {
+  const asset = parseIntakeAssetRow(statements.selectIntakeAssetById.get(assetId));
+  if (!asset || asset.assignmentId !== assignmentId) {
+    const error = new Error('Intake asset not found for this assignment.');
+    error.statusCode = 404;
+    throw error;
+  }
+  const analysis = asset.analysisJson || {};
+  const localExtraction = analysis.localExtraction || {};
+  const recommended = Boolean(analysis.aiEnrichment?.recommended);
+  const providerConfigured = provider !== 'local' && (aiConfig.chatModelConfigured || aiConfig.agentEndpointConfigured || aiConfig.genAiEndpointConfigured);
+  const status = localExtraction.status === 'extracted'
+    ? 'LOCAL_EXTRACTION_AVAILABLE'
+    : recommended && providerConfigured
+      ? 'MODEL_ENRICHMENT_READY'
+      : recommended
+        ? 'FALLBACK_LOCAL_METADATA'
+        : 'NO_MODEL_REQUIRED';
+  const result = {
+    assetId,
+    assignmentId,
+    status,
+    provider,
+    originalName: asset.originalName,
+    fileType: asset.fileType,
+    role: analysis.role || assetRoleForType(asset.fileType, fileExtension(asset.originalName)),
+    localExtraction,
+    aiEnrichment: {
+      ...(analysis.aiEnrichment || {}),
+      providerConfigured,
+      fallbackUsed: !providerConfigured || localExtraction.status === 'extracted',
+      message: providerConfigured
+        ? 'A future provider adapter can enrich this asset explicitly. Upload/storage did not call external AI automatically.'
+        : 'No model/parser provider is configured for this asset type. ODT will use local metadata, stored file path, local excerpts, and manual review.'
+    },
+    nextAction: localExtraction.status === 'extracted'
+      ? 'Use the local excerpt in planning and worker handoff.'
+      : recommended
+        ? 'Review the stored file manually or configure an approved vision/document parser adapter for deeper enrichment.'
+        : 'Use the stored metadata and file path as context.'
+  };
+  createRunEvent(createId('run'), 'intake_asset_enrichment_checked', status === 'MODEL_ENRICHMENT_READY' ? 'ok' : 'warning', {
+    assignmentId,
+    assetId,
+    fileType: asset.fileType,
+    status,
+    provider,
+    providerConfigured
+  }, assignmentId);
+  return result;
 }
 
 function preparePrReadinessReport({ assignmentId, linkedJira = '', notes = '' }) {
@@ -5096,6 +5937,9 @@ function splitKnowledgeChunks({ source, title, text, type = 'document' }) {
 }
 
 function readTextAssetExcerpt(asset) {
+  if (asset.analysisJson?.localExtraction?.excerpt) {
+    return asset.analysisJson.localExtraction.excerpt;
+  }
   const textLike = ['notes', 'api-sample'].includes(asset.fileType) || fileExtension(asset.originalName) === '.csv';
   if (!textLike) return '';
   if (!existsSync(asset.storedPath)) return '';
@@ -5109,6 +5953,7 @@ function readTextAssetExcerpt(asset) {
 function buildKnowledgeCorpus(assignmentId = 'assignment-local-mvp') {
   const docs = [
     ['README', join(appRoot, 'README.md')],
+    ['ODT Platform Handbook', join(appRoot, 'docs', 'ODT-Platform-Handbook.md')],
     ['Governance Architecture', join(appRoot, 'docs', 'ODT-Governance-Architecture.md')],
     ['Developer Agent Handoff Plan', join(appRoot, 'docs', 'ODT-Developer-Agent-Handoff-Plan.md')],
     ['Oracle Standards Agent Guide', join(appRoot, 'docs', 'ODT-Oracle-Standards-Agent-Operating-Guide.md')],
@@ -5150,6 +5995,10 @@ function buildKnowledgeCorpus(assignmentId = 'assignment-local-mvp') {
       fileType: asset.fileType,
       bytes: asset.bytes,
       status: asset.status,
+      role: asset.analysisJson?.role || '',
+      guidance: asset.analysisJson?.guidance || '',
+      localExtractionStatus: asset.analysisJson?.localExtraction?.status || 'not_analyzed',
+      aiEnrichment: asset.analysisJson?.aiEnrichment || {},
       excerpt: readTextAssetExcerpt(asset)
     }))],
     ['Upload Policy', uploadPolicy],
@@ -5226,40 +6075,936 @@ function inferGuideSteps(input, evidence) {
   ];
 }
 
+function guideTitleCase(value = '') {
+  return String(value || '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function guideShortId(value = '') {
+  const text = String(value || '');
+  if (!text) return '';
+  const parts = text.split('_');
+  return parts.length > 1 ? parts.slice(-2).join('_') : text.slice(0, 12);
+}
+
+function guideList(items = [], fallback = 'None captured.', limit = 6) {
+  const values = (items || []).filter(Boolean).slice(0, limit);
+  if (!values.length) return `- ${fallback}`;
+  return values.map((item) => `- ${String(item)}`).join('\n');
+}
+
+function guideSourceList(sources = []) {
+  return sources.length
+    ? sources.slice(0, 4).map((source, index) => `${index + 1}. ${source.title} (${source.type})`).join('\n')
+    : '1. Local ODT baseline workflow';
+}
+
+const platformPageGuides = [
+  {
+    title: 'Overview',
+    aliases: ['overview', 'home page', 'dashboard'],
+    what: 'Shows the active work item, workflow stage, standards health, next best action, active work queue, and PR readiness signals.',
+    when: 'Use it when you want a fast answer to “where are we and what should I do next?”',
+    evidence: 'It summarizes saved assignment, workflow, standards, worker, review, and PR evidence.',
+    safety: 'It is read-only and should guide navigation rather than mutate work.',
+    next: 'Click the recommended action, or open Intake/Planner/Standards based on the visible gate.'
+  },
+  {
+    title: 'Intake',
+    aliases: ['intake', 'new intake', 'repo intake', 'repository intake', 'folder selection', 'choose folder', 'upload'],
+    what: 'Captures the requirement, Jira text, repo/folder context, branch, and supporting files such as screenshots, mockups, PDFs, DOCX, XLSX, CSV, JSON, YAML, Markdown, or text.',
+    when: 'Use it at the start of a task or whenever missing context must be added.',
+    evidence: 'Creates requirement analysis, repo analysis, clarification questions, and intake asset evidence.',
+    safety: 'Browser folder selection is read-only. Backend path scanning and worker launch need an explicit pasted path.',
+    next: 'Analyze the repo read-only, extract requirement structure, then move to Planner.'
+  },
+  {
+    title: 'Planner',
+    aliases: ['planner', 'plan page', 'technical design', 'implementation plan'],
+    what: 'Shows the technical design, implementation plan, impacted files, open questions, test approach, and approval context.',
+    when: 'Use it before any write-approved worker is launched.',
+    evidence: 'Creates or displays design and plan evidence that Standards and Agent Team consume.',
+    safety: 'Planning remains read-only until the user explicitly approves write scope.',
+    next: 'Run Standards after the design and plan are specific enough to review.'
+  },
+  {
+    title: 'Standards',
+    aliases: ['standards page', 'standards', 'governance page', 'standards gate', 'governance gate'],
+    what: 'Reviews UX, accessibility, WCAG/VPAT/Section 508, security, dependency, testing, maintainability, performance, and PR readiness expectations.',
+    when: 'Use it before delegation and again after implementation evidence is captured.',
+    evidence: 'Creates standards checks and findings with PASS, WARNING, BLOCKER, NEEDS_REVIEW, or APPROVAL_REQUIRED statuses.',
+    safety: 'Warnings need human approval, blockers need resolution or controlled override, and dependency installs stay on a separate approval path.',
+    next: 'Resolve findings, approve allowed warnings, or block implementation until the plan is improved.'
+  },
+  {
+    title: 'Agent Team',
+    aliases: ['agent team', 'workers', 'worker queue', 'codex', 'cline'],
+    what: 'Selects the execution engine and worker lane, prepares handoff bundles, launches supported Codex terminal workers, and records worker logs/output.',
+    when: 'Use it after planning, standards review, and approval gates are complete.',
+    evidence: 'Creates worker runs, prompts, handoff files, logs, responses, relay questions, reviewer findings, and implementation evidence.',
+    safety: 'Read-only workers can run earlier; write workers require explicit write approval and healthy adapter status.',
+    next: 'Choose a lane, launch or prepare handoff, ingest output, then record evidence.'
+  },
+  {
+    title: 'Review',
+    aliases: ['review', 'review queue', 'review closeout', 'comments'],
+    what: 'Captures human review comments, blocker decisions, accepted risks, rework routing, and implementation closeout.',
+    when: 'Use it after worker output or when a blocker/warning needs a human decision.',
+    evidence: 'Creates review comments, rework relay items, accepted-risk notes, and review-cycle closeout evidence.',
+    safety: 'Accept Risk should be used only when the impact is understood and documented.',
+    next: 'Resolve comments, accept risk with notes, or launch a rework worker.'
+  },
+  {
+    title: 'PR Ready',
+    aliases: ['pr ready', 'pr readiness', 'pull request', 'pr pack', 'pr markdown'],
+    what: 'Generates the PR package with summary, changed files, tests, accessibility notes, security notes, dependency notes, risks, rollback plan, and reviewer notes.',
+    when: 'Use it after implementation evidence, review, and verification are complete.',
+    evidence: 'Creates the PR readiness report and copyable PR markdown.',
+    safety: 'It should not mark work ready when blockers, failed tests, missing evidence, or pending dependencies remain.',
+    next: 'Review the markdown, inspect blockers/checklist, then copy the PR markdown when clean.'
+  },
+  {
+    title: 'Artifacts',
+    aliases: ['artifacts', 'evidence', 'context vault', 'saved evidence'],
+    what: 'Displays the saved evidence catalog for design, plans, OpenAPI, runs, reviews, worker relay, Agent Foundry, uploads, and PR readiness.',
+    when: 'Use it when you need to prove what happened or inspect generated outputs.',
+    evidence: 'It is the durable audit trail for the current assignment.',
+    safety: 'Artifacts should be reviewable before any external PR or dependency action.',
+    next: 'Open the artifact matching the question: design, plan, worker evidence, review log, context vault, or PR pack.'
+  },
+  {
+    title: 'ODT Guide',
+    aliases: ['odt guide', 'guide', 'chatbot', 'chat bot', 'handbook', 'platform coach'],
+    what: 'Acts as the in-app handbook and evidence-aware chatbot for ODT usage, SDLC steps, buttons, pages, status, blockers, workers, tests, and PR readiness.',
+    when: 'Use it whenever you are unsure where to click, why something is gated, or how ODT expects the workflow to proceed.',
+    evidence: 'It answers from the local handbook, standards, assignment evidence, run history, and PR readiness reports.',
+    safety: 'It can explain and recommend, but it does not silently approve write actions.',
+    next: 'Ask a button/page question or ask what the next safe action is.'
+  },
+  {
+    title: 'Runs',
+    aliases: ['runs', 'run history', 'timeline', 'execution history', 'live logs'],
+    what: 'Shows execution history, events, provider/model usage, latency, token counts, and run status.',
+    when: 'Use it to audit what happened or verify whether a backend/AI action ran.',
+    evidence: 'Displays run events and usage entries created by backend actions.',
+    safety: 'For live terminal worker logs, use Agent Team worker log controls when a worker run exists.',
+    next: 'Select a run to inspect the timeline, or return to Agent Team for worker-specific logs.'
+  },
+  {
+    title: 'Monitoring',
+    aliases: ['monitoring', 'usage', 'ai usage', 'provider health', 'health'],
+    what: 'Shows AI usage, provider health, request count, latency, token usage, and fallback visibility.',
+    when: 'Use it when responses look slow, generic, or unavailable.',
+    evidence: 'Displays provider and usage events.',
+    safety: 'Secrets stay backend-side; the UI should only show safe configuration status.',
+    next: 'Check provider status, then ask ODT Guide or retry the backend action.'
+  },
+  {
+    title: 'Settings',
+    aliases: ['settings', 'configuration', 'config', 'provider settings'],
+    what: 'Shows local runtime configuration, provider status, feature flags, and safe connector status.',
+    when: 'Use it to confirm ODT is running in the intended environment and provider mode.',
+    evidence: 'Displays safe settings and connector metadata.',
+    safety: 'Do not expose API keys, SSO tokens, or secrets in frontend settings.',
+    next: 'Adjust backend environment configuration outside the UI, then refresh ODT.'
+  }
+];
+
+const platformActionGuides = [
+  {
+    title: 'New Intake',
+    aliases: ['new intake', 'start intake'],
+    what: 'Starts the requirement and repo-context capture flow.',
+    when: 'Use it for a new Jira, requirement, feature, defect, or repo task.',
+    evidence: 'Creates or updates assignment intake evidence.',
+    safety: 'It does not modify the target repo.',
+    next: 'Add requirement text, choose or paste repo context, attach supporting files, then analyze.'
+  },
+  {
+    title: 'Analyze Repo Read-only',
+    aliases: ['analyze repo read-only', 'analyze repo readonly', 'analyse repo read only', 'analyze repository'],
+    what: 'Scans the target repo for framework, package manager, scripts, test tools, folders, and likely impacted areas.',
+    when: 'Use it before drafting design or plan so ODT can align to the actual codebase.',
+    evidence: 'Creates repo analysis evidence.',
+    safety: 'It is read-only and should not write files or install dependencies.',
+    next: 'Review detected framework/tests, then draft design and plan.'
+  },
+  {
+    title: 'Extract Structure',
+    aliases: ['extract structure', 'requirement extraction', 'analyze requirement'],
+    what: 'Turns unstructured requirement/Jira text into structured scope, acceptance criteria, gaps, assumptions, and clarification questions.',
+    when: 'Use it after pasting the requirement.',
+    evidence: 'Creates requirement analysis and clarification evidence.',
+    safety: 'It should surface gaps rather than inventing hidden requirements.',
+    next: 'Answer or accept clarification questions, then draft design.'
+  },
+  {
+    title: 'Draft Design',
+    aliases: ['draft design', 'technical design'],
+    what: 'Creates a technical design from the requirement, repo analysis, and standards expectations.',
+    when: 'Use it before implementation planning.',
+    evidence: 'Creates technical design evidence.',
+    safety: 'It should include validation, accessibility, security, testing, and risk considerations.',
+    next: 'Review the design, then draft the implementation plan.'
+  },
+  {
+    title: 'Draft Plan',
+    aliases: ['draft plan', 'implementation plan'],
+    what: 'Creates the implementation blueprint: tasks, impacted files, validation, tests, standards impacts, risks, and approvals.',
+    when: 'Use it after design is good enough to review.',
+    evidence: 'Creates implementation plan evidence.',
+    safety: 'It should not unlock writes until Standards and human approval are complete.',
+    next: 'Run Standards Check.'
+  },
+  {
+    title: 'Run Standards Check',
+    aliases: ['run standards check', 'standards check', 'run governance check'],
+    what: 'Runs governance checks on the current design/plan or implementation evidence.',
+    when: 'Use it before write delegation and before PR readiness.',
+    evidence: 'Creates standards check and finding records.',
+    safety: 'BLOCKER and APPROVAL_REQUIRED findings must be resolved, approved, or routed through the right approval path.',
+    next: 'Review findings in Standards, then approve warnings or block implementation.'
+  },
+  {
+    title: 'Approve With Warnings',
+    aliases: ['approve with warnings', 'approve warnings', 'approve warning'],
+    what: 'Records a human approval that non-critical warnings are acceptable for this workflow step.',
+    when: 'Use it only after reading the warning details and deciding the risk is acceptable.',
+    evidence: 'Creates an approval event tied to the assignment.',
+    safety: 'It should not bypass hard safety blockers, destructive actions, frontend secrets, or unapproved dependency installs.',
+    next: 'Return to Agent Team and confirm write delegation is now enabled.'
+  },
+  {
+    title: 'Block Implementation',
+    aliases: ['block implementation', 'block work', 'stop implementation'],
+    what: 'Records that implementation should not proceed until issues are addressed.',
+    when: 'Use it when the plan, standards, security, dependency, or requirement gaps are not acceptable.',
+    evidence: 'Creates a blocking approval/decision event.',
+    safety: 'This keeps write delegation disabled.',
+    next: 'Update plan/design or send rework, then rerun Standards.'
+  },
+  {
+    title: 'Unlock Write Delegation',
+    aliases: ['unlock write delegation', 'write approval', 'approve write', 'enable delegate', 'enable delegation'],
+    what: 'Guides the user to the approval path needed before a write-capable worker can run.',
+    when: 'Use it when Delegate or Launch Worker is disabled because write approval is missing.',
+    evidence: 'Leads to approval evidence when the user approves.',
+    safety: 'It should still respect unresolved blockers and separate dependency approval.',
+    next: 'Resolve blockers, approve allowed warnings, then return to Agent Team.'
+  },
+  {
+    title: 'Launch Worker',
+    aliases: ['launch worker', 'launch agent', 'delegate to agent', 'start worker', 'run codex'],
+    what: 'Creates a governed worker bundle and launches the selected worker lane through the configured adapter, currently Codex terminal for local execution.',
+    when: 'Use it when the plan is approved and the chosen worker lane is allowed.',
+    evidence: 'Creates worker run, handoff, prompt, log, response, status, and relay evidence.',
+    safety: 'Write-capable workers require approval. Dependency installs and destructive actions remain separately gated.',
+    next: 'Watch the worker/log area, then use Ingest Output when the response is ready.'
+  },
+  {
+    title: 'Prepare Handoff Only',
+    aliases: ['prepare handoff', 'handoff only', 'manual handoff', 'cline handoff'],
+    what: 'Creates the governed worker package without launching a terminal process.',
+    when: 'Use it for Cline/manual workflows or when the launch adapter is not available.',
+    evidence: 'Creates handoff files and run metadata.',
+    safety: 'The receiving tool still must follow the allowed actions in the handoff contract.',
+    next: 'Open/copy the handoff into the external tool, then bring output back with Ingest Output.'
+  },
+  {
+    title: 'Ingest Output',
+    aliases: ['ingest output', 'read worker output', 'capture output'],
+    what: 'Reads the worker response file and stores parsed output, findings, questions, and relay context.',
+    when: 'Use it after a worker finishes or writes its response.',
+    evidence: 'Creates/updates worker output evidence.',
+    safety: 'Ingesting output does not automatically mark implementation complete.',
+    next: 'Review parsed output, then Record Evidence From Worker if the output is acceptable.'
+  },
+  {
+    title: 'Record Evidence From Worker',
+    aliases: ['record evidence from worker', 'record implementation evidence', 'worker evidence'],
+    what: 'Converts worker output into implementation evidence such as changed files, commands, tests, summary, and post-implementation standards signals.',
+    when: 'Use it after successful worker output is ingested and reviewed.',
+    evidence: 'Creates implementation evidence and can feed PR readiness.',
+    safety: 'Only record evidence that matches the approved scope and actual worker output.',
+    next: 'Run reviewer/build verifier or generate PR pack when evidence is complete.'
+  },
+  {
+    title: 'Stop Worker',
+    aliases: ['stop worker', 'stop agent', 'terminate worker', 'cancel worker'],
+    what: 'Requests termination for an active worker and attempts to send SIGINT when ODT has the process id.',
+    when: 'Use it if a worker is stuck, wrong, unsafe, or no longer needed.',
+    evidence: 'Creates a stop request and worker status/log evidence.',
+    safety: 'Stopping is safest for active terminal workers; completed workers keep their logs and evidence.',
+    next: 'Inspect the log, decide whether to relaunch, rework, or mark the run failed.'
+  },
+  {
+    title: 'Send Rework',
+    aliases: ['send rework', 'launch rework', 'rework worker'],
+    what: 'Routes review findings into relay context so the next worker receives the issue and expected correction.',
+    when: 'Use it when reviewer comments require implementation changes.',
+    evidence: 'Creates rework relay evidence.',
+    safety: 'Rework still follows the selected worker lane permissions.',
+    next: 'Launch the appropriate worker and ingest the rework response.'
+  },
+  {
+    title: 'Resolve',
+    aliases: ['resolve comment', 'resolve review', 'mark resolved'],
+    what: 'Marks a review comment resolved.',
+    when: 'Use it after the issue is fixed, answered, or no longer applies.',
+    evidence: 'Updates review evidence.',
+    safety: 'Do not resolve unresolved technical risk just to pass the gate.',
+    next: 'Continue review closeout or generate PR readiness.'
+  },
+  {
+    title: 'Accept Risk',
+    aliases: ['accept risk', 'risk accepted', 'override blocker', 'override'],
+    what: 'Documents that a human accepts a known risk for the current workflow step.',
+    when: 'Use it only for allowed override cases after the impact is understood.',
+    evidence: 'Creates accepted-risk evidence.',
+    safety: 'Dependency installs, secrets, destructive actions, and certain compliance/security blockers should not be bypassed casually.',
+    next: 'Continue only if the remaining gate allows accepted risk.'
+  },
+  {
+    title: 'Generate PR Pack',
+    aliases: ['generate pr pack', 'prepare pr', 'generate pr ready', 'pr package'],
+    what: 'Builds the PR readiness report from assignment evidence, worker output, tests, review, standards, risks, and rollback notes.',
+    when: 'Use it after implementation and verification evidence exist.',
+    evidence: 'Creates PR readiness report evidence.',
+    safety: 'It should show blockers rather than hiding incomplete evidence.',
+    next: 'Open PR Ready, review the checklist, then copy markdown if clean.'
+  },
+  {
+    title: 'Copy PR Markdown',
+    aliases: ['copy pr markdown', 'copy markdown', 'copy pr'],
+    what: 'Copies the generated PR summary/checklist text for external PR creation.',
+    when: 'Use it after reviewing the PR Ready page.',
+    evidence: 'Uses the latest PR readiness report.',
+    safety: 'Copying markdown does not raise a PR or approve external changes by itself.',
+    next: 'Paste into the external PR after human review.'
+  }
+];
+
+function matchPlatformGuideEntry(input, entries = []) {
+  const lower = String(input || '').toLowerCase();
+  return entries.find((entry) => entry.aliases.some((alias) => lower.includes(alias)));
+}
+
+function isPlatformTrainingQuestion(input = '') {
+  const lower = String(input || '').toLowerCase();
+  const explicitTraining = [
+    /how (do|should|can) i use (odt|the app|this app|platform|workbench)/,
+    /how does (odt|the app|this app|platform|workbench) work/,
+    /why (use )?odt|what makes odt|how is odt different|stand(s)? out|advantage|enterprise governance|traceability|customi[sz]e|configurable polic(y|ies)/,
+    /train(ing)? (the )?user/,
+    /handbook|user guide|platform coach|chatbot|chat bot/,
+    /what (does|do|is|are) .*(button|page|screen|tab|panel|card|section|action|workflow|sdlc)/,
+    /what happens (if|when) .*click/,
+    /where (should|do) i click/,
+    /guide me/,
+    /explain .*odt/,
+    /sdlc steps|main flow|workflow steps/
+  ];
+  if (explicitTraining.some((pattern) => pattern.test(lower))) return true;
+  const mentionsAction = matchPlatformGuideEntry(lower, platformActionGuides);
+  const mentionsPage = matchPlatformGuideEntry(lower, platformPageGuides);
+  return Boolean((mentionsAction || mentionsPage) && /(what|how|when|why|click|button|use|open|explain|teach|guide)/.test(lower));
+}
+
+function isCasualGuideQuestion(input = '') {
+  const lower = String(input || '').trim().toLowerCase();
+  if (!lower) return false;
+  const shortGreeting = /^(hi|hello|hey|good morning|good afternoon|good evening|namaste|thanks|thank you)[!. ]*$/.test(lower);
+  const dateTimeQuestion = /\b(today'?s date|date today|current date|what date|what day is it|what time|current time|time now)\b/.test(lower);
+  const wellbeing = /\bhow are you\b|\bhow r u\b|\bare you okay\b/.test(lower);
+  const help = /\bhow can you help\b|\bwhat can you do\b|\bwhat do you do\b|\bhelp me\b/.test(lower);
+  return shortGreeting || dateTimeQuestion || wellbeing || help;
+}
+
+function inferGuideIntent(input = '') {
+  const lower = String(input || '').toLowerCase();
+  if (isCasualGuideQuestion(lower)) return 'casual';
+  if (/(oci genai|oracle ai|generative ai|genai|openai-compatible|responses api|chat completions|embedding|embeddings|rerank|vision|speech|text-to-speech|tts|mcp|bitbucket|jirasd|jira sd|buildservice|build service|devops|memory-service|memory service|sks|ask oracle|knowledge collection|confluence)/.test(lower)) return 'oracle-ai-connectors';
+  if (/(delegate|delegation|launch worker).*(disabled|blocked|blocking|gated|unavailable|not enabled)|(?:why|what).*(delegate|delegation).*(disabled|blocked|blocking|gated)/.test(lower)) return 'blockers';
+  if (isPlatformTrainingQuestion(lower)) return 'platform-training';
+  if (/(preview|persisted|db|database|save draft|publish|assessment)/.test(lower)) return 'assessment-preview';
+  if (/(api|payload|id|delete|remove|question|answer)/.test(lower)) return 'api-payload';
+  if (/(test|jest|coverage|qa|verify|verification|build|failed|passed)/.test(lower)) return 'testing';
+  if (/(where are we|status|progress|current state|how much|summary|overall|now)/.test(lower)) return 'status';
+  if (/(next|what should|roadmap|continue|plan next|move)/.test(lower)) return 'next-action';
+  if (/(blocker|blocked|warning|review comment|accept risk|resolve|override|critical)/.test(lower)) return 'blockers';
+  if (/(?:\bpr\b|pull request|readiness|pr-ready|pr ready|package|markdown)/.test(lower)) return 'pr-readiness';
+  if (/(worker|agent|codex|cline|delegate|handoff|run log|worker run|agent run|log|tail|stop|terminal)/.test(lower)) return 'agent-workers';
+  if (/(standard|governance|accessibility|wcag|vpat|security|dependency|3pl|approval)/.test(lower)) return 'standards';
+  if (/(repo|repository|folder|upload|mockup|excel|pdf|docx|file|intake|jira|github|mcp)/.test(lower)) return 'intake-repo';
+  return 'how-to-use';
+}
+
+function formatGuideDateTime() {
+  const timeZone = process.env.TZ || 'Asia/Kolkata';
+  return new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone,
+    timeZoneName: 'short'
+  }).format(new Date());
+}
+
+function answerCasualGuide(input, ctx) {
+  const lower = String(input || '').trim().toLowerCase();
+  if (/\b(today'?s date|date today|current date|what date|what day is it|what time|current time|time now)\b/.test(lower)) {
+    return `Today is ${formatGuideDateTime()}.`;
+  }
+  if (/\bhow are you\b|\bhow r u\b|\bare you okay\b/.test(lower)) {
+    return 'I am doing well and ready to help. I can be casual for quick questions, and when you ask about ODT work I switch into governed SDLC coach mode.';
+  }
+  if (/\bhow can you help\b|\bwhat can you do\b|\bwhat do you do\b|\bhelp me\b/.test(lower)) {
+    return [
+      'I can help you use ODT like a guided SDLC workbench:',
+      '',
+      '- explain pages, buttons, workflow states, and standards gates',
+      '- answer status, blocker, worker, test, PR readiness, and artifact questions',
+      '- explain how team policies and governance customization work',
+      '- summarize active assignment evidence from requirements, repo analysis, assets, plans, reviews, worker runs, and PR packs',
+      '- keep casual questions simple, like date/time or basic help',
+      '',
+      `Current work item: ${ctx.assignment.title || 'No active assignment title captured'}.`
+    ].join('\n');
+  }
+  return 'Hi. I am here. Ask me a quick question, or ask how to use ODT for intake, planning, standards, agent delegation, review, testing, or PR readiness.';
+}
+
+function buildGuideContext(evidence = {}, snapshot = {}) {
+  const assignment = evidence.assignment || snapshot.assignments?.[0] || {};
+  const workflow = evidence.workflowState || assignment.workflowState || {};
+  const latestRepo = evidence.repoAnalysis?.[0]?.analysisJson || {};
+  const latestPlan = evidence.implementationPlans?.[0]?.planJson || {};
+  const latestDesign = evidence.technicalDesigns?.[0]?.designJson || {};
+  const latestCheck = evidence.standardsChecks?.[0] || null;
+  const latestPrRow = evidence.prReadinessReports?.[0] || null;
+  const latestPr = latestPrRow?.reportJson || latestPrRow || null;
+  const latestImplementation = evidence.implementationEvidence?.[0] || null;
+  const workerRuns = evidence.agentWorkerRuns || [];
+  const latestWorker = workerRuns[0] || null;
+  const reviewComments = evidence.reviewComments || [];
+  const openReviewComments = reviewComments.filter((comment) => comment.status === 'open');
+  const standardsFindings = latestCheck?.findings || evidence.standardsFindings || [];
+  const unresolvedStandards = getUnresolvedStandardsBlockers(evidence);
+  const pendingDependencies = (evidence.dependencyRequests || []).filter((request) => request.status === 'pending');
+  const allTests = (evidence.implementationEvidence || []).flatMap((record) => record.tests || []);
+  const failedTests = allTests.filter((test) => test.status === 'failed');
+  const passedTests = allTests.filter((test) => test.status === 'passed');
+  const reviewCycleCloseout = evidence.reviewCycleCloseout || deriveReviewCycleCloseout(evidence);
+
+  return {
+    assignment,
+    workflow,
+    latestRepo,
+    latestPlan,
+    latestDesign,
+    latestCheck,
+    latestPr,
+    latestImplementation,
+    workerRuns,
+    latestWorker,
+    reviewComments,
+    openReviewComments,
+    standardsFindings,
+    unresolvedStandards,
+    pendingDependencies,
+    allTests,
+    failedTests,
+    passedTests,
+    reviewCycleCloseout,
+    intakeAssets: evidence.intakeAssets || [],
+    approvals: evidence.approvals || [],
+    usageSummary: snapshot.usageSummary || {}
+  };
+}
+
+function answerStatusGuide(ctx) {
+  return [
+    `Current ODT status: ${ctx.workflow.label || guideTitleCase(ctx.workflow.state || ctx.assignment.status || 'In Progress')}.`,
+    '',
+    `Work item: ${ctx.assignment.title || 'Current assignment'}`,
+    `Target repo: ${ctx.assignment.repoPath || ctx.latestRepo.repoPath || 'not captured'}`,
+    `PR gate: ${ctx.latestPr?.status || 'not generated'}`,
+    `Review comments: ${ctx.openReviewComments.length} open, ${ctx.reviewComments.length} total`,
+    `Worker runs: ${ctx.workerRuns.length}`,
+    `Tests recorded: ${ctx.passedTests.length} passed, ${ctx.failedTests.length} failed`,
+    '',
+    `Next best action: ${ctx.workflow.nextAction?.label || ctx.reviewCycleCloseout.nextAction?.label || 'Review current evidence'}.`,
+    ctx.workflow.nextAction?.detail || ctx.reviewCycleCloseout.nextAction?.detail || 'Open PR Ready, Review, or Agent Team depending on what you want to inspect next.'
+  ].join('\n');
+}
+
+function answerNextActionGuide(ctx) {
+  const actions = [
+    ctx.openReviewComments.length ? `Review ${ctx.openReviewComments.length} open review comment(s) in Review.` : '',
+    ctx.unresolvedStandards.length ? `Resolve or explicitly override ${ctx.unresolvedStandards.length} standards blocker(s).` : '',
+    ctx.pendingDependencies.length ? `Approve or reject ${ctx.pendingDependencies.length} dependency request(s) before install/PR readiness.` : '',
+    ctx.failedTests.length ? `Fix or accept risk for ${ctx.failedTests.length} failed test result(s).` : '',
+    ctx.latestPr?.status === 'PR_READY_REVIEW' ? 'Open PR Ready and copy/review the generated PR markdown.' : '',
+    !ctx.latestPr ? 'Generate a PR readiness pack after implementation evidence is recorded.' : ''
+  ].filter(Boolean);
+  return [
+    'Next action recommendation:',
+    '',
+    ctx.workflow.nextAction?.label ? `Primary: ${ctx.workflow.nextAction.label}` : 'Primary: review the latest workflow evidence.',
+    ctx.workflow.nextAction?.detail || ctx.reviewCycleCloseout.nextAction?.detail || '',
+    '',
+    'Checklist:',
+    guideList(actions, 'No immediate blocker is visible. Review PR Ready and Artifacts for final evidence.', 6)
+  ].join('\n');
+}
+
+function answerBlockersGuide(ctx) {
+  const reviewItems = ctx.openReviewComments.map((comment) => `${guideTitleCase(comment.severity)} review: ${comment.comment}`);
+  const standardsItems = ctx.unresolvedStandards.map((finding) => `${finding.category}: ${finding.message} Required action: ${finding.recommendation}`);
+  const dependencyItems = ctx.pendingDependencies.map((request) => `${request.packageName || 'Dependency'} is pending approval.`);
+  const failedItems = ctx.failedTests.map((test) => `${test.name || test.command || 'Test'}: ${test.notes || test.status}`);
+  const all = [...reviewItems, ...standardsItems, ...dependencyItems, ...failedItems];
+  return [
+    all.length ? 'Current blockers / gated items:' : 'No active blockers are open right now.',
+    '',
+    guideList(all, 'Review queue is clean, standards blockers are clear, dependencies are resolved, and no failed tests are recorded.', 8),
+    '',
+    'How to handle them:',
+    '- Review comments can be resolved, accepted as risk, or sent to rework.',
+    '- Standards blockers need a plan update or an explicit human override unless they are hard safety blockers.',
+    '- Dependency installs stay on a separate approval path.',
+    '- Failed tests need a fix, rerun, or accepted-risk evidence before PR readiness.',
+    '',
+    'Delegation gates to check:',
+    '- Standards review has run for the current plan/implementation phase.',
+    '- Write approval exists for write-capable workers.',
+    '- Critical blockers are resolved or explicitly accepted where policy allows.',
+    '- Dependency requests are approved/rejected separately before install.',
+    '- The selected agent adapter is healthy and the worker lane is allowed.'
+  ].join('\n');
+}
+
+function answerPrGuide(ctx) {
+  const checklist = ctx.latestPr?.readinessChecklist || [];
+  const unchecked = checklist.filter((item) => !item.checked);
+  const blocking = ctx.latestPr?.blockingItems || [];
+  return [
+    `PR readiness status: ${ctx.latestPr?.status || 'Not generated yet'}.`,
+    '',
+    `PR title: ${ctx.latestPr?.prTitle || ctx.assignment.title || 'Not captured'}`,
+    `Blocking items: ${blocking.length}`,
+    `Unchecked checklist items: ${unchecked.length}`,
+    '',
+    blocking.length ? 'Blocking items:' : 'PR evidence looks clean from the latest pack:',
+    guideList(blocking.map((item) => `${item.category}: ${item.message} Required action: ${item.requiredAction}`), 'No blocking items in the latest PR readiness pack.', 6),
+    '',
+    unchecked.length ? 'Unchecked checklist items:' : 'Checklist is complete:',
+    guideList(unchecked.map((item) => item.label), 'All latest PR checklist items are checked.', 6),
+    '',
+    'Where to go: open PR Ready to copy/review markdown, or Artifacts to inspect the saved PR Readiness Pack.'
+  ].join('\n');
+}
+
+function answerWorkersGuide(ctx) {
+  const workerItems = ctx.workerRuns.slice(0, 6).map((run) => {
+    const output = run.output || {};
+    const response = output.responseBytes ? `${output.responseBytes} bytes` : output.rawText ? 'captured' : 'not captured';
+    const questions = Array.isArray(run.questions) && run.questions.length ? `, ${run.questions.length} relay question(s)` : '';
+    const findings = Array.isArray(output.reviewerFindings) && output.reviewerFindings.length ? `, ${output.reviewerFindings.length} reviewer finding(s)` : '';
+    return `${run.workerRoleLabel || run.workerRole}: ${guideTitleCase(run.status)} (${guideTitleCase(run.executionAgent)}), response ${response}${questions}${findings}`;
+  });
+  return [
+    'Agent Team / worker evidence:',
+    '',
+    guideList(workerItems, 'No worker runs have been launched yet.', 8),
+    '',
+    `Latest worker: ${ctx.latestWorker?.workerRoleLabel || 'none'}`,
+    `Latest closeout state: ${ctx.reviewCycleCloseout.label || 'No review cycle queued'}`,
+    '',
+    'How to use this:',
+    '- Open Agent Team to review worker bundles, prompts, responses, logs, and relay context.',
+    '- Use Ingest Output after a worker writes a response.',
+    '- Use Record Evidence From Worker to convert worker output into implementation evidence.',
+    '- Stop appears for active workers only; completed workers keep log/evidence actions.'
+  ].join('\n');
+}
+
+function answerOracleAiConnectorsGuide(ctx) {
+  const connectors = listConnectors();
+  const connectorRows = connectors.map((connector) => (
+    `${connector.label}: ${connector.phaseFit}. ${connector.description} Status: ${connector.enabled ? 'enabled' : 'disabled'}; server ${connector.serverConfigured ? 'configured' : 'not configured'}.`
+  ));
+  return [
+    'How ODT 2.0 should use Oracle AI and internal agentic building blocks:',
+    '',
+    'Use AI where it improves analysis, retrieval, drafting, review, and coaching. Keep ODT as the workflow authority for standards, approvals, write scope, dependency decisions, evidence, and PR readiness.',
+    '',
+    'Current implementation stage:',
+    '- Stage A: backend-owned provider foundation is being wired now.',
+    '- Local deterministic RAG is default and fallback.',
+    '- OCI GenAI can power ODT Guide when endpoint, model, compartment, and backend auth are configured.',
+    '- OpenAI-compatible and Ollama paths use the same provider interface.',
+    '- Runs and Monitoring record provider, model, tokens, latency, errors, and fallback usage.',
+    '',
+    'Oracle AI roadmap:',
+    '- OCI GenAI Chat Completions: ODT Guide, specialist reviews, design/review summarization.',
+    '- OCI GenAI Responses/conversations/files/vector stores/containers: future managed agentic adapter.',
+    '- OCI embeddings and rerank: stronger enterprise RAG over standards, repo evidence, Jira, Confluence, worker output, and PR packs.',
+    '- OCI Document Understanding: PDFs, scanned docs, forms, tables, and document-heavy intake before GenAI reasoning.',
+    '- OCI Vision or approved document/image analysis: screenshot, mockup, diagram, OCR, and document enrichment.',
+    '- OCI Speech and text-to-speech: future voice intake and accessibility walkthroughs.',
+    '- OCI API Gateway plus Functions/OKE: future governed deployment boundary for ODT APIs, auth, rate limits, and routing.',
+    '- OCI Object Storage plus DB audit store: durable raw artifacts, prompts, outputs, logs, approvals, and PR packages.',
+    '',
+    'Internal MCP / knowledge connector fit:',
+    guideList(connectorRows, 'No connector catalog is loaded.', 10),
+    '',
+    'ODT page map:',
+    '- Intake: GenAI Files/Vector Stores, Document Understanding, Vision, Speech, Jira SD, Bitbucket/SCM read context.',
+    '- Planner: GenAI Responses or Agents for design, plan, impacted files, validation, risks, and assumptions.',
+    '- Standards: GenAI + RAG + ODT rule engine + SKS/Confluence knowledge + human gates.',
+    '- Agent Team: Codex/Cline/manual workers, MCP gateway, and future OCI tool calling after approval.',
+    '- Review: GenAI review plus Bitbucket/SCM/Jira/Build evidence.',
+    '- PR Ready: GenAI-generated title, description, tests, risks, rollback, reviewers, and compliance summary.',
+    '- Artifacts/Runs: Object Storage, DB/JSON audit store, and memory-service evidence.',
+    '',
+    'Phase mapping:',
+    '- Intake: Jira SD, Ask Oracle, SKS, Bitbucket/SCM read context.',
+    '- Analyze: Bitbucket/SCM read tools, SKS, repo summaries, uploaded assets.',
+    '- Clarify: Ask Oracle/SKS retrieval and memory-service context.',
+    '- Design/Plan: provider-backed ODT Guide/Agent Foundry using retrieved evidence.',
+    '- Govern: standards registry, SKS/internal standards, DevOps/runbook/security context.',
+    '- Approve: human approval remains outside automated write tools.',
+    '- Delegate: Codex/Cline/OCI-managed agents with approved scope and allowlisted tools.',
+    '- Ingest/Review: Bitbucket/SCM PR/diff/build outputs, Build Service logs, memory/evidence capture.',
+    '',
+    'Internal source references provided for configuration:',
+    '- MCP servers available with Codex: https://confluence.oraclecorp.com/confluence/pages/viewpage.action?pageId=20650909983',
+    '- Ask Oracle Knowledge Collections: https://confluence.oraclecorp.com/confluence/pages/viewpage.action?pageId=17328629254',
+    '',
+    'Public Oracle reference links:',
+    '- OCI Generative AI overview: https://docs.oracle.com/en-us/iaas/Content/generative-ai/overview.htm',
+    '- OCI OpenAI-compatible endpoints: https://docs.oracle.com/en-us/iaas/Content/generative-ai/openai-compatible-api.htm',
+    '- OCI Generative AI Agents: https://docs.oracle.com/en-us/iaas/Content/generative-ai-agents/overview.htm',
+    '- OCI Document Understanding: https://docs.oracle.com/en-us/iaas/Content/document-understanding/using/home.htm',
+    '- OCI Vision: https://docs.oracle.com/en-us/iaas/Content/vision/using/overview.htm',
+    '- OCI Speech: https://docs.oracle.com/iaas/Content/speech/using/speech.htm',
+    '- OCI API Gateway: https://docs.oracle.com/en-us/iaas/Content/APIGateway/home.htm',
+    '',
+    'Safety rule:',
+    'Read connectors can assist earlier phases. Write-capable SCM/Bitbucket/Build actions stay disabled until standards gates and explicit human approval are captured. Destructive actions stay blocked by default.',
+    '',
+    'Current task context:',
+    `- Work item: ${ctx.assignment.title || 'Current assignment'}`,
+    `- Workflow: ${ctx.workflow.label || ctx.workflow.state || ctx.assignment.status || 'not captured'}`
+  ].join('\n');
+}
+
+function answerTestingGuide(ctx) {
+  const latestTests = (ctx.latestImplementation?.tests || ctx.allTests || []).slice(0, 8).map((test) => (
+    `${guideTitleCase(test.status)}: ${test.name || test.command || 'Test'}${test.notes ? ` - ${test.notes}` : ''}`
+  ));
+  const planned = normalizeStringItems(ctx.latestPlan.testTasks || ctx.latestDesign.testing || [], 8);
+  return [
+    'Testing evidence:',
+    '',
+    `Recorded tests: ${ctx.allTests.length}`,
+    `Passed: ${ctx.passedTests.length}`,
+    `Failed: ${ctx.failedTests.length}`,
+    '',
+    'Latest recorded outcomes:',
+    guideList(latestTests, 'No test evidence recorded yet.', 8),
+    '',
+    'Planned / expected tests:',
+    guideList(planned, 'No explicit test plan found in the latest plan/design.', 8)
+  ].join('\n');
+}
+
+function answerStandardsGuide(ctx) {
+  const findings = (ctx.latestCheck?.findings || ctx.standardsFindings || []).slice(0, 8).map((finding) => (
+    `${finding.status}: ${finding.category} - ${finding.message}`
+  ));
+  return [
+    `Latest standards gate: ${ctx.latestCheck?.status || 'Not run yet'}.`,
+    '',
+    `Standards version: ${ctx.latestCheck?.standardsVersion || 'not captured'}`,
+    `Approvals captured: ${ctx.approvals.length}`,
+    `Pending dependency requests: ${ctx.pendingDependencies.length}`,
+    '',
+    'Findings:',
+    guideList(findings, 'No standards findings captured yet.', 8),
+    '',
+    'Governance rule:',
+    '- Warnings can proceed only with human approval.',
+    '- Blockers require resolution or controlled override where allowed.',
+    '- Dependency installs always require package-specific approval.',
+    '- Frontend secrets, destructive actions, and unapproved installs stay hard-blocked.'
+  ].join('\n');
+}
+
+function answerIntakeRepoGuide(ctx) {
+  const assets = ctx.intakeAssets.map((asset) => {
+    const analysis = asset.analysisJson || {};
+    const extraction = analysis.localExtraction?.status || 'not_analyzed';
+    const ai = analysis.aiEnrichment?.recommended ? `, optional AI: ${analysis.aiEnrichment.status}` : '';
+    return `${asset.originalName} (${asset.fileType}, ${asset.bytes} bytes, extraction: ${extraction}${ai})`;
+  });
+  const repoSignals = ctx.latestRepo.frameworks || [];
+  const tests = ctx.latestRepo.testFrameworks || [];
+  return [
+    'Intake and repo context:',
+    '',
+    `Repo path: ${ctx.assignment.repoPath || ctx.latestRepo.repoPath || 'not captured'}`,
+    `Package manager: ${ctx.latestRepo.packageManager || 'not detected'}`,
+    `Frameworks: ${repoSignals.length ? repoSignals.join(', ') : 'not detected'}`,
+    `Test frameworks: ${tests.length ? tests.join(', ') : 'not detected'}`,
+    '',
+    'Uploaded / attached context:',
+    guideList(assets, 'No intake assets attached.', 8),
+    '',
+    'Storage rule:',
+    'ODT copies uploads into its own workspace storage. It does not copy them into the target repo unless a write-approved worker explicitly does so inside approved scope.',
+    '',
+    'Enrichment rule:',
+    'Text-like files are excerpted locally. PDF/DOCX/XLSX/PPTX/images are stored as evidence and can receive optional parser or vision enrichment later; if that provider is offline, ODT falls back to metadata, file path, and manual review.'
+  ].join('\n');
+}
+
+function answerAssessmentPreviewGuide(ctx) {
+  return [
+    'Assessment Preview rule:',
+    '',
+    'Preview must reflect the last saved DB version, not unsaved edits.',
+    '',
+    'Create flow:',
+    '- Preview remains disabled until the Assessment is saved/published and redirects into edit.',
+    '',
+    'Edit flow:',
+    '- Initial Preview state comes from saved GET data.',
+    '- Any Assessment field, question, answer option, or correct-answer checkbox change disables Preview immediately.',
+    '- Save Draft or Publish can re-enable Preview only after success and only if submitted/saved questions are previewable.',
+    '',
+    'Previewable question data:',
+    '- At least one question.',
+    '- Every question has text.',
+    '- Every question has at least two answer options with text.',
+    '- Every question has at least one correct answer.',
+    '',
+    'Current ODT evidence says this task is at:',
+    `- Workflow: ${ctx.workflow.label || ctx.workflow.state || 'not captured'}`,
+    `- PR gate: ${ctx.latestPr?.status || 'not generated'}`
+  ].join('\n');
+}
+
+function answerApiPayloadGuide(ctx) {
+  const apiRules = normalizeStringItems([
+    ...(ctx.latestDesign.apiChanges || []),
+    ...(ctx.latestPlan.backendTasks || []),
+    ...(ctx.latestPlan.validationTasks || [])
+  ], 10);
+  return [
+    'Assessment update API payload rules:',
+    '',
+    '- Deleted question: do not send that question block.',
+    '- Removed answer: do not send that answer block.',
+    '- New question: do not send question id; do not send answer ids for answers under it.',
+    '- New answer under existing question: keep the existing question id, omit the new answer id.',
+    '- Existing question/answer: preserve ids when still present.',
+    '',
+    'Plan evidence related to this:',
+    guideList(apiRules, 'No API payload-specific plan tasks were found.', 8)
+  ].join('\n');
+}
+
+function answerPlatformTrainingGuide(ctx, input) {
+  const lower = String(input || '').toLowerCase();
+  if (/(customi[sz]e|modify|change|edit|tune).{0,60}(rule|governance|standard|policy|gate|approval)|(?:rule|governance|standard|policy|gate|approval).{0,60}(customi[sz]e|modify|change|edit|tune)/.test(lower)) {
+    const registry = loadStandardsRegistry();
+    const standardsConfig = registry.sources?.find((source) => source.id === 'standards-config');
+    return [
+      'How teams customize ODT governance:',
+      '',
+      'Current local MVP path:',
+      `1. Edit the standards registry: ${standardsConfig?.path || 'server/standards/odt-standards.json'}.`,
+      '2. Update the related Markdown source documents when guidance changes.',
+      '3. Bump or note the standards version when the policy meaning changes.',
+      '4. Restart/reload ODT if needed and rerun Standards Check on the assignment.',
+      '5. Review the new findings before approving write/delegate actions.',
+      '',
+      'What can be customized:',
+      '- Accessibility required topics and VPAT/WCAG/Section 508 expectations.',
+      '- Dependency license preferences and package approval rules.',
+      '- Security checks, testing expectations, UX guidance, review templates, and PR-readiness checklist.',
+      '- Team-specific approval gates, worker lanes, and provider/model adapter policies.',
+      '',
+      'What should stay hard-gated:',
+      '- Frontend secrets.',
+      '- Destructive actions.',
+      '- Dependency installs without package-specific approval.',
+      '- Write actions without human approval.',
+      '- External system writes without approval.',
+      '',
+      'Future production path:',
+      'ODT should add a Policy Admin UI where authorized admins edit rules, preview impact, validate config, publish a new policy version, and create an audit event. ODT should not rely on random code edits for enterprise policy changes.',
+      '',
+      'Rule of thumb:',
+      'Customization is allowed; silent governance drift is not. Every policy change and override should be versioned, reviewed, and traceable.'
+    ].join('\n');
+  }
+
+  if (/(why (use )?odt|what makes odt|how is odt different|stand(s)? out|advantage|enterprise governance|traceability|customi[sz]e|configurable polic(y|ies))/.test(lower)) {
+    return [
+      'Why ODT stands out:',
+      '',
+      'ODT combines modern AI developer workflow with enterprise governance and traceability.',
+      '',
+      'Modern AI tools are strong at repo-aware chat, plan-first assistance, terminal delegation, code edits, and review loops. ODT adopts those patterns, then adds a governed evidence system around them.',
+      '',
+      'What ODT adds on top:',
+      '- Standards gates for UX, accessibility, security, dependency, testing, maintainability, and PR readiness.',
+      '- Human approval evidence before write actions, dependency installs, risky overrides, and external writes.',
+      '- Durable records for requirement analysis, repo analysis, uploaded assets, plans, standards findings, worker runs, logs, tests, review comments, relay items, and PR packs.',
+      '- Configurable team policies instead of one hardcoded rule set.',
+      '- Adapter-ready execution for Codex, Cline/manual, OCI GenAI/OCA, OpenAI, Ollama, MCP, and future providers.',
+      '',
+      'Team customization model:',
+      '- Standards can vary by team or product area.',
+      '- Dependency policies can be stricter for enterprise/compliance-heavy work.',
+      '- Approval gates can differ for local demo, internal tools, production apps, and regulated systems.',
+      '- Worker lanes and model/provider choices can be configured behind the same governed contract.',
+      '',
+      'Simple positioning:',
+      'AI assistants help produce work. ODT helps govern, prove, and safely operationalize that work.',
+      '',
+      'Current task context:',
+      `- Work item: ${ctx.assignment.title || 'Current assignment'}`,
+      `- Workflow: ${ctx.workflow.label || ctx.workflow.state || ctx.assignment.status || 'not captured'}`
+    ].join('\n');
+  }
+
+  const action = matchPlatformGuideEntry(input, platformActionGuides);
+  const page = matchPlatformGuideEntry(input, platformPageGuides);
+  const entry = action || page;
+
+  if (entry) {
+    return [
+      'ODT platform coach:',
+      '',
+      `${action ? 'Action' : 'Page'}: ${entry.title}`,
+      `What it does: ${entry.what}`,
+      `When to use it: ${entry.when}`,
+      `Evidence it creates/uses: ${entry.evidence}`,
+      `Safety rule: ${entry.safety}`,
+      `Next click: ${entry.next}`,
+      '',
+      'Current task context:',
+      `- Work item: ${ctx.assignment.title || 'Current assignment'}`,
+      `- Workflow: ${ctx.workflow.label || ctx.workflow.state || ctx.assignment.status || 'not captured'}`,
+      `- Latest standards gate: ${ctx.latestCheck?.status || 'not run'}`,
+      `- PR readiness: ${ctx.latestPr?.status || 'not generated'}`
+    ].join('\n');
+  }
+
+  const sdlcSteps = [
+    '1. Intake: capture requirement/Jira text, repo or folder, branch, and context files.',
+    '2. Analyze: run requirement extraction and read-only repo analysis.',
+    '3. Clarify: answer, accept, or route open questions before planning.',
+    '4. Design: draft technical design with UX, accessibility, security, data/API, and test impact.',
+    '5. Plan: draft implementation tasks, impacted files, validation, risks, and approvals.',
+    '6. Govern: run Standards and resolve warnings/blockers or document allowed exceptions.',
+    '7. Approve: capture human approval before write-capable delegation.',
+    '8. Delegate: launch or prepare a governed worker handoff in Agent Team.',
+    '9. Ingest: pull worker output back into ODT and record implementation evidence.',
+    '10. Review: resolve comments, send rework, verify tests, then generate PR Ready.'
+  ];
+  const pageMap = [
+    'Intake = start and enrich the work item.',
+    'Planner = review design and implementation plan.',
+    'Standards = check governance before/after implementation.',
+    'Agent Team = launch/track Codex/Cline/manual workers.',
+    'Review = close comments, risks, and rework.',
+    'PR Ready = generate final PR package.',
+    'Artifacts/Runs = audit evidence and execution history.'
+  ];
+
+  return [
+    'ODT Guide is your in-app platform coach and evidence-aware chatbot.',
+    '',
+    'How to use ODT for SDLC work:',
+    sdlcSteps.join('\n'),
+    '',
+    'Page map:',
+    guideList(pageMap, 'Open Overview to choose the next step.', 8),
+    '',
+    'Button rule of thumb:',
+    '- Buttons that analyze, draft, ingest, or generate evidence are safe workflow actions.',
+    '- Buttons that write files, launch workers, install dependencies, or override blockers require explicit approval.',
+    '- Dependency installs always stay on their own approval path.',
+    '',
+    'Current task context:',
+    `- Work item: ${ctx.assignment.title || 'Current assignment'}`,
+    `- Next safe action: ${ctx.workflow.nextAction?.label || ctx.reviewCycleCloseout.nextAction?.label || 'Review Overview or Planner'}`
+  ].join('\n');
+}
+
+function answerHowToUseGuide(ctx, input) {
+  const steps = inferGuideSteps(input, { assignment: ctx.assignment });
+  return [
+    'How to use ODT Guide effectively:',
+    '',
+    guideList(steps, 'Ask about status, blockers, PR readiness, standards, worker runs, tests, repo intake, or a specific requirement rule.', 8),
+    '',
+    'Try questions like:',
+    '- Where are we now?',
+    '- Why is delegation blocked?',
+    '- What did the Build Verifier run?',
+    '- What is missing before PR?',
+    '- Explain the Assessment Preview DB rule.',
+    '- List update API payload edge cases.'
+  ].join('\n');
+}
+
 function answerFromLocalRag(input, snapshot, assignmentId = 'assignment-local-mvp') {
   const evidence = collectEvidence(assignmentId);
   const corpus = buildKnowledgeCorpus(assignmentId);
   const sources = rankKnowledge(input, corpus, 6);
-  const steps = inferGuideSteps(input, evidence);
-  const assets = evidence.intakeAssets || [];
-  const latestRepo = evidence.repoAnalysis?.[0]?.analysisJson;
-  const latestCheck = evidence.standardsChecks?.[0];
-  const sourceList = sources.length
-    ? sources.map((source, index) => `${index + 1}. ${source.title} (${source.type})`).join('\n')
-    : '1. Local ODT baseline workflow';
+  const ctx = buildGuideContext(evidence, snapshot);
+  const intent = inferGuideIntent(input);
+  if (intent === 'casual') {
+    return answerCasualGuide(input, ctx);
+  }
+  const responders = {
+    status: answerStatusGuide,
+    'next-action': answerNextActionGuide,
+    blockers: answerBlockersGuide,
+    'pr-readiness': answerPrGuide,
+    'agent-workers': answerWorkersGuide,
+    'oracle-ai-connectors': answerOracleAiConnectorsGuide,
+    testing: answerTestingGuide,
+    standards: answerStandardsGuide,
+    'intake-repo': answerIntakeRepoGuide,
+    'assessment-preview': answerAssessmentPreviewGuide,
+    'api-payload': answerApiPayloadGuide,
+    'platform-training': (context) => answerPlatformTrainingGuide(context, input),
+    'how-to-use': (context) => answerHowToUseGuide(context, input)
+  };
+  const body = (responders[intent] || responders['how-to-use'])(ctx);
 
   return [
-    'I checked the local ODT knowledge corpus and evidence trail before answering.',
+    body,
     '',
-    'Recommended steps:',
-    ...steps.map((step, index) => `${index + 1}. ${step}`),
+    'Evidence used:',
+    `- Assignment: ${ctx.assignment.title || assignmentId}`,
+    `- Workflow: ${ctx.workflow.label || ctx.workflow.state || 'not captured'}`,
+    `- Latest standards: ${ctx.latestCheck?.status || 'not run'}`,
+    `- Latest PR gate: ${ctx.latestPr?.status || 'not generated'}`,
     '',
-    'What ODT has already captured:',
-    `- Assignments: ${snapshot.assignments.length}`,
-    `- Recent runs: ${snapshot.runs.length}`,
-    `- AI requests today: ${snapshot.usageSummary.requestsToday}`,
-    `- Latest repo analysis: ${latestRepo?.repoPath || 'not captured yet'}`,
-    `- Intake context files: ${assets.length ? assets.map((asset) => `${asset.originalName} (${asset.fileType})`).join(', ') : 'none yet'}`,
-    `- Latest standards gate: ${latestCheck?.status || 'not run yet'}`,
-    '',
-    'Safety and governance note:',
-    '- Repo analysis is read-only by default.',
-    '- Uploaded context is copied into the ODT workbench workspace, not the target repository.',
-    '- Write/delegate actions, package installs, and external-system writes require explicit human approval.',
-    '- Hard blockers remain frontend secrets, destructive actions, and unapproved dependencies.',
-    '',
-    'Sources used:',
-    sourceList
+    'Sources:',
+    guideSourceList(sources)
   ].join('\n');
 }
 
@@ -5267,7 +7012,7 @@ function localProviderContent(requestType, input, snapshot, assignmentId = 'assi
   const text = String(input || '');
   const lower = text.toLowerCase();
   if (requestType === 'chat') {
-    if (!text.trim()) return 'Ask ODT Guide about a requirement, a run, a review gate, or how to split frontend/backend work.';
+    if (!text.trim()) return 'Hi. Ask me anything about using ODT, the active task, today’s date, workflow blockers, standards gates, worker runs, tests, artifacts, or PR readiness.';
     if (aiConfig.ragEnabled) {
       return answerFromLocalRag(text, snapshot, assignmentId);
     }
@@ -5341,24 +7086,75 @@ async function handleAiRequest(response, requestType, body) {
   const input = extractInput(body);
   const assignmentId = body.assignmentId || null;
   const sessionId = body.sessionId || 'local-session';
+  const provider = createGenAiProvider(aiConfig);
   const model = requestType === 'embed'
     ? (aiConfig.embedModelConfigured ? 'configured-server-side-embed-model' : 'local-placeholder-embed')
-    : (aiConfig.chatModelConfigured ? 'configured-server-side-chat-model' : 'local-guide-model');
+    : provider.model;
+  let providerStatus = provider.isConfigured();
+  let selectedProvider = provider.id;
+  let responseModel = model;
+  let fallbackUsed = provider.id === 'local';
+  let providerError = null;
 
   try {
     assertInputLimit(input);
-    createRunEvent(runId, 'request_received', 'running', { requestId, requestType, provider: aiConfig.provider }, assignmentId);
-    createRunEvent(runId, 'provider_selected', 'running', { provider: aiConfig.provider, model, fallbackUsed: aiConfig.provider === 'local' }, assignmentId);
+    createRunEvent(runId, 'request_received', 'running', { requestId, requestType, provider: provider.id }, assignmentId);
+    createRunEvent(runId, 'provider_selected', 'running', {
+      provider: provider.id,
+      model,
+      ready: providerStatus.ready,
+      fallbackUsed,
+      status: providerStatus.message
+    }, assignmentId);
     const snapshot = await buildSnapshot();
-    const content = localProviderContent(requestType, input, snapshot, assignmentId || 'assignment-local-mvp');
+    let providerResult = null;
+    if (requestType === 'chat' && provider.id !== 'local' && providerStatus.ready) {
+      const rag = buildProviderContext(input, assignmentId || 'assignment-local-mvp', 6);
+      createRunEvent(runId, 'rag_context_retrieved', 'ok', {
+        requestId,
+        sourceCount: rag.sources.length,
+        sources: rag.sources.slice(0, 4).map((source) => source.title)
+      }, assignmentId);
+      try {
+        providerResult = await provider.chat({
+          question: input,
+          context: rag.context,
+          sources: rag.sources,
+          snapshot,
+          assignmentId: assignmentId || 'assignment-local-mvp',
+          requestType
+        });
+      } catch (error) {
+        providerError = error;
+        fallbackUsed = true;
+        createRunEvent(runId, 'provider_fallback_used', 'warning', {
+          requestId,
+          provider: provider.id,
+          model,
+          reason: error.message
+        }, assignmentId);
+      }
+    } else if (requestType === 'chat' && provider.id !== 'local') {
+      providerError = new Error(providerStatus.message);
+      fallbackUsed = true;
+      createRunEvent(runId, 'provider_fallback_used', 'warning', {
+        requestId,
+        provider: provider.id,
+        model,
+        reason: providerStatus.message
+      }, assignmentId);
+    }
+
+    const content = providerResult?.content || localProviderContent(requestType, input, snapshot, assignmentId || 'assignment-local-mvp');
+    selectedProvider = providerResult?.provider || (requestType === 'chat' && !providerError ? provider.id : 'local');
+    responseModel = providerResult?.model || (providerError || requestType !== 'chat' ? localModelForRequest(requestType) : model);
+    fallbackUsed = providerResult ? Boolean(providerResult.fallbackUsed) : true;
     const serializedContent = typeof content === 'string' ? content : JSON.stringify(content);
     const latencyMs = Date.now() - startedAt;
-    const promptTokens = estimateTokens(input);
-    const completionTokens = estimateTokens(serializedContent);
-    const usage = {
-      promptTokens,
-      completionTokens,
-      totalTokens: promptTokens + completionTokens
+    const usage = providerResult?.usage || {
+      promptTokens: estimateTokens(input),
+      completionTokens: estimateTokens(serializedContent),
+      totalTokens: estimateTokens(input) + estimateTokens(serializedContent)
     };
 
     statements.insertAiUsage.run(
@@ -5368,37 +7164,45 @@ async function handleAiRequest(response, requestType, body) {
       sessionId,
       body.userId || null,
       requestType,
-      aiConfig.provider,
-      model,
+      selectedProvider,
+      responseModel,
       String(input || '').length,
       usage.promptTokens,
       usage.completionTokens,
       usage.totalTokens,
       latencyMs,
       'ok',
-      null,
-      aiConfig.provider === 'local' ? 1 : 0,
+      providerError?.message || null,
+      fallbackUsed ? 1 : 0,
       new Date().toISOString()
     );
 
     if (requestType === 'chat') {
-      statements.insertChat.run(createId('msg'), assignmentId, sessionId, 'user', input, aiConfig.provider, model, new Date().toISOString());
-      statements.insertChat.run(createId('msg'), assignmentId, sessionId, 'assistant', serializedContent, aiConfig.provider, model, new Date().toISOString());
+      statements.insertChat.run(createId('msg'), assignmentId, sessionId, 'user', input, selectedProvider, responseModel, new Date().toISOString());
+      statements.insertChat.run(createId('msg'), assignmentId, sessionId, 'assistant', serializedContent, selectedProvider, responseModel, new Date().toISOString());
     }
 
-    createRunEvent(runId, 'response_generated', 'ok', { requestId, requestType, model, latencyMs }, assignmentId);
-    createRunEvent(runId, 'usage_logged', 'ok', { requestId, totalTokens: usage.totalTokens, provider: aiConfig.provider, model }, assignmentId);
+    createRunEvent(runId, 'response_generated', 'ok', {
+      requestId,
+      requestType,
+      provider: selectedProvider,
+      model: responseModel,
+      latencyMs,
+      fallbackUsed
+    }, assignmentId);
+    createRunEvent(runId, 'usage_logged', 'ok', { requestId, totalTokens: usage.totalTokens, provider: selectedProvider, model: responseModel }, assignmentId);
 
     sendJson(response, 200, {
-      provider: aiConfig.provider,
-      model,
+      provider: selectedProvider,
+      model: responseModel,
       requestType,
       content,
       usage,
       latencyMs,
       requestId,
       runId,
-      error: null
+      fallbackUsed,
+      error: providerError?.message || null
     });
   } catch (error) {
     const latencyMs = Date.now() - startedAt;
@@ -5410,8 +7214,8 @@ async function handleAiRequest(response, requestType, body) {
       sessionId,
       body.userId || null,
       requestType,
-      aiConfig.provider,
-      model,
+      selectedProvider,
+      responseModel,
       String(input || '').length,
       promptTokens,
       0,
@@ -5419,19 +7223,20 @@ async function handleAiRequest(response, requestType, body) {
       latencyMs,
       'error',
       error.message,
-      aiConfig.provider === 'local' ? 1 : 0,
+      fallbackUsed ? 1 : 0,
       new Date().toISOString()
     );
     createRunEvent(runId, 'request_failed', 'error', { requestId, requestType, error: error.message, latencyMs }, assignmentId);
     sendJson(response, 400, {
-      provider: aiConfig.provider,
-      model,
+      provider: selectedProvider,
+      model: responseModel,
       requestType,
       content: null,
       usage: { promptTokens, completionTokens: 0, totalTokens: promptTokens },
       latencyMs,
       requestId,
       runId,
+      fallbackUsed,
       error: error.message
     });
   }
@@ -5510,7 +7315,7 @@ function buildOpenApiSchema() {
         post: {
           operationId: 'storeIntakeAssets',
           summary: 'Store intake context assets',
-          description: 'Copies user-provided context files into the ODT workbench workspace without modifying the target repository.',
+          description: 'Copies user-provided context files into the ODT workbench workspace without modifying the target repository. Generates local asset analysis, text excerpts where possible, checksum evidence, and optional AI/parser enrichment status.',
           requestBody: {
             required: true,
             content: jsonContent({
@@ -5557,6 +7362,28 @@ function buildOpenApiSchema() {
           description: 'Streams a copied intake asset from the ODT workbench workspace.',
           parameters: [{ name: 'assetId', in: 'path', required: true, schema: { type: 'string' }, description: 'Asset id.' }],
           responses: { 200: { description: 'Raw copied file content.' }, 404: { description: 'Asset not found.' } }
+        }
+      },
+      '/api/intake/assets/{assetId}/enrich': {
+        post: {
+          operationId: 'checkIntakeAssetEnrichment',
+          summary: 'Check optional intake asset enrichment',
+          description: 'Returns local extraction status and optional model/parser enrichment readiness for a copied intake asset. This endpoint is fail-soft: if no provider is configured, it returns local metadata and fallback guidance instead of blocking the workflow.',
+          parameters: [{ name: 'assetId', in: 'path', required: true, schema: { type: 'string' }, description: 'Asset id.' }],
+          requestBody: {
+            required: false,
+            content: jsonContent({
+              type: 'object',
+              properties: {
+                assignmentId: { type: 'string', description: 'Assignment id for evidence storage.' },
+                provider: { type: 'string', description: 'Optional provider override such as local, oci-genai, openai, ollama, or manual.' }
+              }
+            })
+          },
+          responses: {
+            200: { description: 'Asset enrichment readiness or fallback result.', content: jsonContent({ type: 'object' }) },
+            404: { description: 'Asset not found.', content: jsonContent({ type: 'object' }) }
+          }
         }
       },
       '/api/intake/analyze': {
@@ -6342,6 +8169,7 @@ function normalizedAiResponseSchema() {
       latencyMs: { type: 'integer', description: 'Request latency in milliseconds.' },
       requestId: { type: 'string', description: 'Unique request id for monitoring and debugging.' },
       runId: { type: 'string', description: 'Run id associated with generated run events.' },
+      fallbackUsed: { type: 'boolean', description: 'True when ODT answered through local deterministic fallback instead of a remote provider.' },
       error: { type: 'string', nullable: true, description: 'Normalized error message, if failed.' }
     }
   };
@@ -6395,8 +8223,9 @@ async function handleConnectorQuery(response, body) {
   const mode = String(body.mode || 'read').toLowerCase();
   const now = new Date().toISOString();
   if (!connector || !connector.enabled) {
-    statements.insertConnectorEvent.run(createId('connector'), body.connectorId || 'unknown', action, mode, 'blocked', 'Connector is disabled or not configured.', now);
-    sendJson(response, 403, { status: 'blocked', reason: 'Connector is disabled or not configured.', connector });
+    const reason = connector?.readinessDetail || 'Connector is disabled or not configured.';
+    statements.insertConnectorEvent.run(createId('connector'), body.connectorId || 'unknown', action, mode, 'blocked', reason, now);
+    sendJson(response, 403, { status: 'blocked', reason, connector });
     return;
   }
   if (mode.includes('delete') || mode.includes('destructive')) {
@@ -6480,7 +8309,7 @@ const server = createServer(async (request, response) => {
       const assignmentId = intakeAssetListMatch[1];
       sendJson(response, 200, {
         assignmentId,
-        assets: statements.selectIntakeAssetsByAssignment.all(assignmentId),
+        assets: statements.selectIntakeAssetsByAssignment.all(assignmentId).map(parseIntakeAssetRow),
         uploadPolicy,
         workspaceDir: join(workspaceDir, assignmentId, 'intake-assets')
       });
@@ -6489,12 +8318,27 @@ const server = createServer(async (request, response) => {
 
     const intakeAssetFileMatch = url.pathname.match(/^\/api\/intake\/assets\/([^/]+)\/file$/);
     if (request.method === 'GET' && intakeAssetFileMatch) {
-      const asset = statements.selectIntakeAssetById.get(intakeAssetFileMatch[1]);
+      const asset = parseIntakeAssetRow(statements.selectIntakeAssetById.get(intakeAssetFileMatch[1]));
       if (!asset || !existsSync(asset.storedPath)) {
         sendJson(response, 404, { error: 'Intake asset not found.' });
         return;
       }
       sendFile(response, asset);
+      return;
+    }
+
+    const intakeAssetEnrichMatch = url.pathname.match(/^\/api\/intake\/assets\/([^/]+)\/enrich$/);
+    if (request.method === 'POST' && intakeAssetEnrichMatch) {
+      const body = await readBody(request);
+      try {
+        sendJson(response, 200, enrichIntakeAsset({
+          assetId: intakeAssetEnrichMatch[1],
+          assignmentId: body.assignmentId || 'assignment-local-mvp',
+          provider: body.provider || aiConfig.provider
+        }));
+      } catch (err) {
+        sendJson(response, err.statusCode || 400, { error: err.message });
+      }
       return;
     }
 
