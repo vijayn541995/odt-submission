@@ -1,0 +1,11 @@
+{
+  "name": "@odt/config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./navigation": "./src/navigation.js",
+    "./ports": "./src/ports.js"
+  }
+}

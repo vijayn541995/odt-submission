@@ -1,0 +1,1182 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/0z61032l",
+    "id": "0z61032l",
+    "slide": 8,
+    "layoutId": "/ppt/slideLayouts/slideLayout6.xml",
+    "layoutName": "Light - Title/Subtitle 1 Column",
+    "masterLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "Oracle Redwood 08-26-2020",
+    "colors": {
+      "accent1": "#C74634",
+      "accent2": "#FACD62",
+      "accent3": "#94AFAF",
+      "accent4": "#2B6242",
+      "accent5": "#AE562C",
+      "accent6": "#759C6C",
+      "dk1": "#312D2A",
+      "lt1": "#FCFBFA",
+      "dk2": "#312D2A",
+      "lt2": "#FCFBFA",
+      "hlink": "#00688C",
+      "folHlink": "#00688C"
+    },
+    "fontScheme": {
+      "name": "Oracle Sans Tabular",
+      "majorFont": {
+        "latinTypeface": "Georgia"
+      },
+      "minorFont": {
+        "latinTypeface": "Oracle Sans Tab"
+      }
+    },
+    "typefaces": [
+      "Aptos",
+      "Georgia",
+      "Oracle Sans Tab"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "/ppt/slideLayouts/slideLayout6.xml",
+      "name": "Light - Title/Subtitle 1 Column",
+      "parentLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+      "elements": [
+        {
+          "order": 1,
+          "kind": "image",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/9",
+          "id": "9",
+          "name": "Cloud",
+          "bbox": [
+            704.01,
+            28.28,
+            533.37,
+            163.72
+          ],
+          "contentType": "image/png",
+          "imageCrop": {
+            "left": 0,
+            "top": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "asset": {
+            "assetId": "/ppt/media/image5.png",
+            "contentType": "image/png",
+            "byteLength": 42026
+          },
+          "fillImage": {
+            "assetId": "/ppt/media/image5.png",
+            "contentType": "image/png",
+            "byteLength": 42026
+          }
+        },
+        {
+          "order": 2,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/3",
+          "id": "3",
+          "name": "Subtitle",
+          "bbox": [
+            80.5,
+            106.53,
+            1120.32,
+            34.7
+          ],
+          "geometry": "rect",
+          "text": "Subtitle",
+          "textPreview": "Subtitle",
+          "resolvedTextStyle": {
+            "autoFit": "none",
+            "insets": {
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Subtitle",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Subtitle"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 3,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/6",
+          "id": "6",
+          "name": "Content",
+          "bbox": [
+            80.5,
+            168,
+            1120.33,
+            473.17
+          ],
+          "text": "Edit Master text styles\nSecond level\nThird level\nFourth level\nFifth level",
+          "textPreview": "Edit Master text styles | Second level | Third level | Fourth level | Fifth level",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Edit Master text styles",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Edit Master text styles"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "text": "Second level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Second level"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "text": "Third level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Third level"
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "text": "Fourth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fourth level"
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "text": "Fifth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fifth level"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 4,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/2",
+          "id": "2",
+          "name": "Title 1",
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": "Title",
+          "textPreview": "Title",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Title",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Title"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 5,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/5",
+          "id": "5",
+          "name": "Date Placeholder 4",
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": "[Date]",
+          "textPreview": "[Date]",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "[Date]",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "[Date]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 6,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/7",
+          "id": "7",
+          "name": "Footer Placeholder 6",
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal",
+          "textPreview": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 7,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/8",
+          "id": "8",
+          "name": "Slide Number Placeholder 7",
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": "‹#›",
+          "textPreview": "‹#›",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "‹#›",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "‹#›"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scope": "master",
+      "id": "/ppt/slideMasters/slideMaster1.xml",
+      "type": "master",
+      "backgroundColor": "bg1",
+      "elements": [
+        {
+          "order": 1,
+          "kind": "image",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/21",
+          "id": "21",
+          "name": "OTag",
+          "bbox": [
+            1174.08,
+            667.2,
+            52.8,
+            52.8
+          ],
+          "contentType": "image/x-emf",
+          "asset": {
+            "assetId": "/ppt/media/image1.emf",
+            "contentType": "image/x-emf",
+            "byteLength": 2940
+          },
+          "fillImage": {
+            "assetId": "/ppt/media/image1.emf",
+            "contentType": "image/x-emf",
+            "byteLength": 2940
+          }
+        },
+        {
+          "order": 2,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/2",
+          "id": "2",
+          "name": "Title",
+          "bbox": [
+            80.72,
+            19.15,
+            1120.32,
+            86.4
+          ],
+          "geometry": "rect",
+          "text": "Title",
+          "textPreview": "Title",
+          "resolvedTextStyle": {
+            "anchor": 3,
+            "vertical": 1,
+            "verticalAlignment": "bottom",
+            "autoFit": "none",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Title",
+              "marginLeft": 0,
+              "indent": 0,
+              "spaceBefore": 1000,
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Title"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 3,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/4",
+          "id": "4",
+          "name": "Text Field",
+          "bbox": [
+            80.72,
+            168,
+            1120.32,
+            474
+          ],
+          "geometry": "rect",
+          "text": "Edit Master text styles\nSecond level\nThird level\nFourth level\nFifth level",
+          "textPreview": "Edit Master text styles | Second level | Third level | Fourth level | Fifth level",
+          "resolvedTextStyle": {
+            "vertical": 1,
+            "autoFit": "none",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Edit Master text styles",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Edit Master text styles"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "text": "Second level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Second level"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "text": "Third level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Third level"
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "text": "Fourth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fourth level"
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "text": "Fifth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fifth level"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 4,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/17",
+          "id": "17",
+          "name": "Slide Number",
+          "bbox": [
+            80,
+            674.4,
+            38.4,
+            38.4
+          ],
+          "geometry": "rect",
+          "text": "‹#›",
+          "textPreview": "‹#›",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "‹#›",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "‹#›"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 5,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/18",
+          "id": "18",
+          "name": "Footer",
+          "bbox": [
+            118.4,
+            674.43,
+            603.19,
+            38.33
+          ],
+          "geometry": "rect",
+          "text": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal",
+          "textPreview": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 6,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/20",
+          "id": "20",
+          "name": "Date",
+          "bbox": [
+            721.59,
+            674.6,
+            288,
+            38.16
+          ],
+          "geometry": "rect",
+          "text": "[Date]",
+          "textPreview": "[Date]",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "[Date]",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "[Date]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 7,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/6",
+          "id": "6",
+          "name": "TextBox 5",
+          "bbox": [
+            6.67,
+            6.67,
+            284.5,
+            16
+          ],
+          "geometry": "rect",
+          "text": "Confidential - Oracle Restricted \\Employees Only",
+          "textPreview": "Confidential - Oracle Restricted \\Employees Only",
+          "resolvedTextStyle": {
+            "autoFit": "resizeShapeToFitText",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Confidential - Oracle Restricted \\Employees Only",
+              "resolvedTextStyle": {
+                "alignment": "left"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Confidential - Oracle Restricted \\Employees Only",
+                  "fontSize": 13.33,
+                  "typeface": "Aptos",
+                  "color": "rgba(0, 0, 0, 0.5)"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 8,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/7",
+          "id": "7",
+          "name": "TextBox 6",
+          "bbox": [
+            6.67,
+            697.33,
+            284.5,
+            16
+          ],
+          "geometry": "rect",
+          "text": "Confidential - Oracle Restricted \\Employees Only",
+          "textPreview": "Confidential - Oracle Restricted \\Employees Only",
+          "resolvedTextStyle": {
+            "autoFit": "resizeShapeToFitText",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Confidential - Oracle Restricted \\Employees Only",
+              "resolvedTextStyle": {
+                "alignment": "left"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Confidential - Oracle Restricted \\Employees Only",
+                  "fontSize": 13.33,
+                  "typeface": "Aptos",
+                  "color": "rgba(0, 0, 0, 0.5)"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/x4nap4r6",
+      "id": "2",
+      "name": "Text Placeholder 1",
+      "bbox": [
+        79.83,
+        87.27,
+        1120.32,
+        34.7
+      ],
+      "text": "How the Digital Worker Operates in Practice\t",
+      "textPreview": "How the Digital Worker Operates in Practice",
+      "resolvedFontSize": 26.67,
+      "resolvedTextStyle": {
+        "vertical": 1,
+        "fontSize": 26.67,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "autoFit": "none",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          },
+          {
+            "index": 2,
+            "text": "How the Digital Worker Operates in Practice"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "How the Digital Worker Operates in Practice\t",
+          "runs": [
+            {
+              "index": 1,
+              "text": "How the Digital Worker Operates in Practice\t",
+              "fontSize": 24
+            }
+          ],
+          "bulletCharacter": "",
+          "marginLeft": 0,
+          "indent": 0,
+          "lineSpacingPercent": 95000,
+          "spaceBefore": 600,
+          "spaceAfter": 0
+        }
+      ]
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/8jqh0fep",
+      "id": "3",
+      "name": "Content Placeholder 2",
+      "bbox": [
+        34.66,
+        149.32,
+        1210.67,
+        431.69
+      ],
+      "text": "Execution model: ODT plans and governs; OCA-backed Codex or Cline sessions execute implementation against the target repository.\nLocal backend control plane: a lightweight Node.js context server handles intake updates, repo validation, uploads, ODT run requests, execution bundle creation, and agent launch status.\nHybrid prompting: OCI GenAI can optionally generate stage prompts; fallback prompts and reviewer overrides (custom prompt) keep the workflow resilient and customizable.\nGuardrails: 7 stage guided pipeline, prompt hardening, repo-aware impact analysis, Oracle accessibility guidance before delegation, and mandatory human approval before delivery.\nDecision points: human can refine scope, update prompts, request re-analysis, approve delegation, review changed files, and fill gaps before final approval.\nAutomation boundaries: ODT does not auto-merge, bypass human approval, or replace developer judgment.\nIntegration points: ODT/FEDIT dashboard, reports/odt artifacts, OCI GenAI, fallback prompt templates, local context server, OCA Codex/Cline, repo diff review.\n",
+      "textPreview": "Execution model: ODT plans and governs; OCA-backed Codex or Cline sessions execute implementation against the target repository. | Local ...",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 20,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          },
+          {
+            "index": 2,
+            "text": "• Execution model: ODT plans and governs; OCA-backed Codex or Cline sessions execute implementation against the"
+          },
+          {
+            "index": 3,
+            "text": "target repository."
+          },
+          {
+            "index": 4,
+            "text": "Local backend control plane: a lightweight Node.js context server handles intake updates, repo validation, uploads, ODT"
+          },
+          {
+            "index": 5,
+            "text": "run requests, execution bundle creation, and agent launch status."
+          },
+          {
+            "index": 6,
+            "text": ""
+          },
+          {
+            "index": 7,
+            "text": "• Hybrid prompting: OCI GenAI can optionally generate stage prompts; fallback prompts and reviewer overrides (custom"
+          },
+          {
+            "index": 8,
+            "text": "prompt) keep the workflow resilient and customizable."
+          },
+          {
+            "index": 9,
+            "text": ""
+          },
+          {
+            "index": 10,
+            "text": "• Guardrails: 7 stage guided pipeline, prompt hardening, repo-aware impact analysis, Oracle accessibility guidance before"
+          },
+          {
+            "index": 11,
+            "text": "delegation, and mandatory human approval before delivery."
+          },
+          {
+            "index": 12,
+            "text": ""
+          },
+          {
+            "index": 13,
+            "text": "• Decision points: human can refine scope, update prompts, request re-analysis, approve delegation, review changed files,"
+          },
+          {
+            "index": 14,
+            "text": "and fill gaps before final approval."
+          },
+          {
+            "index": 15,
+            "text": ""
+          },
+          {
+            "index": 16,
+            "text": "• Automation boundaries: ODT does not auto-merge, bypass human approval, or replace developer judgment."
+          },
+          {
+            "index": 17,
+            "text": ""
+          },
+          {
+            "index": 18,
+            "text": "• Integration points: ODT/FEDIT dashboard, reports/odt artifacts, OCI GenAI, fallback prompt templates, local context"
+          },
+          {
+            "index": 19,
+            "text": "server, OCA Codex/Cline, repo diff review."
+          },
+          {
+            "index": 20,
+            "text": ""
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Execution model: ODT plans and governs; OCA-backed Codex or Cline sessions execute implementation against the target repository.\nLocal backend control plane: a lightweight Node.js context server handles intake updates, repo validation, uploads, ODT run requests, execution bundle creation, and agent launch status.",
+          "bulletCharacter": "•",
+          "marginLeft": 342900,
+          "indent": -342900,
+          "runs": [
+            {
+              "index": 1,
+              "text": "Execution model",
+              "fontSize": 21.33,
+              "bold": true
+            },
+            {
+              "index": 2,
+              "text": ": ODT plans and governs; OCA-backed Codex or Cline sessions execute implementation against the target repository.",
+              "fontSize": 21.33
+            },
+            {
+              "index": 3,
+              "text": "\n"
+            },
+            {
+              "index": 4,
+              "text": "Local backend control plane: ",
+              "fontSize": 21.33,
+              "bold": true
+            },
+            {
+              "index": 5,
+              "text": "a lightweight Node.js context server handles intake updates, repo validation, uploads, ODT run requests, execution bundle creation, and agent launch status.",
+              "fontSize": 21.33
+            }
+          ],
+          "lineSpacingPercent": 95000,
+          "spaceBefore": 600,
+          "spaceAfter": 0
+        },
+        {
+          "index": 2,
+          "text": "Hybrid prompting: OCI GenAI can optionally generate stage prompts; fallback prompts and reviewer overrides (custom prompt) keep the workflow resilient and customizable.",
+          "bulletCharacter": "•",
+          "marginLeft": 342900,
+          "indent": -342900,
+          "runs": [
+            {
+              "index": 1,
+              "text": "Hybrid prompting: ",
+              "fontSize": 21.33,
+              "bold": true
+            },
+            {
+              "index": 2,
+              "text": "OCI GenAI can optionally generate stage prompts; fallback prompts and reviewer overrides (custom prompt) keep the workflow resilient and customizable.",
+              "fontSize": 21.33
+            }
+          ],
+          "lineSpacingPercent": 95000,
+          "spaceBefore": 600,
+          "spaceAfter": 0
+        },
+        {
+          "index": 3,
+          "text": "Guardrails: 7 stage guided pipeline, prompt hardening, repo-aware impact analysis, Oracle accessibility guidance before delegation, and mandatory human approval before delivery.",
+          "bulletCharacter": "•",
+          "marginLeft": 342900,
+          "indent": -342900,
+          "runs": [
+            {
+              "index": 1,
+              "text": "Guardrails: ",
+              "fontSize": 21.33,
+              "bold": true
+            },
+            {
+              "index": 2,
+              "text": "7 stage guided pipeline, prompt hardening, repo-aware impact analysis, Oracle accessibility guidance before delegation, and mandatory human approval before delivery.",
+              "fontSize": 21.33
+            }
+          ],
+          "lineSpacingPercent": 95000,
+          "spaceBefore": 600,
+          "spaceAfter": 0
+        },
+        {
+          "index": 4,
+          "text": "Decision points: human can refine scope, update prompts, request re-analysis, approve delegation, review changed files, and fill gaps before final approval.",
+          "bulletCharacter": "•",
+          "marginLeft": 342900,
+          "indent": -342900,
+          "runs": [
+            {
+              "index": 1,
+              "text": "Decision points: ",
+              "fontSize": 21.33,
+              "bold": true
+            },
+            {
+              "index": 2,
+              "text": "human can refine scope, update prompts, request re-analysis, approve delegation, review changed files, and fill gaps before final approval.",
+              "fontSize": 21.33
+            }
+          ],
+          "lineSpacingPercent": 95000,
+          "spaceBefore": 600,
+          "spaceAfter": 0
+        },
+        {
+          "index": 5,
+          "text": "Automation boundaries: ODT does not auto-merge, bypass human approval, or replace developer judgment.",
+          "bulletCharacter": "•",
+          "marginLeft": 342900,
+          "indent": -342900,
+          "runs": [
+            {
+              "index": 1,
+              "text": "Automation boundaries: ",
+              "fontSize": 21.33,
+              "bold": true
+            },
+            {
+              "index": 2,
+              "text": "ODT does not auto-merge, bypass human approval, or replace developer judgment.",
+              "fontSize": 21.33
+            }
+          ],
+          "lineSpacingPercent": 95000,
+          "spaceBefore": 600,
+          "spaceAfter": 0
+        },
+        {
+          "index": 6,
+          "text": "Integration points: ODT/FEDIT dashboard, reports/odt artifacts, OCI GenAI, fallback prompt templates, local context server, OCA Codex/Cline, repo diff review.\n",
+          "bulletCharacter": "•",
+          "marginLeft": 342900,
+          "indent": -342900,
+          "runs": [
+            {
+              "index": 1,
+              "text": "Integration points: ",
+              "fontSize": 21.33,
+              "bold": true
+            },
+            {
+              "index": 2,
+              "text": "ODT/FEDIT dashboard, reports/",
+              "fontSize": 21.33
+            },
+            {
+              "index": 3,
+              "text": "odt",
+              "fontSize": 21.33
+            },
+            {
+              "index": 4,
+              "text": " artifacts, OCI GenAI, fallback prompt templates, local context server, OCA Codex/Cline, repo diff review.",
+              "fontSize": 21.33
+            },
+            {
+              "index": 5,
+              "text": "\n"
+            }
+          ],
+          "lineSpacingPercent": 95000,
+          "spaceBefore": 600,
+          "spaceAfter": 0
+        }
+      ]
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/fa9w3m94",
+      "id": "4",
+      "name": "Title 3",
+      "bbox": [
+        79.83,
+        23.77,
+        1120.32,
+        58.24
+      ],
+      "text": "Execution, Guardrails, and Governance",
+      "textPreview": "Execution, Guardrails, and Governance",
+      "resolvedFontSize": 32,
+      "resolvedTextStyle": {
+        "anchor": 3,
+        "vertical": 1,
+        "fontSize": 32,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "bottom",
+        "autoFit": "none",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Execution, Guardrails, and Governance"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Execution, Guardrails, and Governance",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Execution, Guardrails, and Governance"
+            }
+          ],
+          "bulletCharacter": "",
+          "lineSpacingPercent": 95000,
+          "spaceBefore": 0
+        }
+      ]
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/8v6psfil",
+      "id": "7",
+      "name": "Slide Number Placeholder 6",
+      "bbox": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "text": "7",
+      "textPreview": "7",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "7"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "7",
+          "runs": [
+            {
+              "index": 1,
+              "text": "7"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/qtcj6tov",
+      "id": "9",
+      "name": "TextBox 8",
+      "bbox": [
+        58.32,
+        616.15,
+        1163.35,
+        38.78
+      ],
+      "geometry": "rect",
+      "text": "ODT makes AI-assisted delivery explainable, reviewable, and safe to use in enterprise development.",
+      "textPreview": "ODT makes AI-assisted delivery explainable, reviewable, and safe to use in enterprise development.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "wrap": "square",
+        "autoFit": "resizeShapeToFitText",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "ODT makes AI-assisted delivery explainable, reviewable, and safe to use in enterprise development."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "ODT makes AI-assisted delivery explainable, reviewable, and safe to use in enterprise development.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "ODT makes AI-assisted delivery explainable, reviewable, and safe to use in enterprise development."
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(255, 192, 0, 0.41094)"
+    }
+  ],
+  "composeRuns": []
+}

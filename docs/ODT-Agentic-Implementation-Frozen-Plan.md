@@ -77,9 +77,10 @@ Next implementation slice toward the 100% goal:
 1. Add a real terminal-launch smoke test for a read-only lane, then a write-approved lane.
 2. Harden closeout evidence ingestion: automatically associate Senior Full Stack Dev rework evidence with the rework relay and resolve the relay after human review.
 3. Add score/readiness thresholds for stopping the agent loop and asking the developer for final review.
-4. Add optional Cline/OCI/OCA adapters behind the same worker contract and relay context pack.
-5. Add future read-only Jira2/Jira MCP and GitHub MCP intake connectors behind approval-gated connector policy; do not enable external writes by default.
-6. Add future governed DB awareness: repo config detection, local metadata-only schema introspection, approval-gated data queries, and no credential exposure to UI or workers.
+4. Add autonomous sequential orchestration: Planner hands context to the chosen implementation lane, implementation lanes can route questions to backend/frontend/full-stack lanes, Reviewer findings create rework relay items, rework goes back to the responsible lane, and Build Verifier runs only after reviewer closeout. The chain must remain pausable and evidence-backed, with human review before write, dependency, external, or final PR actions.
+5. Add optional Cline/OCI/OCA adapters behind the same worker contract and relay context pack.
+6. Add future read-only Jira2/Jira MCP and GitHub MCP intake connectors behind approval-gated connector policy; do not enable external writes by default.
+7. Add future governed DB awareness: repo config detection, local metadata-only schema introspection, approval-gated data queries, and no credential exposure to UI or workers.
 
 This is the frozen implementation plan for evolving Oracle Developer Twin from a static seven-stage planning workflow into a practical, developer-usable agentic delivery workbench.
 

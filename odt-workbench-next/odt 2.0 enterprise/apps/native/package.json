@@ -1,0 +1,15 @@
+{
+  "name": "@odt/app-native",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/renderer/App.js"
+  },
+  "dependencies": {
+    "@odt/api-client": "0.1.0",
+    "@odt/config": "0.1.0",
+    "@odt/domain": "0.1.0",
+    "@odt/ui": "0.1.0"
+  }
+}

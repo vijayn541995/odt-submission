@@ -1,0 +1,31 @@
+Task mode: create from supplied source deck as visual/template reference
+Primary deck profile: engineering-platform
+Secondary gates: product-platform, strategy-leadership
+
+Required proof objects:
+- Updated ODT 2.0 architecture map
+- Requirement-to-PR workflow diagram
+- Agent delegation/orchestration flow
+- Governance/customization model
+- Roadmap and future upgrade path
+- Pilot metrics and leadership ask
+
+Source/asset requirements:
+- Source deck: /Users/vn105957/Desktop/odt-submission/OracleDeveloperTwin__EngineeringProductivity_PPT_Submission_v1.pptx
+- Reference screenshots supplied by user in chat
+- Leadership brief generated at docs/ODT-2.0-Leadership-Brief.docx
+- ODT project state and roadmap from local memory and docs
+
+Brand authenticity constraints:
+- Preserve Oracle-style theme cues from the supplied source deck: white canvas, red accent, pale fingerprint motif, charcoal headline, bottom-right red Oracle-style mark.
+- Do not invent or redraw official Oracle logo artwork. Use text and theme cues instead of unverified logos.
+- User-provided ODT/source assets may be used as provenance-backed internal concept assets.
+
+Profile-specific QA gates:
+- Architecture and workflow labels must remain technically precise.
+- Connectors must attach to the intended source and target.
+- No dense text slides that read like pasted documentation.
+- Future roadmap must separate current, next, and future capabilities.
+
+Known missing inputs:
+- Exact leadership audience and final submission context. Deck uses internal leadership/team presentation wording.

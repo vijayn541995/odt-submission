@@ -1,0 +1,2221 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/re1w7mp0",
+    "id": "re1w7mp0",
+    "slide": 12,
+    "layoutId": "/ppt/slideLayouts/slideLayout64.xml",
+    "layoutType": "tx",
+    "masterLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "Oracle Redwood 08-26-2020",
+    "colors": {
+      "accent1": "#C74634",
+      "accent2": "#FACD62",
+      "accent3": "#94AFAF",
+      "accent4": "#2B6242",
+      "accent5": "#AE562C",
+      "accent6": "#759C6C",
+      "dk1": "#312D2A",
+      "lt1": "#FCFBFA",
+      "dk2": "#312D2A",
+      "lt2": "#FCFBFA",
+      "hlink": "#00688C",
+      "folHlink": "#00688C"
+    },
+    "fontScheme": {
+      "name": "Oracle Sans Tabular",
+      "majorFont": {
+        "latinTypeface": "Georgia"
+      },
+      "minorFont": {
+        "latinTypeface": "Oracle Sans Tab"
+      }
+    },
+    "typefaces": [
+      "Aptos",
+      "Georgia",
+      "Oracle Sans Tab"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "/ppt/slideLayouts/slideLayout64.xml",
+      "type": "tx",
+      "parentLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "/ppt/slideMasters/slideMaster1.xml",
+      "type": "master",
+      "backgroundColor": "bg1",
+      "elements": [
+        {
+          "order": 1,
+          "kind": "image",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/21",
+          "id": "21",
+          "name": "OTag",
+          "bbox": [
+            1174.08,
+            667.2,
+            52.8,
+            52.8
+          ],
+          "contentType": "image/x-emf",
+          "asset": {
+            "assetId": "/ppt/media/image1.emf",
+            "contentType": "image/x-emf",
+            "byteLength": 2940
+          },
+          "fillImage": {
+            "assetId": "/ppt/media/image1.emf",
+            "contentType": "image/x-emf",
+            "byteLength": 2940
+          }
+        },
+        {
+          "order": 2,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/2",
+          "id": "2",
+          "name": "Title",
+          "bbox": [
+            80.72,
+            19.15,
+            1120.32,
+            86.4
+          ],
+          "geometry": "rect",
+          "text": "Title",
+          "textPreview": "Title",
+          "resolvedTextStyle": {
+            "anchor": 3,
+            "vertical": 1,
+            "verticalAlignment": "bottom",
+            "autoFit": "none",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Title",
+              "marginLeft": 0,
+              "indent": 0,
+              "spaceBefore": 1000,
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Title"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 3,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/4",
+          "id": "4",
+          "name": "Text Field",
+          "bbox": [
+            80.72,
+            168,
+            1120.32,
+            474
+          ],
+          "geometry": "rect",
+          "text": "Edit Master text styles\nSecond level\nThird level\nFourth level\nFifth level",
+          "textPreview": "Edit Master text styles | Second level | Third level | Fourth level | Fifth level",
+          "resolvedTextStyle": {
+            "vertical": 1,
+            "autoFit": "none",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Edit Master text styles",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Edit Master text styles"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "text": "Second level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Second level"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "text": "Third level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Third level"
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "text": "Fourth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fourth level"
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "text": "Fifth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fifth level"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 4,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/17",
+          "id": "17",
+          "name": "Slide Number",
+          "bbox": [
+            80,
+            674.4,
+            38.4,
+            38.4
+          ],
+          "geometry": "rect",
+          "text": "‹#›",
+          "textPreview": "‹#›",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "‹#›",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "‹#›"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 5,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/18",
+          "id": "18",
+          "name": "Footer",
+          "bbox": [
+            118.4,
+            674.43,
+            603.19,
+            38.33
+          ],
+          "geometry": "rect",
+          "text": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal",
+          "textPreview": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 6,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/20",
+          "id": "20",
+          "name": "Date",
+          "bbox": [
+            721.59,
+            674.6,
+            288,
+            38.16
+          ],
+          "geometry": "rect",
+          "text": "[Date]",
+          "textPreview": "[Date]",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "[Date]",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "[Date]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 7,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/6",
+          "id": "6",
+          "name": "TextBox 5",
+          "bbox": [
+            6.67,
+            6.67,
+            284.5,
+            16
+          ],
+          "geometry": "rect",
+          "text": "Confidential - Oracle Restricted \\Employees Only",
+          "textPreview": "Confidential - Oracle Restricted \\Employees Only",
+          "resolvedTextStyle": {
+            "autoFit": "resizeShapeToFitText",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Confidential - Oracle Restricted \\Employees Only",
+              "resolvedTextStyle": {
+                "alignment": "left"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Confidential - Oracle Restricted \\Employees Only",
+                  "fontSize": 13.33,
+                  "typeface": "Aptos",
+                  "color": "rgba(0, 0, 0, 0.5)"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 8,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/7",
+          "id": "7",
+          "name": "TextBox 6",
+          "bbox": [
+            6.67,
+            697.33,
+            284.5,
+            16
+          ],
+          "geometry": "rect",
+          "text": "Confidential - Oracle Restricted \\Employees Only",
+          "textPreview": "Confidential - Oracle Restricted \\Employees Only",
+          "resolvedTextStyle": {
+            "autoFit": "resizeShapeToFitText",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Confidential - Oracle Restricted \\Employees Only",
+              "resolvedTextStyle": {
+                "alignment": "left"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Confidential - Oracle Restricted \\Employees Only",
+                  "fontSize": 13.33,
+                  "typeface": "Aptos",
+                  "color": "rgba(0, 0, 0, 0.5)"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/f6dcbulw",
+      "id": "27",
+      "name": "Rectangle 26",
+      "bbox": [
+        80,
+        56,
+        1120,
+        30
+      ],
+      "geometry": "rect",
+      "text": "Appendix",
+      "textPreview": "Appendix",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Appendix"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Appendix",
+          "resolvedTextStyle": {
+            "fontSize": 16,
+            "color": "#A64936",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Appendix",
+              "fontSize": 16,
+              "color": "#A64936",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "#F7F4EF",
+      "lineColor": "#F7F4EF",
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/6tovahoz",
+      "id": "2",
+      "name": "Rectangle 1",
+      "bbox": [
+        80,
+        88,
+        1120,
+        42
+      ],
+      "geometry": "rect",
+      "text": "Governed Technical Flow",
+      "textPreview": "Governed Technical Flow",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Governed Technical Flow"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Governed Technical Flow",
+          "resolvedTextStyle": {
+            "fontSize": 30,
+            "color": "#6F2119",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Governed Technical Flow",
+              "fontSize": 30,
+              "color": "#6F2119",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "#F7F4EF",
+      "lineColor": "#F7F4EF",
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/vahoza1g",
+      "id": "3",
+      "name": "Rectangle 2",
+      "bbox": [
+        80,
+        132,
+        840,
+        44
+      ],
+      "geometry": "rect",
+      "text": "A step-by-step governed flow showing where accessibility guidance enters and where human review can refine the path before and after OCA execution.",
+      "textPreview": "A step-by-step governed flow showing where accessibility guidance enters and where human review can refine the path before and after OCA ...",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "A step-by-step governed flow showing where accessibility guidance enters and where human review can refine the"
+          },
+          {
+            "index": 2,
+            "text": "path before and after OCA execution."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "A step-by-step governed flow showing where accessibility guidance enters and where human review can refine the path before and after OCA execution.",
+          "resolvedTextStyle": {
+            "fontSize": 16,
+            "color": "#5F6B76",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "A step-by-step governed flow showing where accessibility guidance enters and where human review can refine the path before and after OCA execution.",
+              "fontSize": 16,
+              "color": "#5F6B76"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "#F7F4EF",
+      "lineColor": "#F7F4EF",
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/onyd0z61",
+      "id": "4",
+      "name": "Rounded Rectangle 3",
+      "bbox": [
+        980,
+        98,
+        200,
+        30
+      ],
+      "geometry": "roundRect",
+      "text": "Human review checkpoints",
+      "textPreview": "Human review checkpoints",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Human review checkpoints"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Human review checkpoints",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "color": "#6F2119",
+            "alignment": "center"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Human review checkpoints",
+              "fontSize": 13,
+              "color": "#6F2119",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "#FFF3ED",
+      "lineColor": "#C74634",
+      "lineWidth": 1.5
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/d8v6psfi",
+      "id": "5",
+      "name": "Rounded Rectangle 4",
+      "bbox": [
+        915,
+        136,
+        265,
+        30
+      ],
+      "geometry": "roundRect",
+      "text": "OCI GenAI remains optional for stage prompting",
+      "textPreview": "OCI GenAI remains optional for stage prompting",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "OCI GenAI remains optional for stage"
+          },
+          {
+            "index": 2,
+            "text": "prompting"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "OCI GenAI remains optional for stage prompting",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "color": "#25424D",
+            "alignment": "center"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "OCI GenAI remains optional for stage prompting",
+              "fontSize": 13,
+              "color": "#25424D",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "#EEF4F7",
+      "lineColor": "#88A8B6",
+      "lineWidth": 1.5
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/6hcrmhk3",
+      "id": "6",
+      "name": "Rounded Rectangle 5",
+      "bbox": [
+        80,
+        178,
+        330,
+        28
+      ],
+      "geometry": "roundRect",
+      "text": "Phase 1  Understand and scope",
+      "textPreview": "Phase 1  Understand and scope",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Phase 1  Understand and scope"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Phase 1  Understand and scope",
+          "resolvedTextStyle": {
+            "fontSize": 14,
+            "color": "#8C1D18",
+            "alignment": "center"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Phase 1  Understand and scope",
+              "fontSize": 14,
+              "color": "#8C1D18",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "#FFF2EC",
+      "lineColor": "#D9A597",
+      "lineWidth": 1.5
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/z25kb6xk",
+      "id": "7",
+      "name": "Rounded Rectangle 6",
+      "bbox": [
+        475,
+        178,
+        330,
+        28
+      ],
+      "geometry": "roundRect",
+      "text": "Phase 2  Prepare and govern",
+      "textPreview": "Phase 2  Prepare and govern",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Phase 2  Prepare and govern"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Phase 2  Prepare and govern",
+          "resolvedTextStyle": {
+            "fontSize": 14,
+            "color": "#25424D",
+            "alignment": "center"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Phase 2  Prepare and govern",
+              "fontSize": 14,
+              "color": "#25424D",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "#EEF4F7",
+      "lineColor": "#88A8B6",
+      "lineWidth": 1.5
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/oj2t83it",
+      "id": "8",
+      "name": "Rounded Rectangle 7",
+      "bbox": [
+        870,
+        178,
+        330,
+        28
+      ],
+      "geometry": "roundRect",
+      "text": "Phase 3  Execute and approve",
+      "textPreview": "Phase 3  Execute and approve",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Phase 3  Execute and approve"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Phase 3  Execute and approve",
+          "resolvedTextStyle": {
+            "fontSize": 14,
+            "color": "#1E5A40",
+            "alignment": "center"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Phase 3  Execute and approve",
+              "fontSize": 14,
+              "color": "#1E5A40",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "#EFF8F3",
+      "lineColor": "#A7CDB8",
+      "lineWidth": 1.5
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/d4vmtwra",
+      "id": "9",
+      "name": "Right Arrow 8",
+      "bbox": [
+        425,
+        180,
+        36,
+        24
+      ],
+      "geometry": "rightArrow",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          }
+        ]
+      },
+      "fillColor": "#C74634",
+      "lineColor": "#C74634",
+      "lineWidth": 1
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/h4byhgn2",
+      "id": "10",
+      "name": "Right Arrow 9",
+      "bbox": [
+        820,
+        180,
+        36,
+        24
+      ],
+      "geometry": "rightArrow",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          }
+        ]
+      },
+      "fillColor": "#C74634",
+      "lineColor": "#C74634",
+      "lineWidth": 1
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/sji5snel",
+      "id": "11",
+      "name": "Rounded Rectangle 10",
+      "bbox": [
+        80,
+        214,
+        330,
+        104
+      ],
+      "geometry": "roundRect",
+      "text": "1. Requirement / Jira / Reviewer Input\nWork item details, repo context, mockups, and reviewer intent.",
+      "textPreview": "1. Requirement / Jira / Reviewer Input | Work item details, repo context, mockups, and reviewer intent.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "insets": {
+          "top": 16,
+          "right": 18,
+          "bottom": 16,
+          "left": 18
+        }
+      },
+      "textLayout": {
+        "lineCount": 4,
+        "lines": [
+          {
+            "index": 1,
+            "text": "1. Requirement / Jira / Reviewer"
+          },
+          {
+            "index": 2,
+            "text": "Input"
+          },
+          {
+            "index": 3,
+            "text": "Work item details, repo context, mockups, and"
+          },
+          {
+            "index": 4,
+            "text": "reviewer intent."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "1. Requirement / Jira / Reviewer Input",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "color": "#34414B",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "1. Requirement / Jira / Reviewer Input",
+              "fontSize": 17,
+              "color": "#8C1D18",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "Work item details, repo context, mockups, and reviewer intent.",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "color": "#34414B",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Work item details, repo context, mockups, and reviewer intent.",
+              "fontSize": 13,
+              "color": "#34414B"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "#FFF8F4",
+      "lineColor": "#E7B7AE",
+      "lineWidth": 2
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/3ylc7u54",
+      "id": "12",
+      "name": "Rounded Rectangle 11",
+      "bbox": [
+        80,
+        350,
+        330,
+        104
+      ],
+      "geometry": "roundRect",
+      "text": "2. ODT Intake + Prompt Hardening\nNormalize the ask, strengthen clarity, and prepare governed prompts.",
+      "textPreview": "2. ODT Intake + Prompt Hardening | Normalize the ask, strengthen clarity, and prepare governed prompts.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "insets": {
+          "top": 16,
+          "right": 18,
+          "bottom": 16,
+          "left": 18
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "2. ODT Intake + Prompt Hardening"
+          },
+          {
+            "index": 2,
+            "text": "Normalize the ask, strengthen clarity, and prepare"
+          },
+          {
+            "index": 3,
+            "text": "governed prompts."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "2. ODT Intake + Prompt Hardening",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "color": "#34414B",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "2. ODT Intake + Prompt Hardening",
+              "fontSize": 17,
+              "color": "#8C1D18",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "Normalize the ask, strengthen clarity, and prepare governed prompts.",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "color": "#34414B",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Normalize the ask, strengthen clarity, and prepare governed prompts.",
+              "fontSize": 13,
+              "color": "#34414B"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "#FFF8F4",
+      "lineColor": "#E7B7AE",
+      "lineWidth": 2
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/adsji5sn",
+      "id": "13",
+      "name": "Rounded Rectangle 12",
+      "bbox": [
+        80,
+        486,
+        330,
+        104
+      ],
+      "geometry": "roundRect",
+      "text": "3. Repo Impact Analysis\nIdentify hotspots, candidate files, tests, and impacted surfaces.",
+      "textPreview": "3. Repo Impact Analysis | Identify hotspots, candidate files, tests, and impacted surfaces.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "insets": {
+          "top": 16,
+          "right": 18,
+          "bottom": 16,
+          "left": 18
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "3. Repo Impact Analysis"
+          },
+          {
+            "index": 2,
+            "text": "Identify hotspots, candidate files, tests, and"
+          },
+          {
+            "index": 3,
+            "text": "impacted surfaces."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "3. Repo Impact Analysis",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "color": "#34414B",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "3. Repo Impact Analysis",
+              "fontSize": 17,
+              "color": "#8C1D18",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "Identify hotspots, candidate files, tests, and impacted surfaces.",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "color": "#34414B",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Identify hotspots, candidate files, tests, and impacted surfaces.",
+              "fontSize": 13,
+              "color": "#34414B"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "#FFF8F4",
+      "lineColor": "#E7B7AE",
+      "lineWidth": 2
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/lszqtcj6",
+      "id": "14",
+      "name": "Rounded Rectangle 13",
+      "bbox": [
+        475,
+        214,
+        330,
+        104
+      ],
+      "geometry": "roundRect",
+      "text": "4. Hybrid Prompt Generation\nOCI GenAI option, fallback prompts, and reviewer stage overrides.",
+      "textPreview": "4. Hybrid Prompt Generation | OCI GenAI option, fallback prompts, and reviewer stage overrides.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "insets": {
+          "top": 16,
+          "right": 18,
+          "bottom": 16,
+          "left": 18
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "4. Hybrid Prompt Generation"
+          },
+          {
+            "index": 2,
+            "text": "OCI GenAI option, fallback prompts, and reviewer"
+          },
+          {
+            "index": 3,
+            "text": "stage overrides."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "4. Hybrid Prompt Generation",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "color": "#34414B",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "4. Hybrid Prompt Generation",
+              "fontSize": 17,
+              "color": "#25424D",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "OCI GenAI option, fallback prompts, and reviewer stage overrides.",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "color": "#34414B",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "OCI GenAI option, fallback prompts, and reviewer stage overrides.",
+              "fontSize": 13,
+              "color": "#34414B"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "#F6FAFC",
+      "lineColor": "#A7BDC8",
+      "lineWidth": 2
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/s72x4nap",
+      "id": "15",
+      "name": "Rounded Rectangle 14",
+      "bbox": [
+        475,
+        350,
+        330,
+        104
+      ],
+      "geometry": "roundRect",
+      "text": "5. Code + Unit Tests + Oracle A11y Guidance\nImplementation guidance, test expectations, and accessibility checks.",
+      "textPreview": "5. Code + Unit Tests + Oracle A11y Guidance | Implementation guidance, test expectations, and accessibility checks.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "insets": {
+          "top": 16,
+          "right": 18,
+          "bottom": 16,
+          "left": 18
+        }
+      },
+      "textLayout": {
+        "lineCount": 4,
+        "lines": [
+          {
+            "index": 1,
+            "text": "5. Code + Unit Tests + Oracle A11y"
+          },
+          {
+            "index": 2,
+            "text": "Guidance"
+          },
+          {
+            "index": 3,
+            "text": "Implementation guidance, test expectations, and"
+          },
+          {
+            "index": 4,
+            "text": "accessibility checks."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "5. Code + Unit Tests + Oracle A11y Guidance",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "color": "#34414B",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "5. Code + Unit Tests + Oracle A11y Guidance",
+              "fontSize": 17,
+              "color": "#1E5A40",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "Implementation guidance, test expectations, and accessibility checks.",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "color": "#34414B",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Implementation guidance, test expectations, and accessibility checks.",
+              "fontSize": 13,
+              "color": "#34414B"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "#F1FAF4",
+      "lineColor": "#9CC8A6",
+      "lineWidth": 2
+    },
+    {
+      "order": 16,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/3m94fu18",
+      "id": "16",
+      "name": "Rounded Rectangle 15",
+      "bbox": [
+        475,
+        486,
+        330,
+        104
+      ],
+      "geometry": "roundRect",
+      "text": "6. Human Review + Refine + Re-analyze\nA developer or lead can update scope, prompts, and guidance before delegation.",
+      "textPreview": "6. Human Review + Refine + Re-analyze | A developer or lead can update scope, prompts, and guidance before delegation.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "insets": {
+          "top": 16,
+          "right": 18,
+          "bottom": 16,
+          "left": 18
+        }
+      },
+      "textLayout": {
+        "lineCount": 4,
+        "lines": [
+          {
+            "index": 1,
+            "text": "6. Human Review + Refine +"
+          },
+          {
+            "index": 2,
+            "text": "Re-analyze"
+          },
+          {
+            "index": 3,
+            "text": "A developer or lead can update scope, prompts,"
+          },
+          {
+            "index": 4,
+            "text": "and guidance before delegation."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "6. Human Review + Refine + Re-analyze",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "color": "#34414B",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "6. Human Review + Refine + Re-analyze",
+              "fontSize": 17,
+              "color": "#6F2119",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "A developer or lead can update scope, prompts, and guidance before delegation.",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "color": "#34414B",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "A developer or lead can update scope, prompts, and guidance before delegation.",
+              "fontSize": 13,
+              "color": "#34414B"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "#FFF3ED",
+      "lineColor": "#C74634",
+      "lineWidth": 2
+    },
+    {
+      "order": 17,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/a5gbq1or",
+      "id": "17",
+      "name": "Rounded Rectangle 16",
+      "bbox": [
+        870,
+        214,
+        330,
+        104
+      ],
+      "geometry": "roundRect",
+      "text": "7. Delegation to Codex / Cline  via OCA Powered\nGoverned execution against the target repository.",
+      "textPreview": "7. Delegation to Codex / Cline  via OCA Powered | Governed execution against the target repository.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "insets": {
+          "top": 16,
+          "right": 18,
+          "bottom": 16,
+          "left": 18
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "7. Delegation to Codex / Cline  via"
+          },
+          {
+            "index": 2,
+            "text": "OCA Powered"
+          },
+          {
+            "index": 3,
+            "text": "Governed execution against the target repository."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "7. Delegation to Codex / Cline  via OCA Powered",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "color": "#34414B"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "7. Delegation to Codex / Cline",
+              "fontSize": 17,
+              "color": "#1E5A40",
+              "bold": true
+            },
+            {
+              "index": 2,
+              "text": "  via OCA Powered",
+              "fontSize": 17,
+              "color": "#1E5A40",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "Governed execution against the target repository.",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "color": "#34414B",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Governed execution against the target repository.",
+              "fontSize": 13,
+              "color": "#34414B"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "#F4FBF7",
+      "lineColor": "#A7CDB8",
+      "lineWidth": 2
+    },
+    {
+      "order": 18,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/hoza1gvy",
+      "id": "18",
+      "name": "Rounded Rectangle 17",
+      "bbox": [
+        870,
+        350,
+        330,
+        104
+      ],
+      "geometry": "roundRect",
+      "text": "8. Review Changed Files + Fill Gaps\nInspect diffs, validate tests and a11y, and close remaining misses.",
+      "textPreview": "8. Review Changed Files + Fill Gaps | Inspect diffs, validate tests and a11y, and close remaining misses.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "insets": {
+          "top": 16,
+          "right": 18,
+          "bottom": 16,
+          "left": 18
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "8. Review Changed Files + Fill Gaps"
+          },
+          {
+            "index": 2,
+            "text": "Inspect diffs, validate tests and a11y, and close"
+          },
+          {
+            "index": 3,
+            "text": "remaining misses."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "8. Review Changed Files + Fill Gaps",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "color": "#34414B",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "8. Review Changed Files + Fill Gaps",
+              "fontSize": 17,
+              "color": "#1E5A40",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "Inspect diffs, validate tests and a11y, and close remaining misses.",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "color": "#34414B",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Inspect diffs, validate tests and a11y, and close remaining misses.",
+              "fontSize": 13,
+              "color": "#34414B"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "#F4FBF7",
+      "lineColor": "#A7CDB8",
+      "lineWidth": 2
+    },
+    {
+      "order": 19,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/s36hcrmh",
+      "id": "19",
+      "name": "Rounded Rectangle 18",
+      "bbox": [
+        870,
+        486,
+        330,
+        104
+      ],
+      "geometry": "roundRect",
+      "text": "9. Final Human Approval + Deliver\nApprove, refine, or reject before merge, submission, or handoff.",
+      "textPreview": "9. Final Human Approval + Deliver | Approve, refine, or reject before merge, submission, or handoff.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "insets": {
+          "top": 16,
+          "right": 18,
+          "bottom": 16,
+          "left": 18
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "9. Final Human Approval + Deliver"
+          },
+          {
+            "index": 2,
+            "text": "Approve, refine, or reject before merge,"
+          },
+          {
+            "index": 3,
+            "text": "submission, or handoff."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "9. Final Human Approval + Deliver",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "color": "#34414B",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "9. Final Human Approval + Deliver",
+              "fontSize": 17,
+              "color": "#6F2119",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "Approve, refine, or reject before merge, submission, or handoff.",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "color": "#34414B",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Approve, refine, or reject before merge, submission, or handoff.",
+              "fontSize": 13,
+              "color": "#34414B"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "#FFF3ED",
+      "lineColor": "#C74634",
+      "lineWidth": 2
+    },
+    {
+      "order": 20,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/4zidonyd",
+      "id": "20",
+      "name": "Down Arrow 19",
+      "bbox": [
+        226,
+        322,
+        38,
+        22
+      ],
+      "geometry": "downArrow",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          }
+        ]
+      },
+      "fillColor": "#C74634",
+      "lineColor": "#C74634",
+      "lineWidth": 1
+    },
+    {
+      "order": 21,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/xkf6dcbu",
+      "id": "21",
+      "name": "Down Arrow 20",
+      "bbox": [
+        226,
+        458,
+        38,
+        22
+      ],
+      "geometry": "downArrow",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          }
+        ]
+      },
+      "fillColor": "#C74634",
+      "lineColor": "#C74634",
+      "lineWidth": 1
+    },
+    {
+      "order": 22,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/mtwra5gb",
+      "id": "22",
+      "name": "Down Arrow 21",
+      "bbox": [
+        621,
+        322,
+        38,
+        22
+      ],
+      "geometry": "downArrow",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          }
+        ]
+      },
+      "fillColor": "#C74634",
+      "lineColor": "#C74634",
+      "lineWidth": 1
+    },
+    {
+      "order": 23,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/fepkzupw",
+      "id": "23",
+      "name": "Down Arrow 22",
+      "bbox": [
+        621,
+        458,
+        38,
+        22
+      ],
+      "geometry": "downArrow",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          }
+        ]
+      },
+      "fillColor": "#C74634",
+      "lineColor": "#C74634",
+      "lineWidth": 1
+    },
+    {
+      "order": 24,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/4r65wjud",
+      "id": "24",
+      "name": "Down Arrow 23",
+      "bbox": [
+        1016,
+        322,
+        38,
+        22
+      ],
+      "geometry": "downArrow",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          }
+        ]
+      },
+      "fillColor": "#C74634",
+      "lineColor": "#C74634",
+      "lineWidth": 1
+    },
+    {
+      "order": 25,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/xc3ylc7u",
+      "id": "25",
+      "name": "Down Arrow 24",
+      "bbox": [
+        1016,
+        458,
+        38,
+        22
+      ],
+      "geometry": "downArrow",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          }
+        ]
+      },
+      "fillColor": "#C74634",
+      "lineColor": "#C74634",
+      "lineWidth": 1
+    },
+    {
+      "order": 26,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/mlkjm1cf",
+      "id": "26",
+      "name": "Rounded Rectangle 25",
+      "bbox": [
+        80,
+        624,
+        1120,
+        52
+      ],
+      "geometry": "roundRect",
+      "text": "Accessibility enters at step 5 before delegation. Human review checkpoints appear at step 6 before OCA execution and step 9 before final delivery.",
+      "textPreview": "Accessibility enters at step 5 before delegation. Human review checkpoints appear at step 6 before OCA execution and step 9 before final ...",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "insets": {
+          "top": 12,
+          "right": 18,
+          "bottom": 12,
+          "left": 18
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Accessibility enters at step 5 before delegation. Human review checkpoints appear at step 6 before OCA execution and step 9 before final delivery."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Accessibility enters at step 5 before delegation. Human review checkpoints appear at step 6 before OCA execution and step 9 before final delivery.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Accessibility enters at step 5 before delegation. Human review checkpoints appear at step 6 before OCA execution and step 9 before final delivery.",
+              "fontSize": 15,
+              "color": "#1F2933"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "#FFFFFF",
+      "lineColor": "#E4E7EB",
+      "lineWidth": 1.5
+    },
+    {
+      "order": 27,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/nuxc3ylc",
+      "id": "30",
+      "name": "Slide Number Placeholder 6",
+      "bbox": [
+        80,
+        674.4,
+        62.93,
+        38.4
+      ],
+      "geometry": "rect",
+      "text": "11",
+      "textPreview": "11",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "vertical": 1,
+        "fontSize": 12,
+        "typeface": "Oracle Sans Tab",
+        "color": "#8B8580",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "11"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "11",
+          "runs": [
+            {
+              "index": 1,
+              "text": "11"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    }
+  ],
+  "composeRuns": []
+}

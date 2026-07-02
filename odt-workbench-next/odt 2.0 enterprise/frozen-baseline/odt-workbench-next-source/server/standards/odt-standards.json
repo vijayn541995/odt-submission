@@ -1,0 +1,99 @@
+{
+  "standardsVersion": "odt-baseline-1.0",
+  "description": "Baseline ODT standards for governed developer workflows.",
+  "accessibility": {
+    "wcagVersion": "2.2",
+    "vpatImpactRequired": true,
+    "section508ConsiderationRequired": true,
+    "requiredTopics": [
+      "keyboard navigation",
+      "visible focus",
+      "semantic structure",
+      "accessible labels",
+      "validation messages",
+      "color contrast",
+      "loading states",
+      "empty states",
+      "error states"
+    ]
+  },
+  "dependencyPolicy": {
+    "requireApprovalBeforeInstall": true,
+    "preferredLicenses": ["MIT", "Apache-2.0"],
+    "blockedLicenses": ["GPL-3.0", "AGPL-3.0", "UNKNOWN"],
+    "allowDevDependenciesWithoutApproval": false,
+    "blockUnknownLicense": true
+  },
+  "security": {
+    "blockFrontendSecrets": true,
+    "requireSafeErrors": true,
+    "requireInputValidation": true,
+    "requireNoRawSensitivePromptLogging": true,
+    "requireAuthRoleConsideration": true
+  },
+  "testing": {
+    "requireTestPlan": true,
+    "coverageTypes": ["statement", "branch", "function", "line"],
+    "scenarioTypes": ["positive", "negative", "boundary", "error", "accessibility", "security", "regression"]
+  },
+  "ux": {
+    "style": "Oracle Redwood-like",
+    "requiredTopics": ["task-oriented layout", "clear status language", "human approval gates", "loading states", "empty states", "error states"],
+    "allowThemeOverrideWithNotes": true
+  },
+  "flexibility": {
+    "allowTeamSpecificOverrides": true,
+    "allowNonCriticalWarningApproval": true,
+    "overridableAreas": ["theme", "page titles", "UI wording", "test commands", "coverage thresholds", "review templates"],
+    "hardBlockers": ["frontend secrets", "destructive actions", "unapproved dependency installs", "unknown or disallowed licenses", "write actions without approval"]
+  },
+  "policyCustomization": {
+    "supportedToday": "Edit standards registry JSON and source Markdown documents, then rerun Standards Check.",
+    "futureAdminUi": true,
+    "versioningRequired": true,
+    "reviewRequired": true,
+    "auditableChangesRequired": true,
+    "customizableAreas": [
+      "accessibility required topics",
+      "dependency license preferences",
+      "security checks",
+      "testing expectations",
+      "UX guidance",
+      "override policy",
+      "approval gates",
+      "worker lanes",
+      "PR readiness checklist"
+    ],
+    "nonOverridableSafetyRules": [
+      "no frontend secrets",
+      "no destructive actions",
+      "no dependency installs without package-specific approval",
+      "no write actions without approval",
+      "no external writes without approval"
+    ]
+  },
+  "agentPolicy": {
+    "defaultMode": "read-only",
+    "requireApprovalBeforeWrite": true,
+    "blockDestructiveActions": true,
+    "writeAllowedState": "APPROVED_TO_WRITE"
+  },
+  "workflowStates": [
+    "INTAKE_STARTED",
+    "REQUIREMENT_ANALYZED",
+    "REPO_ANALYZED",
+    "CLARIFICATION_REQUIRED",
+    "TECH_DESIGN_DRAFTED",
+    "STANDARDS_REVIEW_PENDING",
+    "STANDARDS_REVIEW_PASSED",
+    "PLAN_REVIEW",
+    "APPROVED_TO_WRITE",
+    "IMPLEMENTING",
+    "CODE_REVIEWING",
+    "TESTING",
+    "PR_READY",
+    "DONE",
+    "FAILED",
+    "BLOCKED"
+  ]
+}

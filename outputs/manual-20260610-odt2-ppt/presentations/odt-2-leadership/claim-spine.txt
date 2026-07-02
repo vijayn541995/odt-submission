@@ -1,0 +1,34 @@
+Thesis:
+ODT 2.0 turns AI coding tools into governed, evidence-backed SDLC workers by sitting above Codex/Cline/OCI/other models as the enterprise control plane.
+
+Audience:
+Engineering leadership, development teams, architecture reviewers, and teams evaluating internal AI-assisted SDLC adoption.
+
+One-line arc:
+Problem -> ODT 2.0 control plane -> workflow and architecture -> agent delegation -> governance/customization -> privacy/cost -> roadmap -> pilot ask.
+
+Slide list:
+1. ODT 2.0 is no longer a dashboard; it is a governed agentic SDLC workbench.
+   Proof: cover positioning and three value pillars.
+2. Teams need governance and evidence around AI coding, not just faster code generation.
+   Proof: problem/value matrix.
+3. ODT differs from Codex/Cline by owning workflow, standards, evidence, and approvals.
+   Proof: control-plane comparison.
+4. ODT 2.0 already has a real workbench surface and current capabilities.
+   Proof: current capability map.
+5. Requirement-to-PR readiness is an evidence-generating workflow.
+   Proof: 10-stage workflow diagram.
+6. Agent Team turns worker engines into governed roles with relay context.
+   Proof: Planner -> Full Stack Dev -> Reviewer -> Build Verifier orchestration.
+7. The architecture separates UI, backend, evidence, governance, connectors, workers, and providers.
+   Proof: dark architecture map.
+8. Governance and policy packs make ODT enterprise-customizable.
+   Proof: policy inheritance and gate model.
+9. Local evidence and scoped prompts reduce token cost and privacy risk.
+   Proof: context compiler model.
+10. Future upgrades move ODT toward enterprise-grade agentic SDLC.
+    Proof: near/mid/long roadmap.
+11. Real task path shows ODT verifying completed Jira work before PR readiness.
+    Proof: JOURNEY-style completed verification workflow.
+12. Leadership ask: pilot ODT 2.0 with measurable productivity, quality, and governance metrics.
+    Proof: pilot metrics and decision ask.

@@ -1,0 +1,69 @@
+{
+  "contracts": [
+    {
+      "id": "odt-workbench-local",
+      "projectName": "ODT Workbench Local",
+      "ownerTeam": "ODT 2.0",
+      "repoPath": "/Users/vn105957/Desktop/odt-submission/odt-workbench-next",
+      "baseBranch": "main",
+      "riskProfile": "medium",
+      "installCommand": "npm install",
+      "buildCommand": "npm run build",
+      "testCommand": "npm run check",
+      "runUiCommand": "npm run dev",
+      "runApiCommand": "npm run api",
+      "deployCommand": "",
+      "knownIssues": [
+        "Keep the existing ODT app running on API port 5190 and UI port 5189 during demos.",
+        "Do not treat terminal worker completion as sufficient; worker output must be ingested back into ODT."
+      ],
+      "blockedCommands": [
+        "git reset --hard",
+        "git checkout -- .",
+        "rm -rf"
+      ],
+      "approvalNotes": [
+        "Writes, dependency installs, PR creation, and deployment require explicit human approval.",
+        "Preserve the frozen baseline and validate Agent Team relay behavior after workflow changes."
+      ],
+      "evidenceNotes": [
+        "Run `npm run check` in the enterprise folder after repository/module changes.",
+        "Use Agent Team relay smoke after Agent Team, workflow, relay, or evidence changes."
+      ],
+      "updatedAt": "2026-06-18T00:00:00.000Z"
+    },
+    {
+      "id": "learning-portal-cerner-js",
+      "projectName": "Learning Portal cerner-learning-js",
+      "ownerTeam": "Learning Portal",
+      "repoPath": "/Users/vn105957/Desktop/lpDev/cerner-learning-js",
+      "baseBranch": "master",
+      "riskProfile": "high",
+      "installCommand": "npm install",
+      "buildCommand": "NODE_OPTIONS=--openssl-legacy-provider npm run build",
+      "testCommand": "./node_modules/.bin/jest --coverage=false --runTestsByPath <test-files> --runInBand",
+      "runUiCommand": "",
+      "runApiCommand": "",
+      "deployCommand": "",
+      "knownIssues": [
+        "Plain `npm run build` can fail on Webpack 4/OpenSSL 3 hash behavior; use NODE_OPTIONS=--openssl-legacy-provider for readiness evidence.",
+        "Targeted Jest can pass while the overall command exits non-zero because of unrelated obsolete snapshot cleanup.",
+        "Worktree-based local Docker testing may not reflect changes if docker sync points at the default repo path."
+      ],
+      "blockedCommands": [
+        "git reset --hard",
+        "git checkout -- .",
+        "rm -rf"
+      ],
+      "approvalNotes": [
+        "Do not create PRs, push branches, deploy, or update external tickets without explicit approval.",
+        "For completed Jira work, run reviewer/build verifier flow before PR readiness."
+      ],
+      "evidenceNotes": [
+        "Record exact test command, status, and environment note in ODT implementation evidence.",
+        "For layout defects, include manual/browser/visual evidence when jsdom cannot prove layout behavior."
+      ],
+      "updatedAt": "2026-06-18T00:00:00.000Z"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "name": "@odt/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./features": "./src/features/index.js",
+    "./layout": "./src/layout/index.js",
+    "./primitives": "./src/primitives/index.js",
+    "./routing": "./src/routing/index.js",
+    "./sidebar": "./src/layout/sidebar/index.js",
+    "./utils": "./src/utils/index.js"
+  },
+  "dependencies": {
+    "@odt/config": "0.1.0",
+    "@odt/domain": "0.1.0",
+    "react": "^18.3.1"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "odt-ai-innovator-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Isolated ODT AI Innovator lab for project contracts, environment readiness, and governed agent handoff.",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js"
+  }
+}

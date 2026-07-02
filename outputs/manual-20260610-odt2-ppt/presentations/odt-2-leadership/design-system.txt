@@ -1,0 +1,52 @@
+Slide size:
+- 1280x720
+
+Background:
+- Primary: #F7F4EF warm paper / #FFFFFF white canvas.
+- Dark architecture slide: #111827 to #0B1018 feel using deep ink fill.
+- Pale fingerprint motif: light #E8E2DC lines in upper-right.
+
+Typography:
+- Headlines: Aptos/Arial bold, 34-44px.
+- Cover headline: 50-58px.
+- Body: Aptos/Arial, 18-24px.
+- Labels: 11-15px uppercase or semibold.
+
+Palette:
+- ODT red: #C74634
+- Deep red: #8C1D18
+- Charcoal: #2B2B2B
+- Muted gray: #6B7280
+- Light line: #DED8D2
+- Cream callout: #FFF4D6
+- Blue support: #2E5F8A
+- Green support: #2F7D4B
+- Purple support: #7A5AC8
+
+Diagram grammar:
+- Rounded rectangles with 1-2px lines.
+- Red for governance/approval current gates.
+- Blue for platform/backend/evidence.
+- Green for readiness/passed state.
+- Orange/cream for callouts and human review.
+- Arrows only when direction matters.
+
+Footer grammar:
+- Top-left: "Confidential - Oracle Restricted (Employees Only)" on interior slides.
+- Bottom-left slide number.
+- Bottom-right red square with white O-style mark matching source deck flavor.
+
+Allowed layout families:
+- Cover with right-side product mark.
+- Problem/value matrix.
+- Split explanation + diagram.
+- Full-width workflow canvas.
+- Dark technical architecture canvas.
+- Roadmap bands.
+- Closing summary columns + callout.
+
+Banned motifs:
+- Generic SaaS card grids repeated on every slide.
+- Text-heavy slide dumps.
+- Floating arrows with unclear targets.
+- Unverified Oracle logo redraws.

@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ODT AI Innovator Lab</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <aside class="side-rail">
+        <div class="brand-lockup">
+          <div class="brand-mark">ODT</div>
+          <div>
+            <p class="eyebrow">AI Innovator Lab</p>
+            <h1>Project Contract</h1>
+          </div>
+        </div>
+        <p class="rail-copy">Turn repo tribal knowledge into reusable guardrails for agents, reviewers, and new developers.</p>
+        <div class="rail-card">
+          <span class="rail-label">Value thesis</span>
+          <strong>Speed from agents. Reliability from guardrails.</strong>
+        </div>
+        <nav class="rail-nav" aria-label="Lab sections">
+          <a href="#contract">Contract</a>
+          <a href="#readiness">Readiness</a>
+          <a href="#handoff">Handoff</a>
+          <a href="#roadmap">Roadmap</a>
+        </nav>
+      </aside>
+
+      <main class="content">
+        <section class="hero-panel">
+          <div>
+            <p class="eyebrow">Separate project, safe experiment</p>
+            <h2>ODT AI Innovator working model</h2>
+            <p>This lab captures per-repo commands, known issues, approval rules, and readiness checks before an agent starts work.</p>
+          </div>
+          <div class="hero-actions">
+            <select id="contractPicker" aria-label="Select project contract"></select>
+            <button id="newContractButton" class="ghost-button" type="button">New Contract</button>
+          </div>
+        </section>
+
+        <section id="contract" class="grid-layout">
+          <form id="contractForm" class="panel wide-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Project Contract</p>
+                <h3>Repo rules agents should not guess</h3>
+              </div>
+              <button class="primary-button" type="submit">Save Contract</button>
+            </div>
+
+            <div class="form-grid">
+              <label>
+                <span>Project name</span>
+                <input name="projectName" required />
+              </label>
+              <label>
+                <span>Owner team</span>
+                <input name="ownerTeam" />
+              </label>
+              <label class="span-two">
+                <span>Repository path</span>
+                <input name="repoPath" placeholder="/absolute/path/to/repo" />
+              </label>
+              <label>
+                <span>Base branch</span>
+                <input name="baseBranch" placeholder="main" />
+              </label>
+              <label>
+                <span>Risk profile</span>
+                <select name="riskProfile">
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="regulated">Regulated</option>
+                </select>
+              </label>
+              <label>
+                <span>Install command</span>
+                <input name="installCommand" placeholder="npm install" />
+              </label>
+              <label>
+                <span>Build command</span>
+                <input name="buildCommand" placeholder="npm run build" />
+              </label>
+              <label>
+                <span>Test command</span>
+                <input name="testCommand" placeholder="npm test" />
+              </label>
+              <label>
+                <span>Run UI command</span>
+                <input name="runUiCommand" placeholder="npm run dev" />
+              </label>
+              <label>
+                <span>Run API command</span>
+                <input name="runApiCommand" placeholder="npm run api" />
+              </label>
+              <label>
+                <span>Deploy command</span>
+                <input name="deployCommand" placeholder="Keep empty until deploy gate exists" />
+              </label>
+              <label class="span-two">
+                <span>Known issues</span>
+                <textarea name="knownIssues" placeholder="One known issue per line"></textarea>
+              </label>
+              <label class="span-two">
+                <span>Blocked commands</span>
+                <textarea name="blockedCommands" placeholder="git reset --hard&#10;rm -rf"></textarea>
+              </label>
+              <label class="span-two">
+                <span>Approval notes</span>
+                <textarea name="approvalNotes" placeholder="What requires human approval?"></textarea>
+              </label>
+              <label class="span-two">
+                <span>Evidence notes</span>
+                <textarea name="evidenceNotes" placeholder="What evidence should workers record?"></textarea>
+              </label>
+            </div>
+          </form>
+
+          <aside class="panel value-panel">
+            <p class="eyebrow">Cost-saving levers</p>
+            <h3>Why this matters</h3>
+            <ul class="value-list">
+              <li>Fewer failed agent runs from guessed commands.</li>
+              <li>Less setup debugging for new contributors.</li>
+              <li>Cleaner handoff from planning to execution.</li>
+              <li>Reusable evidence for PR and audit readiness.</li>
+            </ul>
+          </aside>
+        </section>
+
+        <section id="readiness" class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Environment Readiness</p>
+              <h3>Read-only checks before agent launch</h3>
+            </div>
+            <button id="runReadinessButton" class="primary-button" type="button">Run Readiness</button>
+          </div>
+          <div id="readinessSummary" class="readiness-summary"></div>
+          <div id="readinessChecks" class="check-grid"></div>
+        </section>
+
+        <section id="handoff" class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Agent Handoff</p>
+              <h3>Contract text for ODT Agent Team</h3>
+            </div>
+            <div class="button-row">
+              <button id="generateHandoffButton" class="primary-button" type="button">Generate Handoff</button>
+              <button id="copyHandoffButton" class="ghost-button" type="button">Copy</button>
+            </div>
+          </div>
+          <pre id="handoffOutput" class="handoff-output">Generate a handoff after saving or selecting a contract.</pre>
+        </section>
+
+        <section id="roadmap" class="panel roadmap-panel">
+          <p class="eyebrow">ODT merge roadmap</p>
+          <h3>How this becomes product value</h3>
+          <div class="roadmap">
+            <article>
+              <span>1</span>
+              <strong>Project Contract</strong>
+              <p>Capture repo rules and known issues.</p>
+            </article>
+            <article>
+              <span>2</span>
+              <strong>Agent Team Injection</strong>
+              <p>Attach contract to every worker prompt.</p>
+            </article>
+            <article>
+              <span>3</span>
+              <strong>PR Ready Evidence</strong>
+              <p>Use contract commands and readiness in PR pack.</p>
+            </article>
+            <article>
+              <span>4</span>
+              <strong>Deploy Gate</strong>
+              <p>Add approval-backed deploy only after verifier passes.</p>
+            </article>
+          </div>
+        </section>
+
+        <div id="notice" class="notice" role="status"></div>
+      </main>
+    </div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

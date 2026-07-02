@@ -1,0 +1,12 @@
+{
+  "name": "@odt/api-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./modules/workflow": "./src/modules/workflow/index.js"
+  },
+  "dependencies": {
+    "@odt/domain": "0.1.0"
+  }
+}

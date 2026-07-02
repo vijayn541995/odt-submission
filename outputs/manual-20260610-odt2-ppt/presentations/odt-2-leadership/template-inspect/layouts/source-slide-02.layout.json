@@ -1,0 +1,1517 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/pg3ex0nu",
+    "id": "pg3ex0nu",
+    "slide": 3,
+    "layoutId": "/ppt/slideLayouts/slideLayout34.xml",
+    "layoutName": "Light - Title/Subtitle",
+    "masterLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "Oracle Redwood 08-26-2020",
+    "colors": {
+      "accent1": "#C74634",
+      "accent2": "#FACD62",
+      "accent3": "#94AFAF",
+      "accent4": "#2B6242",
+      "accent5": "#AE562C",
+      "accent6": "#759C6C",
+      "dk1": "#312D2A",
+      "lt1": "#FCFBFA",
+      "dk2": "#312D2A",
+      "lt2": "#FCFBFA",
+      "hlink": "#00688C",
+      "folHlink": "#00688C"
+    },
+    "fontScheme": {
+      "name": "Oracle Sans Tabular",
+      "majorFont": {
+        "latinTypeface": "Georgia"
+      },
+      "minorFont": {
+        "latinTypeface": "Oracle Sans Tab"
+      }
+    },
+    "typefaces": [
+      "Aptos",
+      "Georgia",
+      "Oracle Sans",
+      "Oracle Sans Tab"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "/ppt/slideLayouts/slideLayout34.xml",
+      "name": "Light - Title/Subtitle",
+      "parentLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+      "elements": [
+        {
+          "order": 1,
+          "kind": "image",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout34.xml/16",
+          "id": "16",
+          "name": "Cloud",
+          "bbox": [
+            704.01,
+            28.28,
+            533.37,
+            163.72
+          ],
+          "contentType": "image/png",
+          "imageCrop": {
+            "left": 0,
+            "top": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "asset": {
+            "assetId": "/ppt/media/image5.png",
+            "contentType": "image/png",
+            "byteLength": 42026
+          },
+          "fillImage": {
+            "assetId": "/ppt/media/image5.png",
+            "contentType": "image/png",
+            "byteLength": 42026
+          }
+        },
+        {
+          "order": 2,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout34.xml/15",
+          "id": "15",
+          "name": "Subtitle",
+          "bbox": [
+            80,
+            107.53,
+            1120.32,
+            34.7
+          ],
+          "geometry": "rect",
+          "text": "Subtitle",
+          "textPreview": "Subtitle",
+          "resolvedTextStyle": {
+            "autoFit": "none",
+            "insets": {
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Subtitle",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Subtitle"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 3,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout34.xml/4",
+          "id": "4",
+          "name": "Title 3",
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": "Title",
+          "textPreview": "Title",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Title",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Title"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 4,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout34.xml/3",
+          "id": "3",
+          "name": "Date Placeholder 2",
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": "[Date]",
+          "textPreview": "[Date]",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "[Date]",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "[Date]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 5,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout34.xml/5",
+          "id": "5",
+          "name": "Footer Placeholder 4",
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal",
+          "textPreview": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 6,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout34.xml/6",
+          "id": "6",
+          "name": "Slide Number Placeholder 5",
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": "‹#›",
+          "textPreview": "‹#›",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "‹#›",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "‹#›"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scope": "master",
+      "id": "/ppt/slideMasters/slideMaster1.xml",
+      "type": "master",
+      "backgroundColor": "bg1",
+      "elements": [
+        {
+          "order": 1,
+          "kind": "image",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/21",
+          "id": "21",
+          "name": "OTag",
+          "bbox": [
+            1174.08,
+            667.2,
+            52.8,
+            52.8
+          ],
+          "contentType": "image/x-emf",
+          "asset": {
+            "assetId": "/ppt/media/image1.emf",
+            "contentType": "image/x-emf",
+            "byteLength": 2940
+          },
+          "fillImage": {
+            "assetId": "/ppt/media/image1.emf",
+            "contentType": "image/x-emf",
+            "byteLength": 2940
+          }
+        },
+        {
+          "order": 2,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/2",
+          "id": "2",
+          "name": "Title",
+          "bbox": [
+            80.72,
+            19.15,
+            1120.32,
+            86.4
+          ],
+          "geometry": "rect",
+          "text": "Title",
+          "textPreview": "Title",
+          "resolvedTextStyle": {
+            "anchor": 3,
+            "vertical": 1,
+            "verticalAlignment": "bottom",
+            "autoFit": "none",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Title",
+              "marginLeft": 0,
+              "indent": 0,
+              "spaceBefore": 1000,
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Title"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 3,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/4",
+          "id": "4",
+          "name": "Text Field",
+          "bbox": [
+            80.72,
+            168,
+            1120.32,
+            474
+          ],
+          "geometry": "rect",
+          "text": "Edit Master text styles\nSecond level\nThird level\nFourth level\nFifth level",
+          "textPreview": "Edit Master text styles | Second level | Third level | Fourth level | Fifth level",
+          "resolvedTextStyle": {
+            "vertical": 1,
+            "autoFit": "none",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Edit Master text styles",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Edit Master text styles"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "text": "Second level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Second level"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "text": "Third level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Third level"
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "text": "Fourth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fourth level"
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "text": "Fifth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fifth level"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 4,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/17",
+          "id": "17",
+          "name": "Slide Number",
+          "bbox": [
+            80,
+            674.4,
+            38.4,
+            38.4
+          ],
+          "geometry": "rect",
+          "text": "‹#›",
+          "textPreview": "‹#›",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "‹#›",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "‹#›"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 5,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/18",
+          "id": "18",
+          "name": "Footer",
+          "bbox": [
+            118.4,
+            674.43,
+            603.19,
+            38.33
+          ],
+          "geometry": "rect",
+          "text": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal",
+          "textPreview": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 6,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/20",
+          "id": "20",
+          "name": "Date",
+          "bbox": [
+            721.59,
+            674.6,
+            288,
+            38.16
+          ],
+          "geometry": "rect",
+          "text": "[Date]",
+          "textPreview": "[Date]",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "[Date]",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "[Date]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 7,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/6",
+          "id": "6",
+          "name": "TextBox 5",
+          "bbox": [
+            6.67,
+            6.67,
+            284.5,
+            16
+          ],
+          "geometry": "rect",
+          "text": "Confidential - Oracle Restricted \\Employees Only",
+          "textPreview": "Confidential - Oracle Restricted \\Employees Only",
+          "resolvedTextStyle": {
+            "autoFit": "resizeShapeToFitText",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Confidential - Oracle Restricted \\Employees Only",
+              "resolvedTextStyle": {
+                "alignment": "left"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Confidential - Oracle Restricted \\Employees Only",
+                  "fontSize": 13.33,
+                  "typeface": "Aptos",
+                  "color": "rgba(0, 0, 0, 0.5)"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 8,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/7",
+          "id": "7",
+          "name": "TextBox 6",
+          "bbox": [
+            6.67,
+            697.33,
+            284.5,
+            16
+          ],
+          "geometry": "rect",
+          "text": "Confidential - Oracle Restricted \\Employees Only",
+          "textPreview": "Confidential - Oracle Restricted \\Employees Only",
+          "resolvedTextStyle": {
+            "autoFit": "resizeShapeToFitText",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Confidential - Oracle Restricted \\Employees Only",
+              "resolvedTextStyle": {
+                "alignment": "left"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Confidential - Oracle Restricted \\Employees Only",
+                  "fontSize": 13.33,
+                  "typeface": "Aptos",
+                  "color": "rgba(0, 0, 0, 0.5)"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/gr2p8nqx",
+      "id": "7",
+      "name": "Title 1",
+      "bbox": [
+        27.77,
+        32.01,
+        1172.55,
+        36.77
+      ],
+      "text": "Oracle Developer Twin (ODT)",
+      "textPreview": "Oracle Developer Twin (ODT)",
+      "resolvedFontSize": 32,
+      "resolvedTextStyle": {
+        "anchor": 3,
+        "vertical": 1,
+        "fontSize": 32,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "bottom",
+        "autoFit": "none",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Oracle Developer Twin (ODT)"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Oracle Developer Twin (ODT)",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Oracle Developer Twin (ODT)"
+            }
+          ],
+          "bulletCharacter": "",
+          "lineSpacingPercent": 95000,
+          "spaceBefore": 0
+        }
+      ]
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/rytsvu9k",
+      "id": "8",
+      "name": "Rectangle 7",
+      "bbox": [
+        27.77,
+        68.99,
+        756.23,
+        283.22
+      ],
+      "geometry": "rect",
+      "text": "Problem Statement:\nDevelopers spend significant time translating tickets into engineering action\nunderstanding requirements\nfinding impacted code files\nplanning changes\nidentifying regression areas\nremembering VPAT/WCAG and keyboard rules as per guidelines\npreparing prompts for coding assistants\n\nThat orchestration work is repetitive, hard to standardize, and easy to miss under delivery pressure.\n\n",
+      "textPreview": "Problem Statement: | Developers spend significant time translating tickets into engineering action | understanding requirements | finding...",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "vertical": 1,
+        "rotation": 0,
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "lt1",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "none",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 13,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Problem Statement:"
+          },
+          {
+            "index": 2,
+            "text": "Developers spend significant time translating tickets into engineering action"
+          },
+          {
+            "index": 3,
+            "text": "• understanding requirements"
+          },
+          {
+            "index": 4,
+            "text": "• finding impacted code files"
+          },
+          {
+            "index": 5,
+            "text": "• planning changes"
+          },
+          {
+            "index": 6,
+            "text": "• identifying regression areas"
+          },
+          {
+            "index": 7,
+            "text": "• remembering VPAT/WCAG and keyboard rules as per guidelines"
+          },
+          {
+            "index": 8,
+            "text": "• preparing prompts for coding assistants"
+          },
+          {
+            "index": 9,
+            "text": ""
+          },
+          {
+            "index": 10,
+            "text": "That orchestration work is repetitive, hard to standardize, and easy to miss under"
+          },
+          {
+            "index": 11,
+            "text": "delivery pressure."
+          },
+          {
+            "index": 12,
+            "text": ""
+          },
+          {
+            "index": 13,
+            "text": ""
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Problem Statement:\nDevelopers spend significant time translating tickets into engineering action",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Problem Statement:",
+              "fontSize": 20,
+              "color": "tx1",
+              "bold": true
+            },
+            {
+              "index": 2,
+              "text": "\n"
+            },
+            {
+              "index": 3,
+              "text": "Developers spend significant time translating tickets into engineering action",
+              "fontSize": 20,
+              "color": "tx1"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "understanding requirements",
+          "bulletCharacter": "•",
+          "marginLeft": 285750,
+          "indent": -285750,
+          "runs": [
+            {
+              "index": 1,
+              "text": "understanding requirements",
+              "fontSize": 20,
+              "color": "tx1"
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "text": "finding impacted code files",
+          "bulletCharacter": "•",
+          "marginLeft": 285750,
+          "indent": -285750,
+          "runs": [
+            {
+              "index": 1,
+              "text": "finding impacted code files",
+              "fontSize": 20,
+              "color": "tx1"
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "text": "planning changes",
+          "bulletCharacter": "•",
+          "marginLeft": 285750,
+          "indent": -285750,
+          "runs": [
+            {
+              "index": 1,
+              "text": "planning changes",
+              "fontSize": 20,
+              "color": "tx1"
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "text": "identifying regression areas",
+          "bulletCharacter": "•",
+          "marginLeft": 285750,
+          "indent": -285750,
+          "runs": [
+            {
+              "index": 1,
+              "text": "identifying regression areas",
+              "fontSize": 20,
+              "color": "tx1"
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "text": "remembering VPAT/WCAG and keyboard rules as per guidelines",
+          "bulletCharacter": "•",
+          "marginLeft": 285750,
+          "indent": -285750,
+          "runs": [
+            {
+              "index": 1,
+              "text": "remembering VPAT/WCAG and keyboard rules as per guidelines",
+              "fontSize": 20,
+              "color": "tx1"
+            }
+          ]
+        },
+        {
+          "index": 7,
+          "text": "preparing prompts for coding assistants\n",
+          "bulletCharacter": "•",
+          "marginLeft": 285750,
+          "indent": -285750,
+          "runs": [
+            {
+              "index": 1,
+              "text": "preparing prompts for coding assistants",
+              "fontSize": 20,
+              "color": "tx1"
+            },
+            {
+              "index": 2,
+              "text": "\n"
+            }
+          ]
+        },
+        {
+          "index": 8,
+          "text": "That orchestration work is repetitive, hard to standardize, and easy to miss under delivery pressure.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "That orchestration work is repetitive, hard to standardize, and easy to miss under delivery pressure.",
+              "fontSize": 18.67,
+              "color": "tx1"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 9,
+          "runs": [
+            {
+              "index": 1,
+              "text": "\n"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": {
+        "type": "theme",
+        "value": "bg1",
+        "transform": {
+          "opacity": 0.4,
+          "darken": 0.05
+        }
+      },
+      "lineColor": {
+        "type": "theme",
+        "value": "bg1",
+        "transform": {
+          "darken": 0.1
+        }
+      },
+      "lineWidth": 2
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/yd0z6103",
+      "id": "9",
+      "name": "Rectangle 8",
+      "bbox": [
+        27.77,
+        360,
+        756.23,
+        333.6
+      ],
+      "geometry": "rect",
+      "text": "Solution – Digital Worker:\n\nOracle Developer Twin automates much of the repetitive preparation work between a ticket and implementation. It helps teams turn a requirement into a clearer action plan, identify likely impacted areas, prepare stronger AI-ready prompts, bring testing and accessibility guidance earlier, and keep human review in control before the work is finalized.\n   reduces manual ticket-to-code preparation with 7-stage guided planning\n   highlights likely impact and regression areas and hardens prompts\n   prepares stronger prompts for coding assistants while keeping devs in control\n   brings testing and accessibility checks earlier in the flow\n   keeps human approval in the final decision\n",
+      "textPreview": "Solution – Digital Worker: |  | Oracle Developer Twin automates much of the repetitive preparation work between a ticket and implementati...",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "vertical": 1,
+        "rotation": 0,
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "lt1",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "none",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 13,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Solution – Digital Worker:"
+          },
+          {
+            "index": 2,
+            "text": ""
+          },
+          {
+            "index": 3,
+            "text": "Oracle Developer Twin automates much of the repetitive preparation work"
+          },
+          {
+            "index": 4,
+            "text": "between a ticket and implementation. It helps teams turn a requirement into a"
+          },
+          {
+            "index": 5,
+            "text": "clearer action plan, identify likely impacted areas, prepare stronger AI-ready"
+          },
+          {
+            "index": 6,
+            "text": "prompts, bring testing and accessibility guidance earlier, and keep human review"
+          },
+          {
+            "index": 7,
+            "text": "in control before the work is finalized."
+          },
+          {
+            "index": 8,
+            "text": "•    reduces manual ticket-to-code preparation with 7-stage guided planning"
+          },
+          {
+            "index": 9,
+            "text": "•    highlights likely impact and regression areas and hardens prompts"
+          },
+          {
+            "index": 10,
+            "text": "•    prepares stronger prompts for coding assistants while keeping devs in control"
+          },
+          {
+            "index": 11,
+            "text": "•    brings testing and accessibility checks earlier in the flow"
+          },
+          {
+            "index": 12,
+            "text": "•    keeps human approval in the final decision"
+          },
+          {
+            "index": 13,
+            "text": ""
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Solution – Digital Worker:\n\nOracle Developer Twin automates much of the repetitive preparation work between a ticket and implementation. It helps teams turn a requirement into a clearer action plan, identify likely impacted areas, prepare stronger AI-ready prompts, bring testing and accessibility guidance earlier, and keep human review in control before the work is finalized.",
+          "spaceAfter": 450,
+          "resolvedTextStyle": {
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Solution – Digital Worker:",
+              "fontSize": 20,
+              "color": "tx1",
+              "bold": true
+            },
+            {
+              "index": 2,
+              "text": "\n",
+              "alignment": "left"
+            },
+            {
+              "index": 3,
+              "text": "\n",
+              "alignment": "left"
+            },
+            {
+              "index": 4,
+              "text": "Oracle Developer Twin automates much of the repetitive preparation work between a ticket and implementation. It helps teams turn a requirement into a clearer action plan, identify likely impacted areas, prepare stronger AI-ready prompts, bring testing and accessibility guidance earlier, and keep human review in control before the work is finalized.",
+              "fontSize": 20,
+              "typeface": "Oracle Sans",
+              "color": "#1A1C1F"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "   reduces manual ticket-to-code preparation with 7-stage guided planning",
+          "bulletCharacter": "•",
+          "spaceAfter": 450,
+          "resolvedTextStyle": {
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "   reduces manual ticket-to-code preparation with 7-stage guided planning",
+              "fontSize": 20,
+              "typeface": "Oracle Sans",
+              "color": "#1A1C1F"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 3,
+          "text": "   highlights likely impact and regression areas and hardens prompts",
+          "bulletCharacter": "•",
+          "spaceAfter": 450,
+          "resolvedTextStyle": {
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "   highlights likely impact and regression areas and hardens prompts",
+              "fontSize": 20,
+              "typeface": "Oracle Sans",
+              "color": "#1A1C1F"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 4,
+          "text": "   prepares stronger prompts for coding assistants while keeping devs in control",
+          "bulletCharacter": "•",
+          "spaceAfter": 450,
+          "runs": [
+            {
+              "index": 1,
+              "text": "   prepares stronger prompts for coding assistants while keeping ",
+              "fontSize": 20,
+              "typeface": "Oracle Sans",
+              "color": "#1A1C1F"
+            },
+            {
+              "index": 2,
+              "text": "devs",
+              "fontSize": 20,
+              "typeface": "Oracle Sans",
+              "color": "#1A1C1F"
+            },
+            {
+              "index": 3,
+              "text": " in control",
+              "fontSize": 20,
+              "typeface": "Oracle Sans",
+              "color": "#1A1C1F"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 5,
+          "text": "   brings testing and accessibility checks earlier in the flow",
+          "bulletCharacter": "•",
+          "spaceAfter": 450,
+          "resolvedTextStyle": {
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "   brings testing and accessibility checks earlier in the flow",
+              "fontSize": 20,
+              "typeface": "Oracle Sans",
+              "color": "#1A1C1F"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 6,
+          "text": "   keeps human approval in the final decision",
+          "bulletCharacter": "•",
+          "spaceAfter": 450,
+          "resolvedTextStyle": {
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "   k",
+              "fontSize": 20,
+              "typeface": "Oracle Sans",
+              "color": "#1A1C1F"
+            },
+            {
+              "index": 2,
+              "text": "eeps human approval in the final decision",
+              "fontSize": 20,
+              "typeface": "Oracle Sans",
+              "color": "#1A1C1F"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": {
+        "type": "theme",
+        "value": "bg1",
+        "transform": {
+          "opacity": 0.4,
+          "darken": 0.05
+        }
+      },
+      "lineColor": {
+        "type": "theme",
+        "value": "bg1",
+        "transform": {
+          "darken": 0.1
+        }
+      },
+      "lineWidth": 2
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/wb2hwfyx",
+      "id": "10",
+      "name": "Rectangle 9",
+      "bbox": [
+        795.64,
+        360,
+        455.88,
+        327.99
+      ],
+      "geometry": "rect",
+      "text": "   Expected Outcomes or Improvements\n\nImpact: clearer requirement-to-action flow, earlier visibility into impact and accessibility, and stronger human-reviewed AI handoff.\n\nMeasurable KPIs: reduced planning prep time, faster implementation handoff, increased review-ready artifact coverage, earlier accessibility visibility, and less repetitive support work.",
+      "textPreview": "Expected Outcomes or Improvements |  | Impact: clearer requirement-to-action flow, earlier visibility into impact and accessibility, and ...",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "vertical": 1,
+        "rotation": 0,
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "lt1",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "none",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 11,
+        "lines": [
+          {
+            "index": 1,
+            "text": "   Expected Outcomes or Improvements"
+          },
+          {
+            "index": 2,
+            "text": ""
+          },
+          {
+            "index": 3,
+            "text": "• Impact: clearer requirement-to-action flow,"
+          },
+          {
+            "index": 4,
+            "text": "earlier visibility into impact and accessibility,"
+          },
+          {
+            "index": 5,
+            "text": "and stronger human-reviewed AI handoff."
+          },
+          {
+            "index": 6,
+            "text": ""
+          },
+          {
+            "index": 7,
+            "text": "• Measurable KPIs: reduced planning prep"
+          },
+          {
+            "index": 8,
+            "text": "time, faster implementation handoff,"
+          },
+          {
+            "index": 9,
+            "text": "increased review-ready artifact coverage,"
+          },
+          {
+            "index": 10,
+            "text": "earlier accessibility visibility, and less"
+          },
+          {
+            "index": 11,
+            "text": "repetitive support work."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "   Expected Outcomes or Improvements\n",
+          "lineSpacingPercent": 90000,
+          "runs": [
+            {
+              "index": 1,
+              "text": "   Expected Outcomes or Improvements",
+              "fontSize": 20,
+              "color": "tx1",
+              "bold": true
+            },
+            {
+              "index": 2,
+              "text": "\n"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "Impact: clearer requirement-to-action flow, earlier visibility into impact and accessibility, and stronger human-reviewed AI handoff.\n",
+          "bulletCharacter": "•",
+          "marginLeft": 285750,
+          "indent": -285750,
+          "lineSpacingPercent": 90000,
+          "runs": [
+            {
+              "index": 1,
+              "text": "Impact: ",
+              "fontSize": 20,
+              "color": "tx1",
+              "bold": true
+            },
+            {
+              "index": 2,
+              "text": "clearer requirement-to-action flow, earlier visibility into impact and accessibility, and stronger human-reviewed AI handoff.",
+              "fontSize": 20,
+              "color": "tx1"
+            },
+            {
+              "index": 3,
+              "text": "\n"
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "text": "Measurable KPIs: reduced planning prep time, faster implementation handoff, increased review-ready artifact coverage, earlier accessibility visibility, and less repetitive support work.",
+          "bulletCharacter": "•",
+          "marginLeft": 285750,
+          "indent": -285750,
+          "lineSpacingPercent": 90000,
+          "runs": [
+            {
+              "index": 1,
+              "text": "Measurable KPIs: ",
+              "fontSize": 20,
+              "color": "tx1",
+              "bold": true
+            },
+            {
+              "index": 2,
+              "text": "reduced planning prep time, faster implementation handoff, increased review-ready artifact coverage, earlier accessibility visibility, and less repetitive support work.",
+              "fontSize": 20,
+              "color": "tx1"
+            }
+          ]
+        }
+      ],
+      "fillColor": {
+        "type": "theme",
+        "value": "bg1",
+        "transform": {
+          "opacity": 0.4,
+          "darken": 0.05
+        }
+      },
+      "lineColor": {
+        "type": "theme",
+        "value": "bg1",
+        "transform": {
+          "darken": 0.1
+        }
+      },
+      "lineWidth": 2
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/lwval87e",
+      "id": "11",
+      "name": "Rectangle 10",
+      "bbox": [
+        795.64,
+        68.78,
+        467.38,
+        283.22
+      ],
+      "geometry": "rect",
+      "text": "Who faces this problem?\n\nDevelopers, tech leads, reviewers, delivery managers, and software delivery teams.",
+      "textPreview": "Who faces this problem? |  | Developers, tech leads, reviewers, delivery managers, and software delivery teams.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "vertical": 1,
+        "rotation": 0,
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "lt1",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "none",
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 4,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Who faces this problem?"
+          },
+          {
+            "index": 2,
+            "text": ""
+          },
+          {
+            "index": 3,
+            "text": "• Developers, tech leads, reviewers, delivery"
+          },
+          {
+            "index": 4,
+            "text": "managers, and software delivery teams."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Who faces this problem?\n",
+          "lineSpacingPercent": 90000,
+          "runs": [
+            {
+              "index": 1,
+              "text": "Who faces this problem?",
+              "fontSize": 20,
+              "color": "tx1",
+              "bold": true
+            },
+            {
+              "index": 2,
+              "text": "\n"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "Developers, tech leads, reviewers, delivery managers, and software delivery teams.",
+          "bulletCharacter": "•",
+          "marginLeft": 285750,
+          "indent": -285750,
+          "lineSpacingPercent": 90000,
+          "runs": [
+            {
+              "index": 1,
+              "text": "Developers, tech leads, reviewers, delivery managers, and software delivery teams",
+              "fontSize": 20,
+              "color": "tx1"
+            },
+            {
+              "index": 2,
+              "text": ".",
+              "fontSize": 21.33,
+              "color": "tx1"
+            }
+          ]
+        }
+      ],
+      "fillColor": {
+        "type": "theme",
+        "value": "bg1",
+        "transform": {
+          "opacity": 0.4,
+          "darken": 0.05
+        }
+      },
+      "lineColor": {
+        "type": "theme",
+        "value": "bg1",
+        "transform": {
+          "darken": 0.1
+        }
+      },
+      "lineWidth": 2
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/5o7qpg3e",
+      "id": "2",
+      "name": "Slide Number Placeholder 6",
+      "bbox": [
+        80,
+        674.4,
+        38.4,
+        38.4
+      ],
+      "geometry": "rect",
+      "text": "2",
+      "textPreview": "2",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "vertical": 1,
+        "fontSize": 12,
+        "typeface": "Oracle Sans Tab",
+        "color": "#8B8580",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "2"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "2",
+          "runs": [
+            {
+              "index": 1,
+              "text": "2"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    }
+  ],
+  "composeRuns": []
+}

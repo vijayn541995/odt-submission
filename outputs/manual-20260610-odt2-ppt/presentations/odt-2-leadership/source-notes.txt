@@ -1,0 +1,15 @@
+Source deck:
+/Users/vn105957/Desktop/odt-submission/OracleDeveloperTwin__EngineeringProductivity_PPT_Submission_v1.pptx
+
+Reference role:
+- Visual system and storyline reference, not exact clone.
+- Source deck has 13 slides and includes a cover, problem/solution, executive brief, technical architecture, operational detail, user/value, governance, example, deep dive, tech stack, appendix flow, and summary.
+
+Identity / brand assets:
+- The source deck contains Oracle branding and a lower-right red mark. The new deck uses Oracle-style theme cues and a simplified lower-right red mark, but does not redraw the official Oracle wordmark.
+- ODT concept imagery from the source deck is treated as user-provided internal material.
+
+ODT content sources:
+- Current ODT 2.0 leadership brief: /Users/vn105957/Desktop/odt-submission/docs/ODT-2.0-Leadership-Brief.docx
+- ODT app direction: governed SDLC control plane, evidence store, Codex worker delegation, future Cline/OCI/Ollama/OpenAI-compatible adapters.
+- Product current state from local repo/memory: JIRA completed verification, agent team lanes, reviewer/build verifier, PR readiness, policy gates, monitoring, UI smoke validation.

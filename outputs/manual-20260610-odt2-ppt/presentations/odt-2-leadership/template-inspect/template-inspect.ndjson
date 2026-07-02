@@ -1,0 +1,100 @@
+{"kind":"slide","id":"sl/2x4nap4r","slide":2,"title":"Oracle Code Assist (OCA) Hackathon 2026","textShapes":7}
+{"kind":"textbox","id":"sh/cvixczed","slide":2,"textChars":70,"textLines":3}
+{"kind":"textbox","id":"sh/5gbq1ory","slide":2,"textChars":27,"textLines":1}
+{"kind":"textbox","id":"sh/udg7adsj","slide":2,"textChars":39,"textLines":3}
+{"kind":"textbox","id":"sh/nyd0z610","slide":2,"textChars":27,"textLines":3}
+{"kind":"textbox","id":"sh/nyd0z610","slide":2,"textChars":45,"textLines":1}
+{"kind":"textbox","id":"sh/judg7ads","slide":2,"textChars":45,"textLines":1}
+{"kind":"textbox","id":"sh/54zidony","slide":2,"textChars":1,"textLines":1}
+{"kind":"image","id":"im/1032lszq","slide":2,"name":"Picture 7","bbox":[864.02,327.38,299.7,299.7]}
+{"kind":"slide","id":"sl/pg3ex0nu","slide":3,"title":"Oracle Developer Twin (ODT)","textShapes":6}
+{"kind":"textbox","id":"sh/gr2p8nqx","slide":3,"textChars":27,"textLines":1}
+{"kind":"textbox","id":"sh/rytsvu9k","slide":3,"textChars":401,"textLines":12}
+{"kind":"textbox","id":"sh/yd0z6103","slide":3,"textChars":712,"textLines":9}
+{"kind":"textbox","id":"sh/wb2hwfyx","slide":3,"textChars":358,"textLines":5}
+{"kind":"textbox","id":"sh/lwval87e","slide":3,"textChars":107,"textLines":3}
+{"kind":"textbox","id":"sh/5o7qpg3e","slide":3,"textChars":1,"textLines":1}
+{"kind":"slide","id":"sl/s72x4nap","slide":4,"title":"Executive Brief","textShapes":6}
+{"kind":"textbox","id":"sh/61032lsz","slide":4,"textChars":15,"textLines":1}
+{"kind":"textbox","id":"sh/vahoza1g","slide":4,"textChars":520,"textLines":6}
+{"kind":"textbox","id":"sh/z25kb6xk","slide":4,"textChars":21,"textLines":1}
+{"kind":"textbox","id":"sh/pg3ex0nu","slide":4,"textChars":166,"textLines":6}
+{"kind":"textbox","id":"sh/7mp0bi9s","slide":4,"textChars":19,"textLines":1}
+{"kind":"textbox","id":"sh/vy90je9c","slide":4,"textChars":1,"textLines":1}
+{"kind":"image","id":"im/zqtcj6to","slide":4,"name":"Content Placeholder 2","bbox":[647.47,185.6,602.67,393.14]}
+{"kind":"slide","id":"sl/val87ed8","slide":5,"title":"Technical Architecture","textShapes":2}
+{"kind":"textbox","id":"sh/je9cvixc","slide":5,"textChars":22,"textLines":1}
+{"kind":"textbox","id":"sh/q1orytsv","slide":5,"textChars":1,"textLines":1}
+{"kind":"image","id":"im/qtcj6tov","slide":5,"name":"Picture 12","bbox":[34.29,56.34,1202.74,632.12]}
+{"kind":"slide","id":"sl/mlkjm1cf","slide":6,"title":"How This Digital Worker Works : Explained in detail in slide No: 6, 7,8, and 9","textShapes":4}
+{"kind":"textbox","id":"sh/6dcbulwv","slide":6,"textChars":78,"textLines":1}
+{"kind":"shape","id":"sh/vy90je9c","slide":6,"name":"Content Placeholder 7","bbox":[80.5,467.9,1120.33,173.27]}
+{"kind":"textbox","id":"sh/nuxc3ylc","slide":6,"textChars":18,"textLines":1}
+{"kind":"shape","id":"sh/onyd0z61","slide":6,"name":"TextBox 5","bbox":[97.61,163.76,1005.18,268.45]}
+{"kind":"textbox","id":"sh/5wjudg7a","slide":6,"textChars":1043,"textLines":21}
+{"kind":"textbox","id":"sh/6hcrmhk3","slide":6,"textChars":1,"textLines":1}
+{"kind":"slide","id":"sl/58z25kb6","slide":7,"title":"Developers use ODT to turn a requirement into clear scope, impacted files, ha...","textShapes":4}
+{"kind":"textbox","id":"sh/r65wjudg","slide":7,"textChars":878,"textLines":10}
+{"kind":"textbox","id":"sh/g3ex0nux","slide":7,"textChars":38,"textLines":1}
+{"kind":"textbox","id":"sh/nih4byhg","slide":7,"textChars":1,"textLines":1}
+{"kind":"textbox","id":"sh/g7adsji5","slide":7,"textChars":96,"textLines":1}
+{"kind":"slide","id":"sl/0z61032l","slide":8,"title":"How the Digital Worker Operates in Practice","textShapes":5}
+{"kind":"textbox","id":"sh/x4nap4r6","slide":8,"textChars":44,"textLines":1}
+{"kind":"textbox","id":"sh/8jqh0fep","slide":8,"textChars":1080,"textLines":8}
+{"kind":"textbox","id":"sh/fa9w3m94","slide":8,"textChars":37,"textLines":1}
+{"kind":"textbox","id":"sh/8v6psfil","slide":8,"textChars":1,"textLines":1}
+{"kind":"textbox","id":"sh/qtcj6tov","slide":8,"textChars":98,"textLines":1}
+{"kind":"slide","id":"sl/fu18jqh0","slide":9,"title":"Example: New Feature Story + Existing Defect Flow","textShapes":5}
+{"kind":"textbox","id":"sh/u9knih4b","slide":9,"textChars":51,"textLines":3}
+{"kind":"textbox","id":"sh/judg7ads","slide":9,"textChars":1170,"textLines":12}
+{"kind":"textbox","id":"sh/c7u54zid","slide":9,"textChars":78,"textLines":1}
+{"kind":"textbox","id":"sh/jm1cfa9w","slide":9,"textChars":1,"textLines":1}
+{"kind":"textbox","id":"sh/5gbq1ory","slide":9,"textChars":232,"textLines":1}
+{"kind":"slide","id":"sl/qh0fepkz","slide":10,"title":"ODT turns one work item into 7 governed stage prompts: Intake, Impact, Tech D...","textShapes":4}
+{"kind":"textbox","id":"sh/dg7adsji","slide":10,"textChars":714,"textLines":13}
+{"kind":"textbox","id":"sh/6hcrmhk3","slide":10,"textChars":32,"textLines":1}
+{"kind":"textbox","id":"sh/d8v6psfi","slide":10,"textChars":1,"textLines":1}
+{"kind":"textbox","id":"sh/6dcbulwv","slide":10,"textChars":126,"textLines":1}
+{"kind":"slide","id":"sl/29gr2p8n","slide":11,"title":"Frontend: React 18 UMD FEDIT dashboard plus generated HTML/CSS/JS ODT dashboa...","textShapes":3}
+{"kind":"textbox","id":"sh/gvy90je9","slide":11,"textChars":848,"textLines":13}
+{"kind":"textbox","id":"sh/r2p8nqxs","slide":11,"textChars":21,"textLines":1}
+{"kind":"textbox","id":"sh/kjm1cfa9","slide":11,"textChars":2,"textLines":1}
+{"kind":"slide","id":"sl/re1w7mp0","slide":12,"title":"Appendix","textShapes":19}
+{"kind":"textbox","id":"sh/f6dcbulw","slide":12,"textChars":8,"textLines":1}
+{"kind":"textbox","id":"sh/6tovahoz","slide":12,"textChars":23,"textLines":1}
+{"kind":"textbox","id":"sh/vahoza1g","slide":12,"textChars":147,"textLines":1}
+{"kind":"textbox","id":"sh/onyd0z61","slide":12,"textChars":24,"textLines":1}
+{"kind":"textbox","id":"sh/d8v6psfi","slide":12,"textChars":46,"textLines":1}
+{"kind":"textbox","id":"sh/6hcrmhk3","slide":12,"textChars":29,"textLines":1}
+{"kind":"textbox","id":"sh/z25kb6xk","slide":12,"textChars":27,"textLines":1}
+{"kind":"textbox","id":"sh/oj2t83it","slide":12,"textChars":28,"textLines":1}
+{"kind":"shape","id":"sh/d4vmtwra","slide":12,"name":"Right Arrow 8","bbox":[425,180,36,24]}
+{"kind":"shape","id":"sh/h4byhgn2","slide":12,"name":"Right Arrow 9","bbox":[820,180,36,24]}
+{"kind":"textbox","id":"sh/sji5snel","slide":12,"textChars":101,"textLines":2}
+{"kind":"textbox","id":"sh/3ylc7u54","slide":12,"textChars":101,"textLines":2}
+{"kind":"textbox","id":"sh/adsji5sn","slide":12,"textChars":89,"textLines":2}
+{"kind":"textbox","id":"sh/lszqtcj6","slide":12,"textChars":93,"textLines":2}
+{"kind":"textbox","id":"sh/s72x4nap","slide":12,"textChars":113,"textLines":2}
+{"kind":"textbox","id":"sh/3m94fu18","slide":12,"textChars":116,"textLines":2}
+{"kind":"textbox","id":"sh/a5gbq1or","slide":12,"textChars":97,"textLines":2}
+{"kind":"textbox","id":"sh/hoza1gvy","slide":12,"textChars":103,"textLines":2}
+{"kind":"textbox","id":"sh/s36hcrmh","slide":12,"textChars":98,"textLines":2}
+{"kind":"shape","id":"sh/4zidonyd","slide":12,"name":"Down Arrow 19","bbox":[226,322,38,22]}
+{"kind":"shape","id":"sh/xkf6dcbu","slide":12,"name":"Down Arrow 20","bbox":[226,458,38,22]}
+{"kind":"shape","id":"sh/mtwra5gb","slide":12,"name":"Down Arrow 21","bbox":[621,322,38,22]}
+{"kind":"shape","id":"sh/fepkzupw","slide":12,"name":"Down Arrow 22","bbox":[621,458,38,22]}
+{"kind":"shape","id":"sh/4r65wjud","slide":12,"name":"Down Arrow 23","bbox":[1016,322,38,22]}
+{"kind":"shape","id":"sh/xc3ylc7u","slide":12,"name":"Down Arrow 24","bbox":[1016,458,38,22]}
+{"kind":"textbox","id":"sh/mlkjm1cf","slide":12,"textChars":146,"textLines":1}
+{"kind":"textbox","id":"sh/nuxc3ylc","slide":12,"textChars":2,"textLines":1}
+{"kind":"slide","id":"sl/4fu18jqh","slide":13,"title":"Digital Worker","textShapes":7}
+{"kind":"textbox","id":"sh/sji5snel","slide":13,"textChars":14,"textLines":1}
+{"kind":"textbox","id":"sh/ap4r65wj","slide":13,"textChars":183,"textLines":3}
+{"kind":"textbox","id":"sh/za1gvy90","slide":13,"textChars":186,"textLines":4}
+{"kind":"textbox","id":"sh/z61032ls","slide":13,"textChars":148,"textLines":4}
+{"kind":"textbox","id":"sh/h4byhgn2","slide":13,"textChars":7,"textLines":1}
+{"kind":"textbox","id":"sh/ed8bat47","slide":13,"textChars":381,"textLines":7}
+{"kind":"textbox","id":"sh/s72x4nap","slide":13,"textChars":2,"textLines":1}
+{"kind":"slide","id":"sl/lwval87e","slide":14,"title":"13","textShapes":1}
+{"kind":"textbox","id":"sh/l0rqd4vm","slide":14,"textChars":2,"textLines":1}
+{"kind":"notice","message":"Truncated: omitted 0 lines. Increase maxChars or narrow target."}

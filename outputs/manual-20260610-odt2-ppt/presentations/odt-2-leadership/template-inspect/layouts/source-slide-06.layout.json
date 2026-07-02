@@ -1,0 +1,1085 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/58z25kb6",
+    "id": "58z25kb6",
+    "slide": 7,
+    "layoutId": "/ppt/slideLayouts/slideLayout6.xml",
+    "layoutName": "Light - Title/Subtitle 1 Column",
+    "masterLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "Oracle Redwood 08-26-2020",
+    "colors": {
+      "accent1": "#C74634",
+      "accent2": "#FACD62",
+      "accent3": "#94AFAF",
+      "accent4": "#2B6242",
+      "accent5": "#AE562C",
+      "accent6": "#759C6C",
+      "dk1": "#312D2A",
+      "lt1": "#FCFBFA",
+      "dk2": "#312D2A",
+      "lt2": "#FCFBFA",
+      "hlink": "#00688C",
+      "folHlink": "#00688C"
+    },
+    "fontScheme": {
+      "name": "Oracle Sans Tabular",
+      "majorFont": {
+        "latinTypeface": "Georgia"
+      },
+      "minorFont": {
+        "latinTypeface": "Oracle Sans Tab"
+      }
+    },
+    "typefaces": [
+      "Aptos",
+      "Georgia",
+      "Oracle Sans Tab"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "/ppt/slideLayouts/slideLayout6.xml",
+      "name": "Light - Title/Subtitle 1 Column",
+      "parentLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+      "elements": [
+        {
+          "order": 1,
+          "kind": "image",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/9",
+          "id": "9",
+          "name": "Cloud",
+          "bbox": [
+            704.01,
+            28.28,
+            533.37,
+            163.72
+          ],
+          "contentType": "image/png",
+          "imageCrop": {
+            "left": 0,
+            "top": 0,
+            "right": 0,
+            "bottom": 0
+          },
+          "asset": {
+            "assetId": "/ppt/media/image5.png",
+            "contentType": "image/png",
+            "byteLength": 42026
+          },
+          "fillImage": {
+            "assetId": "/ppt/media/image5.png",
+            "contentType": "image/png",
+            "byteLength": 42026
+          }
+        },
+        {
+          "order": 2,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/3",
+          "id": "3",
+          "name": "Subtitle",
+          "bbox": [
+            80.5,
+            106.53,
+            1120.32,
+            34.7
+          ],
+          "geometry": "rect",
+          "text": "Subtitle",
+          "textPreview": "Subtitle",
+          "resolvedTextStyle": {
+            "autoFit": "none",
+            "insets": {
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Subtitle",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Subtitle"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 3,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/6",
+          "id": "6",
+          "name": "Content",
+          "bbox": [
+            80.5,
+            168,
+            1120.33,
+            473.17
+          ],
+          "text": "Edit Master text styles\nSecond level\nThird level\nFourth level\nFifth level",
+          "textPreview": "Edit Master text styles | Second level | Third level | Fourth level | Fifth level",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Edit Master text styles",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Edit Master text styles"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "text": "Second level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Second level"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "text": "Third level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Third level"
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "text": "Fourth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fourth level"
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "text": "Fifth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fifth level"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 4,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/2",
+          "id": "2",
+          "name": "Title 1",
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": "Title",
+          "textPreview": "Title",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Title",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Title"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 5,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/5",
+          "id": "5",
+          "name": "Date Placeholder 4",
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": "[Date]",
+          "textPreview": "[Date]",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "[Date]",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "[Date]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 6,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/7",
+          "id": "7",
+          "name": "Footer Placeholder 6",
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal",
+          "textPreview": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 7,
+          "kind": "shape",
+          "scope": "layout",
+          "aid": "template/layout//ppt/slideLayouts/slideLayout6.xml/8",
+          "id": "8",
+          "name": "Slide Number Placeholder 7",
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": "‹#›",
+          "textPreview": "‹#›",
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "‹#›",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "‹#›"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scope": "master",
+      "id": "/ppt/slideMasters/slideMaster1.xml",
+      "type": "master",
+      "backgroundColor": "bg1",
+      "elements": [
+        {
+          "order": 1,
+          "kind": "image",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/21",
+          "id": "21",
+          "name": "OTag",
+          "bbox": [
+            1174.08,
+            667.2,
+            52.8,
+            52.8
+          ],
+          "contentType": "image/x-emf",
+          "asset": {
+            "assetId": "/ppt/media/image1.emf",
+            "contentType": "image/x-emf",
+            "byteLength": 2940
+          },
+          "fillImage": {
+            "assetId": "/ppt/media/image1.emf",
+            "contentType": "image/x-emf",
+            "byteLength": 2940
+          }
+        },
+        {
+          "order": 2,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/2",
+          "id": "2",
+          "name": "Title",
+          "bbox": [
+            80.72,
+            19.15,
+            1120.32,
+            86.4
+          ],
+          "geometry": "rect",
+          "text": "Title",
+          "textPreview": "Title",
+          "resolvedTextStyle": {
+            "anchor": 3,
+            "vertical": 1,
+            "verticalAlignment": "bottom",
+            "autoFit": "none",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Title",
+              "marginLeft": 0,
+              "indent": 0,
+              "spaceBefore": 1000,
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Title"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 3,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/4",
+          "id": "4",
+          "name": "Text Field",
+          "bbox": [
+            80.72,
+            168,
+            1120.32,
+            474
+          ],
+          "geometry": "rect",
+          "text": "Edit Master text styles\nSecond level\nThird level\nFourth level\nFifth level",
+          "textPreview": "Edit Master text styles | Second level | Third level | Fourth level | Fifth level",
+          "resolvedTextStyle": {
+            "vertical": 1,
+            "autoFit": "none",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Edit Master text styles",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Edit Master text styles"
+                }
+              ]
+            },
+            {
+              "index": 2,
+              "text": "Second level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Second level"
+                }
+              ]
+            },
+            {
+              "index": 3,
+              "text": "Third level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Third level"
+                }
+              ]
+            },
+            {
+              "index": 4,
+              "text": "Fourth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fourth level"
+                }
+              ]
+            },
+            {
+              "index": 5,
+              "text": "Fifth level",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Fifth level"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 4,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/17",
+          "id": "17",
+          "name": "Slide Number",
+          "bbox": [
+            80,
+            674.4,
+            38.4,
+            38.4
+          ],
+          "geometry": "rect",
+          "text": "‹#›",
+          "textPreview": "‹#›",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "‹#›",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "‹#›"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 5,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/18",
+          "id": "18",
+          "name": "Footer",
+          "bbox": [
+            118.4,
+            674.43,
+            603.19,
+            38.33
+          ],
+          "geometry": "rect",
+          "text": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal",
+          "textPreview": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Copyright © 2021, Oracle and/or its affiliates  |  Confidential: Internal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 6,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/20",
+          "id": "20",
+          "name": "Date",
+          "bbox": [
+            721.59,
+            674.6,
+            288,
+            38.16
+          ],
+          "geometry": "rect",
+          "text": "[Date]",
+          "textPreview": "[Date]",
+          "resolvedTextStyle": {
+            "anchor": 2,
+            "vertical": 1,
+            "verticalAlignment": "middle",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "[Date]",
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "[Date]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 7,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/6",
+          "id": "6",
+          "name": "TextBox 5",
+          "bbox": [
+            6.67,
+            6.67,
+            284.5,
+            16
+          ],
+          "geometry": "rect",
+          "text": "Confidential - Oracle Restricted \\Employees Only",
+          "textPreview": "Confidential - Oracle Restricted \\Employees Only",
+          "resolvedTextStyle": {
+            "autoFit": "resizeShapeToFitText",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Confidential - Oracle Restricted \\Employees Only",
+              "resolvedTextStyle": {
+                "alignment": "left"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Confidential - Oracle Restricted \\Employees Only",
+                  "fontSize": 13.33,
+                  "typeface": "Aptos",
+                  "color": "rgba(0, 0, 0, 0.5)"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "order": 8,
+          "kind": "shape",
+          "scope": "master",
+          "aid": "template/master//ppt/slideMasters/slideMaster1.xml/7",
+          "id": "7",
+          "name": "TextBox 6",
+          "bbox": [
+            6.67,
+            697.33,
+            284.5,
+            16
+          ],
+          "geometry": "rect",
+          "text": "Confidential - Oracle Restricted \\Employees Only",
+          "textPreview": "Confidential - Oracle Restricted \\Employees Only",
+          "resolvedTextStyle": {
+            "autoFit": "resizeShapeToFitText",
+            "insets": {
+              "top": 0,
+              "right": 0,
+              "bottom": 0,
+              "left": 0
+            }
+          },
+          "paragraphs": [
+            {
+              "index": 1,
+              "text": "Confidential - Oracle Restricted \\Employees Only",
+              "resolvedTextStyle": {
+                "alignment": "left"
+              },
+              "runs": [
+                {
+                  "index": 1,
+                  "text": "Confidential - Oracle Restricted \\Employees Only",
+                  "fontSize": 13.33,
+                  "typeface": "Aptos",
+                  "color": "rgba(0, 0, 0, 0.5)"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/r65wjudg",
+      "id": "3",
+      "name": "Content Placeholder 2",
+      "bbox": [
+        28.44,
+        143.39,
+        1155.56,
+        461.33
+      ],
+      "text": "Developers use ODT to turn a requirement into clear scope, impacted files, hardened prompts, code guidance, unit-test guidance, and accessibility checkpoints.\n\nReviewers and tech leads use ODT to inspect evidence, add reviewer notes or stage overrides, request re-analysis, and standardize the software development process.\n\nPrimary interface: ODT/FEDIT dashboard with generated reports/odt artifacts for intake, impact, design, code, test, and compliance stages, delegation and action buttons.\n\nDay-to-day workflow: enter work item -> review generated evidence -> refine if needed -> delegate approved execution path -> review diffs -> approve or refine.\n\nValue realized: less repetitive planning effort, clearer scope, AI assisted coding and unit testing, more consistent review, earlier accessibility visibility, and better human + AI collaboration and accelerated delivery.\n",
+      "textPreview": "Developers use ODT to turn a requirement into clear scope, impacted files, hardened prompts, code guidance, unit-test guidance, and acces...",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 21,
+        "lines": [
+          {
+            "index": 1,
+            "text": ""
+          },
+          {
+            "index": 2,
+            "text": "• Developers use ODT to turn a requirement into clear scope, impacted files, hardened prompts, code guidance,"
+          },
+          {
+            "index": 3,
+            "text": "unit-test guidance, and accessibility checkpoints."
+          },
+          {
+            "index": 4,
+            "text": ""
+          },
+          {
+            "index": 5,
+            "text": ""
+          },
+          {
+            "index": 6,
+            "text": "• Reviewers and tech leads use ODT to inspect evidence, add reviewer notes or stage overrides, request re-analysis,"
+          },
+          {
+            "index": 7,
+            "text": "and standardize the software development process."
+          },
+          {
+            "index": 8,
+            "text": ""
+          },
+          {
+            "index": 9,
+            "text": ""
+          },
+          {
+            "index": 10,
+            "text": "• Primary interface: ODT/FEDIT dashboard with generated reports/odt artifacts for intake, impact, design, code, test,"
+          },
+          {
+            "index": 11,
+            "text": "and compliance stages, delegation and action buttons."
+          },
+          {
+            "index": 12,
+            "text": ""
+          },
+          {
+            "index": 13,
+            "text": ""
+          },
+          {
+            "index": 14,
+            "text": "• Day-to-day workflow: enter work item -> review generated evidence -> refine if needed -> delegate approved"
+          },
+          {
+            "index": 15,
+            "text": "execution path -> review diffs -> approve or refine."
+          },
+          {
+            "index": 16,
+            "text": ""
+          },
+          {
+            "index": 17,
+            "text": ""
+          },
+          {
+            "index": 18,
+            "text": "• Value realized: less repetitive planning effort, clearer scope, AI assisted coding and unit testing, more consistent"
+          },
+          {
+            "index": 19,
+            "text": "review, earlier accessibility visibility, and better human + AI collaboration and accelerated delivery."
+          },
+          {
+            "index": 20,
+            "text": ""
+          },
+          {
+            "index": 21,
+            "text": ""
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Developers use ODT to turn a requirement into clear scope, impacted files, hardened prompts, code guidance, unit-test guidance, and accessibility checkpoints.\n",
+          "bulletCharacter": "•",
+          "marginLeft": 285750,
+          "indent": -285750,
+          "runs": [
+            {
+              "index": 1,
+              "text": "Developers use ODT to turn a requirement into clear scope, impacted files, hardened prompts, code guidance, unit-test guidance, and accessibility checkpoints.",
+              "fontSize": 21.33
+            },
+            {
+              "index": 2,
+              "text": "\n"
+            }
+          ],
+          "lineSpacingPercent": 95000,
+          "spaceBefore": 600,
+          "spaceAfter": 0
+        },
+        {
+          "index": 2,
+          "text": "Reviewers and tech leads use ODT to inspect evidence, add reviewer notes or stage overrides, request re-analysis, and standardize the software development process.\n",
+          "bulletCharacter": "•",
+          "marginLeft": 285750,
+          "indent": -285750,
+          "runs": [
+            {
+              "index": 1,
+              "text": "Reviewers and tech leads use ODT to inspect evidence, add reviewer notes or stage overrides, request re-analysis, and standardize the software development process.",
+              "fontSize": 21.33
+            },
+            {
+              "index": 2,
+              "text": "\n"
+            }
+          ],
+          "lineSpacingPercent": 95000,
+          "spaceBefore": 600,
+          "spaceAfter": 0
+        },
+        {
+          "index": 3,
+          "text": "Primary interface: ODT/FEDIT dashboard with generated reports/odt artifacts for intake, impact, design, code, test, and compliance stages, delegation and action buttons.\n",
+          "bulletCharacter": "•",
+          "marginLeft": 285750,
+          "indent": -285750,
+          "runs": [
+            {
+              "index": 1,
+              "text": "Primary interface: ",
+              "fontSize": 21.33,
+              "bold": true
+            },
+            {
+              "index": 2,
+              "text": "ODT/FEDIT dashboard with generated reports/",
+              "fontSize": 21.33
+            },
+            {
+              "index": 3,
+              "text": "odt",
+              "fontSize": 21.33
+            },
+            {
+              "index": 4,
+              "text": " artifacts for intake, impact, design, code, test, and compliance stages, delegation and action buttons.",
+              "fontSize": 21.33
+            },
+            {
+              "index": 5,
+              "text": "\n"
+            }
+          ],
+          "lineSpacingPercent": 95000,
+          "spaceBefore": 600,
+          "spaceAfter": 0
+        },
+        {
+          "index": 4,
+          "text": "Day-to-day workflow: enter work item -> review generated evidence -> refine if needed -> delegate approved execution path -> review diffs -> approve or refine.\n",
+          "bulletCharacter": "•",
+          "marginLeft": 285750,
+          "indent": -285750,
+          "runs": [
+            {
+              "index": 1,
+              "text": "Day-to-day workflow: ",
+              "fontSize": 21.33,
+              "bold": true
+            },
+            {
+              "index": 2,
+              "text": "enter work item -> review generated evidence -> refine if needed -> delegate approved execution path -> review diffs -> approve or refine.",
+              "fontSize": 21.33
+            },
+            {
+              "index": 3,
+              "text": "\n"
+            }
+          ],
+          "lineSpacingPercent": 95000,
+          "spaceBefore": 600,
+          "spaceAfter": 0
+        },
+        {
+          "index": 5,
+          "text": "Value realized: less repetitive planning effort, clearer scope, AI assisted coding and unit testing, more consistent review, earlier accessibility visibility, and better human + AI collaboration and accelerated delivery.",
+          "bulletCharacter": "•",
+          "marginLeft": 285750,
+          "indent": -285750,
+          "runs": [
+            {
+              "index": 1,
+              "text": "Value realized: ",
+              "fontSize": 21.33,
+              "bold": true
+            },
+            {
+              "index": 2,
+              "text": "less repetitive planning effort, clearer scope, AI assisted coding and unit testing, more consistent review, earlier accessibility visibility, and better human + AI collaboration and accelerated delivery.",
+              "fontSize": 21.33
+            }
+          ],
+          "lineSpacingPercent": 95000,
+          "spaceBefore": 600,
+          "spaceAfter": 0
+        }
+      ]
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/g3ex0nux",
+      "id": "4",
+      "name": "Title 3",
+      "bbox": [
+        28.44,
+        13.1,
+        1120.32,
+        86.4
+      ],
+      "text": "Who Uses ODT and How Value Is Realized",
+      "textPreview": "Who Uses ODT and How Value Is Realized",
+      "resolvedFontSize": 32,
+      "resolvedTextStyle": {
+        "anchor": 3,
+        "vertical": 1,
+        "fontSize": 32,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "bottom",
+        "autoFit": "none",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Who Uses ODT and How Value Is Realized"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Who Uses ODT and How Value Is Realized",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Who Uses ODT and How Value Is Realized"
+            }
+          ],
+          "bulletCharacter": "",
+          "lineSpacingPercent": 95000,
+          "spaceBefore": 0
+        }
+      ]
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/nih4byhg",
+      "id": "7",
+      "name": "Slide Number Placeholder 6",
+      "bbox": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "text": "6",
+      "textPreview": "6",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "6"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "6",
+          "runs": [
+            {
+              "index": 1,
+              "text": "6"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/g7adsji5",
+      "id": "8",
+      "name": "TextBox 7",
+      "bbox": [
+        40.89,
+        585.34,
+        1143.11,
+        38.78
+      ],
+      "geometry": "rect",
+      "text": "ODT helps teams stay closer to the requirement while keeping execution governed and review-ready",
+      "textPreview": "ODT helps teams stay closer to the requirement while keeping execution governed and review-ready",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "fontSize": 24,
+        "typeface": "Oracle Sans Tab",
+        "color": "tx1",
+        "alignment": "left",
+        "wrap": "square",
+        "autoFit": "resizeShapeToFitText",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "ODT helps teams stay closer to the requirement while keeping execution governed and review-ready"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "ODT helps teams stay closer to the requirement while keeping execution governed and review-ready",
+          "runs": [
+            {
+              "index": 1,
+              "text": "ODT helps teams stay closer to the requirement while keeping execution governed and review-ready"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(255, 192, 0, 0.41094)"
+    }
+  ],
+  "composeRuns": []
+}

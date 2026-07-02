@@ -1,0 +1,12 @@
+{
+  "name": "@odt/domain",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./workflow-contract": "./src/workflow-contract.js",
+    "./workflow": "./src/workflow.js",
+    "./verification-evidence": "./src/verification-evidence.js"
+  }
+}

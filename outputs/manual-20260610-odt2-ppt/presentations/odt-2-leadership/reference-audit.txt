@@ -1,0 +1,26 @@
+Preserve:
+- Oracle-style white/paper canvas.
+- Bold charcoal slide titles.
+- Red accent and bottom-right red mark.
+- Pale fingerprint/cloud motif in upper-right.
+- Operational/developer language.
+- Architecture/workflow proof objects.
+
+Improve:
+- Reduce text density.
+- Replace older ODT/FEDIT/OCA-only framing with ODT 2.0 control-plane framing.
+- Separate Codex/Cline/OCI GenAI/Ollama/OpenAI-compatible models as worker/provider adapters.
+- Make governance, relay context, evidence, and PR readiness explicit.
+- Add future upgrade roadmap.
+
+Do not imitate:
+- Overcrowded dark architecture with too many small labels.
+- Long paragraph slides with weak visual hierarchy.
+- Mixed old terminology that suggests ODT is only a prompt generator or dashboard.
+
+Inherited visual rules:
+- 1280x720 widescreen.
+- White background for most slides; one dark architecture slide.
+- Charcoal headline, red highlight, pale gray fingerprint motif.
+- Bottom footer with confidentiality marker and slide number.
+- Use simple thin-line cards, callout bands, and staged flow boxes.

@@ -1,5 +1,5 @@
 import { createServer } from 'node:http';
-import { execFile, spawnSync } from 'node:child_process';
+import { execFile, spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { chmodSync, existsSync, mkdirSync, openSync, closeSync, readSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
@@ -15,6 +15,48 @@ import {
 import { buildAgentContract } from './governance/agentContractService.js';
 import { runStandardsReview } from './governance/standardsCheckService.js';
 import { loadStandardsRegistry } from './governance/standardsRegistry.js';
+import { buildAiWorkAuditPack } from '../odt 2.0 enterprise/packages/domain/src/ai-work-audit.js';
+import {
+  createProjectContractService,
+  selectProjectContractForAssignmentContext
+} from '../odt 2.0 enterprise/services/api/src/modules/project-contract/index.js';
+import { createSettingsService } from '../odt 2.0 enterprise/services/api/src/modules/settings/index.js';
+import {
+  createWorkflowService,
+  deriveReviewCycleCloseout,
+  deriveJiraVerificationProfile,
+  scopedCurrentEvidence,
+  splitEvidenceByFreshness,
+  deriveWorkflowState as deriveWorkflowStateFromModule
+} from '../odt 2.0 enterprise/services/api/src/modules/workflow/index.js';
+import {
+  createAiWorkAuditPackRepository,
+  createApprovalEventRepository,
+  createAgentEventRepository,
+  createAgentFoundryRunRepository,
+  createAgentRelayRepository,
+  createAgentWorkerRunRepository,
+  createAiUsageRepository,
+  createAssignmentRepository,
+  createChatMessageRepository,
+  createConnectorEventRepository,
+  createDependencyRequestRepository,
+  createImplementationPlanRepository,
+  createImplementationEvidenceRepository,
+  createIntakeAssetRepository,
+  createPrReadinessReportRepository,
+  createProjectContractRepository,
+  createPromptTemplateRepository,
+  createRepoAnalysisRepository,
+  createRequirementRepository,
+  createReviewCommentRepository,
+  createRunEventRepository,
+  createSettingsRepository,
+  createStandardsCheckRepository,
+  createTechnicalDesignRepository,
+  createTestPlanRepository,
+  createWorkflowEvidenceRepository
+} from '../odt 2.0 enterprise/services/sqlite/src/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const appRoot = dirname(__dirname);
@@ -181,6 +223,39 @@ function parseTomlStringArray(bodyText = '', key = 'args') {
       .replace(/\\"/g, '"')
       .replace(/\\\\/g, '\\')
   ));
+}
+
+function parseTomlStringValue(bodyText = '', key = 'model') {
+  const match = String(bodyText || '').match(new RegExp(`^\\s*${key}\\s*=\\s*"((?:\\\\.|[^"])*)"`, 'm'));
+  return match
+    ? match[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\').trim()
+    : '';
+}
+
+function readCodexConfigModel() {
+  const home = process.env.HOME || process.env.USERPROFILE || '';
+  const configPaths = uniqueTruthy([
+    process.env.ODT_CODEX_CONFIG_PATH,
+    home ? join(home, '.codex', 'config.toml') : ''
+  ]);
+  for (const configPath of configPaths) {
+    try {
+      if (!existsSync(configPath)) continue;
+      const model = parseTomlStringValue(readFileSync(configPath, 'utf8'), 'model');
+      if (model) return { model, source: configPath };
+    } catch {
+      // Model discovery is best-effort; launch still works when a model is explicitly configured.
+    }
+  }
+  return { model: '', source: '' };
+}
+
+function getCodexWorkerModel() {
+  const configured = String(process.env.ODT_CODEX_MODEL || process.env.CODEX_MODEL || '').trim();
+  if (configured) return { model: configured, source: process.env.ODT_CODEX_MODEL ? 'ODT_CODEX_MODEL' : 'CODEX_MODEL' };
+  const fromConfig = readCodexConfigModel();
+  if (fromConfig.model) return fromConfig;
+  return { model: '', source: '' };
 }
 
 function expandLocalPath(rawPath = '') {
@@ -509,7 +584,7 @@ function formatJiraIntakeText({ issue, workState, repoSignals }) {
   return lines.join('\n');
 }
 
-async function importJiraIssueForIntake({ assignmentId = 'assignment-local-mvp', issueKey = '', repoPath = '' } = {}) {
+async function importJiraIssueForIntake({ assignmentId = '', issueKey = '', repoPath = '', createNewAssignment = false } = {}) {
   const connector = listConnectors().find((item) => item.id === 'jira');
   if (!connector || !connector.enabled) {
     const error = new Error(connector?.readinessDetail || 'Jira connector is not ready.');
@@ -518,7 +593,7 @@ async function importJiraIssueForIntake({ assignmentId = 'assignment-local-mvp',
   }
   const normalizedIssueKey = normalizeJiraIssueKey(issueKey);
   if (!normalizedIssueKey) {
-    const error = new Error('A Jira issue key such as JOURNEY-25366 is required.');
+    const error = new Error('A Jira issue key such as PROJECT-12345 is required.');
     error.statusCode = 400;
     throw error;
   }
@@ -533,14 +608,39 @@ async function importJiraIssueForIntake({ assignmentId = 'assignment-local-mvp',
   const workState = classifyJiraWorkState(issue);
   const repoSignals = readJiraRepoCompletionSignals({ issueKey: normalizedIssueKey, repoPath });
   const importedText = formatJiraIntakeText({ issue, workState, repoSignals });
+  const targetAssignmentId = createNewAssignment
+    ? createAssignmentForWork({
+      title: `Jira: ${normalizedIssueKey}`,
+      input: importedText,
+      issueKey: normalizedIssueKey,
+      repoPath
+    }).id
+    : (assignmentId || getActiveAssignmentId());
+  setActiveAssignmentId(targetAssignmentId);
   const analysis = buildRequirementAnalysis({
-    assignmentId,
+    assignmentId: targetAssignmentId,
     input: importedText,
+    repoPath,
     sourceType: 'jira-import'
+  });
+  const repoAnalysis = repoPath
+    ? buildRepoAnalysis({ assignmentId: targetAssignmentId, repoPath })
+    : null;
+  const requirement = requirementRepository.listByAssignment(targetAssignmentId)[0] || {};
+  const design = buildTechnicalDesign({
+    assignmentId: targetAssignmentId,
+    requirement,
+    repoAnalysis: repoAnalysis || {},
+    title: workState.state === 'completed' ? `${normalizedIssueKey} Verification Design` : `${normalizedIssueKey} Technical Design`
+  });
+  const plan = buildImplementationPlan({
+    assignmentId: targetAssignmentId,
+    design,
+    title: workState.state === 'completed' ? `${normalizedIssueKey} Verification Plan` : `${normalizedIssueKey} Implementation Plan`
   });
 
   createRunEvent(createId('run'), 'jira_issue_imported_for_intake', workState.state === 'completed' ? 'ok' : 'warning', {
-    assignmentId,
+    assignmentId: targetAssignmentId,
     issueKey: normalizedIssueKey,
     issueStatus: issue.status,
     workState: workState.state,
@@ -548,15 +648,25 @@ async function importJiraIssueForIntake({ assignmentId = 'assignment-local-mvp',
     repoEvidenceStatus: repoSignals.status,
     credentialSource: credentials.source,
     safeFieldsOnly: true
-  }, assignmentId);
+  }, targetAssignmentId);
+  createRunEvent(createId('run'), 'jira_import_plan_created', 'ok', {
+    assignmentId: targetAssignmentId,
+    issueKey: normalizedIssueKey,
+    planType: plan.planType || 'implementation',
+    repoAnalyzed: Boolean(repoAnalysis)
+  }, targetAssignmentId);
 
   return {
-    assignmentId,
+    assignmentId: targetAssignmentId,
+    activeAssignmentId: targetAssignmentId,
     issue,
     workState,
     repoSignals,
     importedText,
     analysis,
+    repoAnalysis,
+    design,
+    plan,
     metadata: {
       credentialSource: credentials.source,
       safeFieldsOnly: true
@@ -816,6 +926,29 @@ db.exec(`
     updated_at TEXT NOT NULL
   );
 
+  CREATE TABLE IF NOT EXISTS project_contracts (
+    id TEXT PRIMARY KEY,
+    assignment_id TEXT,
+    project_name TEXT NOT NULL,
+    owner_team TEXT,
+    repo_path TEXT,
+    base_branch TEXT,
+    risk_profile TEXT NOT NULL,
+    install_command TEXT,
+    build_command TEXT,
+    test_command TEXT,
+    run_ui_command TEXT,
+    run_api_command TEXT,
+    deploy_command TEXT,
+    known_issues_json TEXT NOT NULL,
+    blocked_commands_json TEXT NOT NULL,
+    approval_notes_json TEXT NOT NULL,
+    evidence_notes_json TEXT NOT NULL,
+    status TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS prompt_templates (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
@@ -995,6 +1128,15 @@ db.exec(`
     created_at TEXT NOT NULL
   );
 
+  CREATE TABLE IF NOT EXISTS ai_work_audit_packs (
+    id TEXT PRIMARY KEY,
+    assignment_id TEXT NOT NULL,
+    stage TEXT NOT NULL,
+    status TEXT NOT NULL,
+    pack_json TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS intake_assets (
     id TEXT PRIMARY KEY,
     assignment_id TEXT NOT NULL,
@@ -1162,6 +1304,67 @@ const statements = {
     SELECT key, value, updated_at AS updatedAt
     FROM settings
     ORDER BY key ASC
+  `),
+  upsertProjectContract: db.prepare(`
+    INSERT INTO project_contracts (
+      id, assignment_id, project_name, owner_team, repo_path, base_branch, risk_profile,
+      install_command, build_command, test_command, run_ui_command, run_api_command,
+      deploy_command, known_issues_json, blocked_commands_json, approval_notes_json,
+      evidence_notes_json, status, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      assignment_id = excluded.assignment_id,
+      project_name = excluded.project_name,
+      owner_team = excluded.owner_team,
+      repo_path = excluded.repo_path,
+      base_branch = excluded.base_branch,
+      risk_profile = excluded.risk_profile,
+      install_command = excluded.install_command,
+      build_command = excluded.build_command,
+      test_command = excluded.test_command,
+      run_ui_command = excluded.run_ui_command,
+      run_api_command = excluded.run_api_command,
+      deploy_command = excluded.deploy_command,
+      known_issues_json = excluded.known_issues_json,
+      blocked_commands_json = excluded.blocked_commands_json,
+      approval_notes_json = excluded.approval_notes_json,
+      evidence_notes_json = excluded.evidence_notes_json,
+      status = excluded.status,
+      updated_at = excluded.updated_at
+  `),
+  selectProjectContracts: db.prepare(`
+    SELECT id, assignment_id AS assignmentId, project_name AS projectName, owner_team AS ownerTeam,
+      repo_path AS repoPath, base_branch AS baseBranch, risk_profile AS riskProfile,
+      install_command AS installCommand, build_command AS buildCommand, test_command AS testCommand,
+      run_ui_command AS runUiCommand, run_api_command AS runApiCommand, deploy_command AS deployCommand,
+      known_issues_json AS knownIssuesJson, blocked_commands_json AS blockedCommandsJson,
+      approval_notes_json AS approvalNotesJson, evidence_notes_json AS evidenceNotesJson,
+      status, created_at AS createdAt, updated_at AS updatedAt
+    FROM project_contracts
+    ORDER BY updated_at DESC
+  `),
+  selectProjectContractsByAssignment: db.prepare(`
+    SELECT id, assignment_id AS assignmentId, project_name AS projectName, owner_team AS ownerTeam,
+      repo_path AS repoPath, base_branch AS baseBranch, risk_profile AS riskProfile,
+      install_command AS installCommand, build_command AS buildCommand, test_command AS testCommand,
+      run_ui_command AS runUiCommand, run_api_command AS runApiCommand, deploy_command AS deployCommand,
+      known_issues_json AS knownIssuesJson, blocked_commands_json AS blockedCommandsJson,
+      approval_notes_json AS approvalNotesJson, evidence_notes_json AS evidenceNotesJson,
+      status, created_at AS createdAt, updated_at AS updatedAt
+    FROM project_contracts
+    WHERE assignment_id = ? OR assignment_id = ''
+    ORDER BY assignment_id DESC, updated_at DESC
+  `),
+  selectProjectContractById: db.prepare(`
+    SELECT id, assignment_id AS assignmentId, project_name AS projectName, owner_team AS ownerTeam,
+      repo_path AS repoPath, base_branch AS baseBranch, risk_profile AS riskProfile,
+      install_command AS installCommand, build_command AS buildCommand, test_command AS testCommand,
+      run_ui_command AS runUiCommand, run_api_command AS runApiCommand, deploy_command AS deployCommand,
+      known_issues_json AS knownIssuesJson, blocked_commands_json AS blockedCommandsJson,
+      approval_notes_json AS approvalNotesJson, evidence_notes_json AS evidenceNotesJson,
+      status, created_at AS createdAt, updated_at AS updatedAt
+    FROM project_contracts
+    WHERE id = ?
   `),
   insertPromptTemplate: db.prepare(`
     INSERT OR IGNORE INTO prompt_templates (id, name, request_type, version, template, active, created_at, updated_at)
@@ -1363,6 +1566,21 @@ const statements = {
     FROM implementation_evidence
     WHERE id = ?
   `),
+  insertAiWorkAuditPack: db.prepare(`
+    INSERT INTO ai_work_audit_packs (id, assignment_id, stage, status, pack_json, created_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `),
+  selectAiWorkAuditPacksByAssignment: db.prepare(`
+    SELECT id, assignment_id AS assignmentId, stage, status, pack_json AS packJson, created_at AS createdAt
+    FROM ai_work_audit_packs
+    WHERE assignment_id = ?
+    ORDER BY created_at DESC
+  `),
+  selectAiWorkAuditPackById: db.prepare(`
+    SELECT id, assignment_id AS assignmentId, stage, status, pack_json AS packJson, created_at AS createdAt
+    FROM ai_work_audit_packs
+    WHERE id = ?
+  `),
   insertPrReadinessReport: db.prepare(`
     INSERT INTO pr_readiness_reports (id, assignment_id, title, report_json, status, created_at)
     VALUES (?, ?, ?, ?, ?, ?)
@@ -1505,9 +1723,35 @@ const statements = {
 		      updated_at = ?, resolved_at = ?
 		    WHERE id = ?
 		  `)
-		};
+			};
 
-seedDefaults();
+const settingsRepository = createSettingsRepository({
+  statements
+});
+
+const assignmentRepository = createAssignmentRepository({
+  statements
+});
+
+const promptTemplateRepository = createPromptTemplateRepository({
+  statements
+});
+
+const projectContractRepository = createProjectContractRepository({
+  statements
+});
+
+const settingsService = createSettingsService({
+  settingsRepository,
+  promptTemplateRepository,
+  safeAiConfig,
+  listConnectors,
+  connectorConfig,
+  uploadPolicy,
+  workspaceDir
+});
+
+	seedDefaults();
 
 function seedDefaults() {
   const now = new Date().toISOString();
@@ -1516,22 +1760,150 @@ function seedDefaults() {
     ['plan-generation-v1', 'Plan Generation', 'recommend', 'v1', 'Convert user work into a review-first implementation plan.'],
     ['json-extraction-v1', 'Structured Extraction', 'extract-json', 'v1', 'Extract task metadata, risks, dependencies, and acceptance criteria.']
   ].forEach(([id, name, requestType, version, template]) => {
-    statements.insertPromptTemplate.run(id, name, requestType, version, template, 1, now, now);
+    promptTemplateRepository.createTemplate({ id, name, requestType, version, template, active: 1, createdAt: now, updatedAt: now });
   });
 
-  if (!statements.selectAssignments.all().length) {
-    statements.insertAssignment.run(
-      'assignment-local-mvp',
-      'Local Workbench MVP',
-      'Build the governed ODT Workbench control plane with backend-owned AI, usage logging, OpenAPI, and human approval gates.',
-      'Vijay',
-      'needs review',
-      'high',
-      appRoot,
-      now,
-      now
-    );
+  if (!assignmentRepository.list().length) {
+    assignmentRepository.createAssignment({
+      id: 'assignment-local-mvp',
+      title: 'Local Workbench MVP',
+      requirement: 'Build the governed ODT Workbench control plane with backend-owned AI, usage logging, OpenAPI, and human approval gates.',
+      owner: 'Vijay',
+      status: 'needs review',
+      priority: 'high',
+      repoPath: appRoot,
+      createdAt: now,
+      updatedAt: now
+    });
+    setActiveAssignmentId('assignment-local-mvp');
+  } else if (!getStoredSetting('activeAssignmentId', '')) {
+    setActiveAssignmentId(assignmentRepository.list()[0]?.id || 'assignment-local-mvp');
   }
+
+  seedDefaultProjectContract(now);
+}
+
+function seedDefaultProjectContract(now = new Date().toISOString()) {
+  if (projectContractRepository.getById('odt-workbench-local')) return;
+  projectContractRepository.upsertContract({
+    id: 'odt-workbench-local',
+    assignmentId: 'assignment-local-mvp',
+    projectName: 'ODT Workbench Local',
+    ownerTeam: 'ODT 2.0',
+    repoPath: appRoot,
+    baseBranch: 'main',
+    riskProfile: 'medium',
+    installCommand: 'npm install',
+    buildCommand: 'npm run build',
+    testCommand: 'npm --prefix "odt 2.0 enterprise" run check',
+    runUiCommand: 'npm run dev',
+    runApiCommand: 'npm run api',
+    deployCommand: '',
+    knownIssues: [
+      'Keep the existing ODT app running on API port 5190 and UI port 5189 during demos.',
+      'Do not treat terminal worker completion as sufficient; worker output must be ingested back into ODT.'
+    ],
+    blockedCommands: [
+      'git reset --hard',
+      'git checkout -- .',
+      'rm -rf'
+    ],
+    approvalNotes: [
+      'Writes, dependency installs, PR creation, and deployment require explicit human approval.',
+      'Preserve the frozen baseline and validate Agent Team relay behavior after workflow changes.'
+    ],
+    evidenceNotes: [
+      'Run `npm run build` and `npm --prefix "odt 2.0 enterprise" run check` after enterprise module changes.',
+      'Use Agent Team relay smoke after Agent Team, workflow, relay, or evidence changes.'
+    ],
+    status: 'active',
+    createdAt: now,
+    updatedAt: now
+  });
+}
+
+function setActiveAssignmentId(assignmentId) {
+  if (!assignmentId) return '';
+  settingsRepository.setValue('activeAssignmentId', assignmentId, new Date().toISOString());
+  return assignmentId;
+}
+
+function getActiveAssignmentId() {
+  const stored = getStoredSetting('activeAssignmentId', '');
+  if (stored && getAssignment(stored)) return stored;
+  const latest = assignmentRepository.list()[0]?.id || 'assignment-local-mvp';
+  if (latest) setActiveAssignmentId(latest);
+  return latest;
+}
+
+function compactTimestamp(value = new Date()) {
+  return value.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, '');
+}
+
+function compactTimestampWithMillis(value = new Date()) {
+  const date = value instanceof Date ? value : new Date(value);
+  const safeDate = Number.isFinite(date.getTime()) ? date : new Date();
+  return safeDate.toISOString().replace(/[-:]/g, '').replace('.', '').replace('Z', '');
+}
+
+function slugForAssignmentId(value = '') {
+  return String(value || 'task')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 48) || 'task';
+}
+
+function createAssignmentIdForWork({ issueKey = '', title = '' } = {}) {
+  const base = normalizeJiraIssueKey(issueKey) || slugForAssignmentId(title) || 'task';
+  let id = `assignment_${slugForAssignmentId(base)}_${compactTimestamp()}`;
+  let suffix = 2;
+  while (getAssignment(id)) {
+    id = `assignment_${slugForAssignmentId(base)}_${compactTimestamp()}_${suffix}`;
+    suffix += 1;
+  }
+  return id;
+}
+
+function createAssignmentForWork({ title = '', input = '', repoPath = '', issueKey = '', owner = process.env.USER || 'local-user', priority = 'high' } = {}) {
+  const now = new Date().toISOString();
+  const rawText = String(input || '').trim();
+  const detectedIssueKey = normalizeJiraIssueKey(issueKey || rawText);
+  const rawDerivedTitle = title || deriveAssignmentTitle(rawText) || 'New ODT Work Item';
+  const derivedTitle = detectedIssueKey && rawDerivedTitle && !rawDerivedTitle.includes(detectedIssueKey)
+    ? `Jira: ${detectedIssueKey} - ${rawDerivedTitle}`
+    : rawDerivedTitle;
+  const repoName = repoPath ? basenameFromPath(repoPath) : '';
+  const finalTitle = repoName && !derivedTitle.toLowerCase().includes(repoName.toLowerCase())
+    ? `${derivedTitle} - ${repoName}`
+    : derivedTitle;
+  const requirement = rawText
+    ? rawText.replace(/\s+/g, ' ').trim().slice(0, 360)
+    : 'New ODT work item awaiting requirement analysis.';
+  const assignmentId = createAssignmentIdForWork({ issueKey: detectedIssueKey, title: finalTitle });
+  assignmentRepository.createAssignment({
+    id: assignmentId,
+    title: finalTitle,
+    requirement,
+    owner,
+    status: 'needs review',
+    priority,
+    repoPath: repoPath || null,
+    createdAt: now,
+    updatedAt: now
+  });
+  setActiveAssignmentId(assignmentId);
+  createRunEvent(createId('run'), 'assignment_created_for_intake', 'ok', {
+    assignmentId,
+    title: finalTitle,
+    repoPath: repoPath || ''
+  }, assignmentId);
+  return getAssignment(assignmentId);
+}
+
+function createPrPackId({ generatedAt = new Date(), linkedJira = '', assignmentId = '' } = {}) {
+  const workKey = normalizeJiraIssueKey(linkedJira) || slugForAssignmentId(assignmentId).toUpperCase();
+  return `PRPACK-${compactTimestampWithMillis(generatedAt)}-${workKey || 'TASK'}`;
 }
 
 function sendJson(response, status, payload) {
@@ -1627,16 +1999,23 @@ async function buildSnapshot() {
     getOdtJson('/odt/review-packet'),
     getOdtJson('/odt/clarifications')
   ]);
-  const usage = statements.selectAiUsage.all().map(hydrateAiUsageEvent);
+  const usage = aiUsageRepository.list().map(hydrateAiUsageEvent);
   const runs = listRuns();
-  const assignments = statements.selectAssignments.all().map((assignment) => ({
+  const activeAssignmentId = getActiveAssignmentId();
+  const assignments = assignmentRepository.list().map((assignment) => ({
     ...assignment,
-    workflowState: deriveWorkflowState(collectEvidence(assignment.id))
-  }));
+    isActive: assignment.id === activeAssignmentId,
+    workflowState: deriveWorkflowStateFromModule(collectEvidence(assignment.id))
+  })).sort((a, b) => {
+    if (a.id === activeAssignmentId) return -1;
+    if (b.id === activeAssignmentId) return 1;
+    return String(b.updatedAt).localeCompare(String(a.updatedAt));
+  });
   return {
     generatedAt: new Date().toISOString(),
     environment: aiConfig.environment,
     user: process.env.USER || 'local-user',
+    activeAssignmentId,
     backend: {
       online: true,
       apiBase: `http://127.0.0.1:${port}`,
@@ -1695,7 +2074,7 @@ function safeAiConfig() {
 
 function recentConnectorIssue(connectorId, maxAgeMs = 6 * 60 * 60 * 1000) {
   const nowMs = Date.now();
-  const latest = statements.selectConnectorEvents.all()
+  const latest = connectorEventRepository.list()
     .filter((event) => event.connectorId === connectorId)
     .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))[0];
   if (!latest) return null;
@@ -1800,10 +2179,11 @@ function hydrateAiUsageEvent(event) {
   };
 }
 
-function listRuns() {
-  const events = statements.selectRunEvents.all();
+function listRuns({ assignmentId = '' } = {}) {
+  const events = runEventRepository.list();
   const grouped = new Map();
   events.forEach((event) => {
+    if (assignmentId && event.assignmentId !== assignmentId) return;
     if (!grouped.has(event.runId)) {
       grouped.set(event.runId, {
         id: event.runId,
@@ -2193,15 +2573,14 @@ function assertInputLimit(input) {
 }
 
 function createRunEvent(runId, eventType, status, detail, assignmentId = null) {
-  statements.insertRunEvent.run(
-    createId('event'),
+  runEventRepository.createEvent({
+    id: createId('event'),
     runId,
     assignmentId,
     eventType,
     status,
-    JSON.stringify(detail || {}),
-    new Date().toISOString()
-  );
+    detail
+  });
 }
 
 function parseSmokeScriptJson(stdout) {
@@ -2233,7 +2612,7 @@ function normalizeSmokeScreenshots(parsed) {
 
 function runUiSmokeScript({ assignmentId = 'assignment-local-mvp', expectedIssue = '', runId = createId('run') } = {}) {
   const workflow = collectEvidence(assignmentId).workflowState || {};
-  const issueKey = String(expectedIssue || workflow.verificationProfile?.issueKey || process.env.ODT_EXPECT_ISSUE || 'JOURNEY-25366').trim();
+  const issueKey = String(expectedIssue || workflow.verificationProfile?.issueKey || process.env.ODT_EXPECT_ISSUE || '').trim();
   const appBase = process.env.ODT_VALIDATION_APP_BASE || process.env.ODT_APP_BASE || 'http://127.0.0.1:5189';
   const apiBase = process.env.ODT_VALIDATION_API_BASE || `http://127.0.0.1:${port}`;
   const screenshotDir = join(appRoot, 'output', 'playwright', 'monitoring', runId);
@@ -2300,10 +2679,11 @@ function runUiSmokeScript({ assignmentId = 'assignment-local-mvp', expectedIssue
   });
 }
 
-function listValidationRuns(limit = 10) {
+function listValidationRuns(limit = 10, assignmentId = '') {
   const grouped = new Map();
-  statements.selectRunEvents.all().forEach((event) => {
+  runEventRepository.list().forEach((event) => {
     if (!String(event.eventType || '').startsWith('ui_smoke_validation_')) return;
+    if (assignmentId && event.assignmentId !== assignmentId) return;
     if (!grouped.has(event.runId)) {
       grouped.set(event.runId, {
         runId: event.runId,
@@ -2441,7 +2821,7 @@ function buildMonitoringErrorLog({ assignmentId = 'assignment-local-mvp', limit 
   const currentEvidence = scopedCurrentEvidence(evidence);
   const cutoffMs = timeMillis(evidence.current?.cutoffAt || '');
   const fallbackIssueKey = evidence.workflowState?.verificationProfile?.issueKey || '';
-  const validationRuns = listValidationRuns(80);
+  const validationRuns = listValidationRuns(80, assignmentId);
   const items = [];
   const seen = new Set();
 
@@ -2481,7 +2861,7 @@ function buildMonitoringErrorLog({ assignmentId = 'assignment-local-mvp', limit 
     });
   };
 
-  statements.selectRunEvents.all().forEach((event) => {
+  runEventRepository.list().forEach((event) => {
     if (event.assignmentId && event.assignmentId !== assignmentId) return;
     if (!isCurrentAssignmentEvent(event.assignmentId, event.createdAt)) return;
     const detail = parseJsonValue(event.detail, {});
@@ -2522,7 +2902,7 @@ function buildMonitoringErrorLog({ assignmentId = 'assignment-local-mvp', limit 
     });
   });
 
-  statements.selectAiUsage.all().map(hydrateAiUsageEvent).forEach((event) => {
+  aiUsageRepository.list().map(hydrateAiUsageEvent).forEach((event) => {
     const providerFallback = event.fallbackUsed && event.provider !== 'local';
     if (event.status === 'ok' && !providerFallback) return;
     pushItem({
@@ -2541,7 +2921,7 @@ function buildMonitoringErrorLog({ assignmentId = 'assignment-local-mvp', limit 
   });
 
   const connectorsById = new Map(listConnectors().map((connector) => [connector.id, connector]));
-  const connectorEvents = statements.selectConnectorEvents.all()
+  const connectorEvents = connectorEventRepository.list()
     .map((event) => ({
       ...event,
       parsedDetail: parseJsonValue(event.detail, event.detail)
@@ -2747,19 +3127,18 @@ function buildMonitoringErrorLog({ assignmentId = 'assignment-local-mvp', limit 
 }
 
 function createAgentEvent(assignmentId, agentId, eventType, status, detail) {
-  statements.insertAgentEvent.run(
-    createId('agentevent'),
+  agentEventRepository.createEvent({
+    id: createId('agentevent'),
     assignmentId,
     agentId,
     eventType,
     status,
-    JSON.stringify(detail || {}),
-    new Date().toISOString()
-  );
+    detail
+  });
 }
 
 function getAssignment(assignmentId = 'assignment-local-mvp') {
-  return statements.selectAssignmentById.get(assignmentId) || null;
+  return assignmentRepository.getById(assignmentId);
 }
 
 function basenameFromPath(value = '') {
@@ -2778,8 +3157,20 @@ function escapeAppleScriptString(value = '') {
   return String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
+function applescriptStringLiteral(value = '') {
+  return `"${escapeAppleScriptString(value)}"`;
+}
+
 function isGitRepo(repoPath = '') {
   return Boolean(repoPath && existsSync(join(repoPath, '.git')));
+}
+
+function terminalAppPath() {
+  return uniqueTruthy([
+    process.env.ODT_TERMINAL_APP_PATH,
+    '/System/Applications/Utilities/Terminal.app',
+    '/Applications/Utilities/Terminal.app'
+  ]).find((candidate) => existsSync(candidate)) || '';
 }
 
 function uniqueTruthy(values = []) {
@@ -2834,15 +3225,18 @@ function checkCodexCandidate(candidatePath) {
 function getCodexExecutionHealth() {
   const candidates = codexCandidatePaths().map(checkCodexCandidate);
   const healthy = candidates.find((candidate) => candidate.status === 'healthy');
+  const workerModel = getCodexWorkerModel();
   return {
     agent: 'codex',
     status: healthy ? 'healthy' : 'unhealthy',
     executable: healthy?.path || '',
     version: healthy?.version || '',
+    model: workerModel.model || '',
+    modelSource: workerModel.source || '',
     checkedAt: new Date().toISOString(),
     candidates,
     message: healthy
-      ? `Codex CLI is available: ${healthy.version}`
+      ? `Codex CLI is available: ${healthy.version}${workerModel.model ? ` using model ${workerModel.model}` : ''}`
       : 'No healthy Codex CLI was found. Configure ODT_CODEX_BIN or repair the local Codex install before launching workers.'
   };
 }
@@ -2919,7 +3313,7 @@ function getExecutionAdapterHealth(assignmentId = 'assignment-local-mvp') {
 
 function listExecutionIssues(assignmentId = 'assignment-local-mvp') {
   const issueStatuses = new Set(['error', 'warning', 'blocked', 'failed', 'manual_fallback', 'codex_missing', 'failed_to_open', 'unhealthy']);
-  const agentIssues = statements.selectAgentEventsByAssignment.all(assignmentId)
+  const agentIssues = agentEventRepository.listByAssignment(assignmentId)
     .map((event) => ({ ...event, detailJson: parseJsonValue(event.detail, {}) }))
     .filter((event) => (
       issueStatuses.has(String(event.status || '').toLowerCase())
@@ -2935,7 +3329,7 @@ function listExecutionIssues(assignmentId = 'assignment-local-mvp') {
       detail: event.detailJson,
       createdAt: event.createdAt
     }));
-  const runIssues = statements.selectRunEvents.all()
+  const runIssues = runEventRepository.list()
     .filter((event) => event.assignmentId === assignmentId)
     .map((event) => ({ ...event, detailJson: parseJsonValue(event.detail, {}) }))
     .filter((event) => (
@@ -2959,6 +3353,25 @@ function listExecutionIssues(assignmentId = 'assignment-local-mvp') {
 
 function deriveAssignmentTitle(input = '') {
   const text = String(input || '').replace(/\r/g, '');
+  const meaningfulLines = text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const jiraLineIndex = meaningfulLines.findIndex((line) => /\b[A-Z][A-Z0-9]+-\d+\b/.test(line));
+  if (jiraLineIndex >= 0) {
+    const jiraLine = meaningfulLines[jiraLineIndex];
+    const lineAfterKey = jiraLine.replace(/^.*?\b[A-Z][A-Z0-9]+-\d+\b\s*:?\s*/i, '').trim();
+    if (lineAfterKey.length > 12 && !/^(ticket|jira|issue)$/i.test(lineAfterKey)) {
+      return lineAfterKey.slice(0, 120).trim();
+    }
+    const nextTaskLine = meaningfulLines.slice(jiraLineIndex + 1).find((line) => (
+      line.length > 12
+      && !/^(description|affected areas|actual result|expected result|some example areas|summary)$/i.test(line)
+      && !/^https?:\/\//i.test(line)
+    ));
+    if (nextTaskLine) return nextTaskLine.slice(0, 120).trim();
+  }
+
   const featureMatch = text.match(/Feature\s*\/\s*defect requirement:\s*\n\s*([^\n]+)/i);
   if (featureMatch?.[1]) {
     return featureMatch[1].replace(/\s+for\s+Assessment activity.*$/i, '').trim();
@@ -2984,7 +3397,19 @@ function applyAssignmentContext({ assignmentId = 'assignment-local-mvp', input =
   const assignment = getAssignment(assignmentId);
   if (!assignment) return null;
 
-  const derivedTitle = deriveAssignmentTitle(input) || String(assignment.title || '').split(' - ')[0].trim();
+  const repoNameForExistingTitle = repoPath ? basenameFromPath(repoPath) : '';
+  const existingTitle = String(assignment.title || '').trim();
+  const existingTitleWithoutRepo = repoNameForExistingTitle && existingTitle.endsWith(` - ${repoNameForExistingTitle}`)
+    ? existingTitle.slice(0, -(` - ${repoNameForExistingTitle}`).length).trim()
+    : existingTitle;
+  const detectedIssueKey = normalizeJiraIssueKey(input || assignment.title || assignment.requirement || '');
+  const rawDerivedTitle = input
+    ? deriveAssignmentTitle(input)
+    : existingTitleWithoutRepo;
+  const fallbackTitle = rawDerivedTitle || existingTitleWithoutRepo || 'Current ODT Work Item';
+  const derivedTitle = detectedIssueKey && rawDerivedTitle && !rawDerivedTitle.includes(detectedIssueKey)
+    ? `Jira: ${detectedIssueKey} - ${rawDerivedTitle}`
+    : fallbackTitle;
   const repoName = repoPath ? basenameFromPath(repoPath) : '';
   const title = repoName && !derivedTitle.toLowerCase().includes(repoName.toLowerCase())
     ? `${derivedTitle} - ${repoName}`
@@ -2993,15 +3418,14 @@ function applyAssignmentContext({ assignmentId = 'assignment-local-mvp', input =
     ? String(input).replace(/\s+/g, ' ').trim().slice(0, 360)
     : null;
 
-  statements.updateAssignmentContext.run(
-    title || null,
+  return assignmentRepository.updateContext({
+    assignmentId,
+    title: title || null,
     requirement,
-    repoPath || null,
-    'needs review',
-    new Date().toISOString(),
-    assignmentId
-  );
-  return getAssignment(assignmentId);
+    repoPath: repoPath || null,
+    status: 'needs review',
+    updatedAt: new Date().toISOString()
+  });
 }
 
 function linesFromText(text = '') {
@@ -3032,6 +3456,33 @@ function extractSectionBullets(text = '', startPattern, stopPatterns = []) {
   return items;
 }
 
+function extractSectionLines(text = '', startPattern, stopPatterns = []) {
+  const lines = linesFromText(text);
+  const items = [];
+  let collecting = false;
+  lines.forEach((line) => {
+    if (startPattern.test(line)) {
+      collecting = true;
+      return;
+    }
+    if (!collecting) return;
+    if (stopPatterns.some((pattern) => pattern.test(line))) {
+      collecting = false;
+      return;
+    }
+    const cleaned = line.replace(/^[-*]\s*/, '').replace(/^\d+\.\s*/, '').trim();
+    if (
+      cleaned
+      && cleaned.length > 2
+      && !/^https?:\/\//i.test(cleaned)
+      && !/^(description|affected areas|actual result|expected result|some example areas)$/i.test(cleaned)
+    ) {
+      items.push(cleaned);
+    }
+  });
+  return items;
+}
+
 function extractMatches(text = '', pattern) {
   return Array.from(String(text || '').matchAll(pattern))
     .map((match) => match[0].replace(/[),.;]+$/, ''))
@@ -3042,144 +3493,291 @@ function uniqueItems(items = []) {
   return Array.from(new Set(items.filter(Boolean)));
 }
 
-function requirementText(requirement = {}) {
-  return requirement.rawText || requirement.raw_text || requirement.input || requirement.summary || '';
+function splitSearchTerms(value = '') {
+  const stopWords = new Set([
+    'about', 'after', 'again', 'against', 'allow', 'also', 'before', 'between', 'build', 'change',
+    'codex', 'create', 'current', 'draft', 'during', 'every', 'existing', 'failed', 'files',
+    'first', 'from', 'have', 'implementation', 'issue', 'jira', 'local', 'needs', 'never',
+    'odt', 'only', 'path', 'plan', 'ready', 'repo', 'review', 'saved', 'should',
+    'state', 'task', 'test', 'tests', 'that', 'this', 'until', 'update', 'when', 'where', 'with',
+    'work', 'workflow'
+  ]);
+  const expanded = String(value || '')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/[_./-]+/g, ' ')
+    .toLowerCase();
+  return uniqueItems(expanded
+    .split(/[^a-z0-9]+/)
+    .map((term) => term.trim())
+    .filter((term) => term.length >= 4 && !stopWords.has(term)))
+    .slice(0, 28);
 }
 
-function deriveJiraVerificationProfile(evidence = {}) {
-  const requirement = (evidence.requirements || []).find((item) => (
-    item.sourceType === 'jira-import'
-    || String(item.rawText || '').includes('ODT Work State:')
-  )) || null;
-  const text = requirementText(requirement);
-  if (!text) return null;
-  const lower = text.toLowerCase();
-  const issueKey = normalizeJiraIssueKey(text);
-  const completed = lower.includes('classification: completed in jira') || lower.includes('recommended mode: verification');
-  if (!issueKey || !completed) return null;
-  const repoPath = (text.match(/Repository:\s*([^\n]+)/i)?.[1] || '').trim();
-  const commitMatch = text.match(/appears in\s+(\d+)\s+git commit/i);
-  const commitCount = commitMatch ? Number(commitMatch[1]) : 0;
-  const hasRepoEvidence = commitCount > 0 || lower.includes('ticket_reference_found');
-  return {
-    issueKey,
-    state: 'completed',
-    mode: 'verification',
-    label: 'Completed Jira Verification',
-    createdAt: requirement.updatedAt || requirement.createdAt || '',
-    repoPath,
-    hasRepoEvidence,
-    commitCount,
-    summary: hasRepoEvidence
-      ? `${issueKey} is Done in Jira and has ${commitCount} matching git commit${commitCount === 1 ? '' : 's'}.`
-      : `${issueKey} is Done in Jira. Repository completion evidence still needs verification.`,
-    nextAction: hasRepoEvidence
-      ? 'Launch Reviewer, then capture build/test evidence before PR readiness.'
-      : 'Confirm branch, commit, PR, or release evidence before closeout.'
-  };
+function requirementDomainHints(value = '') {
+  const text = String(value || '').toLowerCase();
+  const hints = [];
+  if (/long\s+(continuous\s+)?text|overflow|clipp|truncate|ellipsis|wrap|layout\s+break|breaks\s+layout|controlled\s+scroll/i.test(text)) {
+    hints.push('long text overflow', 'layout overflow', 'word wrap', 'text truncation', 'ellipsis', 'controlled scrolling');
+  }
+  if (/journey\s+builder|journey_builder|stage\s+sidebar|stage\s+overview/i.test(text)) {
+    hints.push('journey builder', 'stage sidebar', 'stage overview');
+  }
+  if (/journey\s+preview|journey_preview/i.test(text)) hints.push('journey preview');
+  if (/share\s+preview|previewed_journeys|previewed journeys/i.test(text)) hints.push('share preview', 'previewed journeys');
+  if (/activity\s+preview|activity_preview/i.test(text)) hints.push('activity preview');
+  if (/\blink\b|\bdocument\b|\bsurvey\b|\bvideo\b|simulation/i.test(text)) {
+    hints.push('link activity', 'document activity', 'survey activity', 'video activity', 'simulation activity');
+  }
+  return hints;
 }
 
-function evidenceFreshnessCutoff(evidence = {}) {
-  const requirement = evidence.requirements?.[0] || null;
-  const cutoffMs = timeMillis(requirement?.updatedAt || requirement?.createdAt);
-  return {
-    requirement,
-    cutoffAt: requirement?.updatedAt || requirement?.createdAt || '',
-    cutoffMs
-  };
-}
-
-function splitEvidenceByFreshness(evidence = {}) {
-  const { requirement, cutoffAt, cutoffMs } = evidenceFreshnessCutoff(evidence);
-  const isCurrent = (item = {}) => !cutoffMs || timeMillis(item.updatedAt || item.createdAt || item.approvedAt) >= cutoffMs;
-  const split = (items = []) => ({
-    current: (items || []).filter(isCurrent),
-    historical: (items || []).filter((item) => !isCurrent(item))
-  });
-  const repoAnalysis = split(evidence.repoAnalysis);
-  const technicalDesigns = split(evidence.technicalDesigns);
-  const implementationPlans = split(evidence.implementationPlans);
-  const standardsChecks = split(evidence.standardsChecks);
-  const approvals = split(evidence.approvals);
-  const testPlans = split(evidence.testPlans);
-  const implementationEvidence = split(evidence.implementationEvidence);
-  const prReadinessReports = split(evidence.prReadinessReports);
-  const reviewComments = split(evidence.reviewComments);
-  const agentEvents = split(evidence.agentEvents);
-  const agentWorkerRuns = split(evidence.agentWorkerRuns);
-  const dependencyRequests = split(evidence.dependencyRequests);
-  const agentRelayItems = split(evidence.agentRelayItems);
-  return {
-    current: {
-      cutoffAt,
-      activeRequirementId: requirement?.id || '',
-      repoAnalysis: repoAnalysis.current,
-      technicalDesigns: technicalDesigns.current,
-      implementationPlans: implementationPlans.current,
-      standardsChecks: standardsChecks.current,
-      approvals: approvals.current,
-      testPlans: testPlans.current,
-      implementationEvidence: implementationEvidence.current,
-      prReadinessReports: prReadinessReports.current,
-      reviewComments: reviewComments.current,
-      agentEvents: agentEvents.current,
-      agentWorkerRuns: agentWorkerRuns.current,
-      agentRelayItems: agentRelayItems.current,
-      dependencyRequests: dependencyRequests.current
-    },
-    historical: {
-      cutoffAt,
-      repoAnalysis: repoAnalysis.historical,
-      technicalDesigns: technicalDesigns.historical,
-      implementationPlans: implementationPlans.historical,
-      standardsChecks: standardsChecks.historical,
-      approvals: approvals.historical,
-      testPlans: testPlans.historical,
-      implementationEvidence: implementationEvidence.historical,
-      prReadinessReports: prReadinessReports.historical,
-      reviewComments: reviewComments.historical,
-      agentEvents: agentEvents.historical,
-      agentWorkerRuns: agentWorkerRuns.historical,
-      agentRelayItems: agentRelayItems.historical,
-      dependencyRequests: dependencyRequests.historical
+function extractExportNamesFromContent(content = '') {
+  const names = [];
+  const patterns = [
+    /export\s+default\s+(?:function|class)?\s*([A-Za-z0-9_]+)/g,
+    /export\s+(?:const|function|class)\s+([A-Za-z0-9_]+)/g,
+    /module\.exports\s*=\s*([A-Za-z0-9_]+)/g,
+    /class\s+([A-Za-z0-9_]+)\s+extends\s+React\.Component/g,
+    /function\s+([A-Za-z0-9_]+)\s*\(/g
+  ];
+  patterns.forEach((pattern) => {
+    let match = pattern.exec(content);
+    while (match) {
+      names.push(match[1]);
+      match = pattern.exec(content);
     }
+  });
+  return uniqueItems(names).slice(0, 6);
+}
+
+function buildFilePreview(content = '', maxLines = 3) {
+  return String(content || '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, maxLines)
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .slice(0, 220);
+}
+
+function inferFileRole(relativePath = '') {
+  const pathValue = String(relativePath || '').toLowerCase();
+  if (/(^|\/)(test|tests|__tests__)\/|(\.|_)(test|spec)\./.test(pathValue)) return 'Test coverage';
+  if (/\.(css|scss)$/.test(pathValue)) return 'Layout/style';
+  if (/route|router|index\.html|app\.jsx|app\.tsx/.test(pathValue)) return 'Route/shell';
+  if (/service|api|client|request/.test(pathValue)) return 'API/service';
+  if (/component|container|page|view|preview|activity|journey|stage/.test(pathValue)) return 'UI component';
+  return 'Source';
+}
+
+function confidenceForScore(score = 0) {
+  if (score >= 52) return 'high';
+  if (score >= 24) return 'medium';
+  return 'low';
+}
+
+function extractMentionedRepoPaths(value = '') {
+  return uniqueItems([
+    ...String(value || '').matchAll(/[\w./-]+\.(?:jsx?|tsx?|json|css|scss|html|java|xml|rb|py|sql|md|ya?ml)/gi)
+  ].map((match) => match[0].replace(/^[./]+/, '').replace(/[),.;:]+$/, ''))).slice(0, 40);
+}
+
+function collectRepoFiles(repoPath, options = {}) {
+  const {
+    maxFiles = 2200,
+    maxDepth = 9,
+    maxFileBytes = 384 * 1024
+  } = options;
+  const ignoredDirs = new Set([
+    '.git', '.hg', '.svn', 'node_modules', 'dist', 'build', 'coverage', '.next', '.nuxt', '.vite',
+    'target', 'vendor', 'tmp', 'temp', 'logs', '.cache', '.gradle', '.idea', '.vscode'
+  ]);
+  const allowedExtensions = new Set([
+    '.js', '.jsx', '.ts', '.tsx', '.json', '.css', '.scss', '.html', '.md', '.yml', '.yaml',
+    '.java', '.xml', '.rb', '.py', '.sql', '.properties', '.feature'
+  ]);
+  const files = [];
+
+  function extensionOf(fileName = '') {
+    const match = String(fileName).toLowerCase().match(/\.[^.]+$/);
+    return match ? match[0] : '';
+  }
+
+  function walk(dir, prefix = '', depth = 0) {
+    if (files.length >= maxFiles || depth > maxDepth) return;
+    let entries = [];
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      if (files.length >= maxFiles) break;
+      const relativePath = prefix ? `${prefix}/${entry.name}` : entry.name;
+      const absolutePath = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (!ignoredDirs.has(entry.name)) walk(absolutePath, relativePath, depth + 1);
+        continue;
+      }
+      if (!entry.isFile()) continue;
+      const ext = extensionOf(entry.name);
+      if (!allowedExtensions.has(ext)) continue;
+      let stat = null;
+      try {
+        stat = statSync(absolutePath);
+      } catch {
+        continue;
+      }
+      if (!stat || stat.size > maxFileBytes) continue;
+      files.push({ relativePath, absolutePath, size: stat.size, ext });
+    }
+  }
+
+  if (repoPath && existsSync(repoPath)) walk(repoPath);
+  return files;
+}
+
+function buildRepoImpactAnalysis({ repoPath = '', requirementTextValue = '' } = {}) {
+  const files = collectRepoFiles(repoPath);
+  const mentionedPaths = extractMentionedRepoPaths(requirementTextValue);
+  const domainHints = requirementDomainHints(requirementTextValue);
+  const terms = splitSearchTerms([
+    requirementTextValue,
+    mentionedPaths.join(' '),
+    domainHints.join(' ')
+  ].join(' '));
+  const lowerRequirement = String(requirementTextValue || '').toLowerCase();
+  const longTextOverflow = /long\s+(continuous\s+)?text|overflow|clipp|truncate|ellipsis|wrap|layout\s+break|breaks\s+layout|controlled\s+scroll/i.test(lowerRequirement);
+  const routePatterns = [
+    { pattern: /journey[_-]?preview|journey\/preview|previewed[_-]?journeys|share[_-]?preview/i, label: 'journey/share preview route' },
+    { pattern: /activity[_-]?preview|activity\/preview/i, label: 'activity preview route' },
+    { pattern: /journey[-_/]builder|journey_builder|stage[-_/](sidebar|overview)|activities[-_/]container/i, label: 'journey builder surface' },
+    { pattern: /(link|document|survey|video|simulation)[-_/]?(details|activity|preview|container)?/i, label: 'affected activity type surface' }
+  ];
+  const scored = files.map((file) => {
+    const pathLower = file.relativePath.toLowerCase();
+    const baseLower = basenameFromPath(file.relativePath).toLowerCase();
+    let content = '';
+    let rawContent = '';
+    try {
+      rawContent = readFileSync(file.absolutePath, 'utf8').slice(0, 140000);
+      content = rawContent.toLowerCase();
+    } catch {
+      content = '';
+    }
+    const pathMatches = terms.filter((term) => pathLower.includes(term) || baseLower.includes(term));
+    const contentMatches = terms.filter((term) => content.includes(term));
+    const explicitMatches = mentionedPaths.filter((mentioned) => {
+      const normalized = mentioned.toLowerCase();
+      return pathLower.endsWith(normalized) || pathLower.includes(normalized) || baseLower === basenameFromPath(normalized);
+    });
+    const testBoost = /(^|\/)(test|tests|__tests__)\/|(\.|_)(test|spec)\./i.test(file.relativePath) ? 6 : 0;
+    const routeMatches = routePatterns.filter((entry) => entry.pattern.test(file.relativePath) || entry.pattern.test(content));
+    const layoutBoost = longTextOverflow && /\.(css|scss|jsx?|tsx?)$/i.test(file.relativePath) && /(overflow|ellipsis|text-overflow|white-space|word-break|overflow-wrap|line-clamp|truncate|wrap)/i.test(`${file.relativePath}\n${content}`)
+      ? 14
+      : 0;
+    const componentBoost = /(component|container|page|preview|activity|journey|stage|sidebar|header|details)/i.test(file.relativePath) ? 5 : 0;
+    const score = explicitMatches.length * 34
+      + pathMatches.length * 9
+      + contentMatches.length * 3
+      + routeMatches.length * 16
+      + layoutBoost
+      + componentBoost
+      + testBoost;
+    const exportNames = extractExportNamesFromContent(rawContent);
+    const preview = buildFilePreview(rawContent);
+    const fileRole = inferFileRole(file.relativePath);
+    const confidence = confidenceForScore(score);
+    return {
+      file: file.relativePath,
+      score,
+      confidence,
+      fileRole,
+      reason: [
+        explicitMatches.length ? `explicit mention: ${explicitMatches.slice(0, 3).join(', ')}` : '',
+        pathMatches.length ? `path terms: ${pathMatches.slice(0, 5).join(', ')}` : '',
+        contentMatches.length ? `content terms: ${contentMatches.slice(0, 5).join(', ')}` : '',
+        routeMatches.length ? `route/surface: ${routeMatches.map((entry) => entry.label).slice(0, 3).join(', ')}` : '',
+        layoutBoost ? 'layout overflow/truncation signal' : '',
+        componentBoost ? 'component/page surface' : '',
+        testBoost ? 'test/spec file' : ''
+      ].filter(Boolean).join('; '),
+      matchedTerms: uniqueItems([...explicitMatches, ...pathMatches, ...contentMatches]).slice(0, 10),
+      exportNames,
+      preview,
+      isTestCandidate: Boolean(testBoost || /test|spec/i.test(file.relativePath))
+    };
+  }).filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score || a.file.localeCompare(b.file));
+
+  const likelyImpactedFiles = scored.filter((item) => !item.isTestCandidate).slice(0, 16).map((item) => item.file);
+  const candidateTestFiles = scored.filter((item) => item.isTestCandidate).slice(0, 12).map((item) => item.file);
+  const moduleHints = uniqueItems(scored
+    .slice(0, 20)
+    .map((item) => item.file.split('/').slice(0, -1).join('/'))
+    .filter(Boolean))
+    .slice(0, 8);
+  return {
+    scannedFiles: files.length,
+    matchedFiles: scored.length,
+    searchTerms: terms,
+    domainHints,
+    explicitFileMentions: mentionedPaths,
+    likelyImpactedFiles,
+    candidateTestFiles,
+    moduleHints,
+    blastRadius: likelyImpactedFiles.length + candidateTestFiles.length,
+    rankedCandidates: scored.slice(0, 30),
+    notes: scored.length
+      ? 'Candidate files are ranked from read-only path/content matching. A developer or reviewer should confirm before write delegation.'
+      : 'No strong impacted-file candidates were found. Run broader repo analysis or add more requirement details before delegation.'
   };
 }
 
-function scopedCurrentEvidence(evidence = {}) {
-  const freshness = evidence.current ? { current: evidence.current } : splitEvidenceByFreshness(evidence);
-  return {
-    ...evidence,
-    repoAnalysis: freshness.current.repoAnalysis || [],
-    technicalDesigns: freshness.current.technicalDesigns || [],
-    implementationPlans: freshness.current.implementationPlans || [],
-    standardsChecks: freshness.current.standardsChecks || [],
-    standardsFindings: (freshness.current.standardsChecks || []).flatMap((check) => check.findings || []),
-    approvals: freshness.current.approvals || [],
-    testPlans: freshness.current.testPlans || [],
-    implementationEvidence: freshness.current.implementationEvidence || [],
-    prReadinessReports: freshness.current.prReadinessReports || [],
-    reviewComments: freshness.current.reviewComments || [],
-    agentEvents: freshness.current.agentEvents || [],
-    agentWorkerRuns: freshness.current.agentWorkerRuns || [],
-    agentRelayItems: freshness.current.agentRelayItems || [],
-    agentFoundryRuns: evidence.agentFoundryRuns || [],
-    dependencyRequests: freshness.current.dependencyRequests || []
-  };
+function requirementText(requirement = {}) {
+  const safeRequirement = requirement || {};
+  return safeRequirement.rawText || safeRequirement.raw_text || safeRequirement.input || safeRequirement.summary || '';
 }
 
 function parseRequirementSignals(input = '') {
   const text = String(input || '');
   const lower = text.toLowerCase();
-  const title = deriveAssignmentTitle(text) || 'Requirement-driven implementation';
+  const issueKey = normalizeJiraIssueKey(text);
+  const rawTitle = deriveAssignmentTitle(text) || 'Requirement-driven implementation';
+  const title = issueKey && !rawTitle.includes(issueKey)
+    ? `Jira: ${issueKey} - ${rawTitle}`
+    : rawTitle;
   const targetRepo = (text.match(/\/Users\/[^\s]+/) || [])[0] || '';
   const endpointMatch = text.match(/(?:POST|PUT|PATCH):?\s*(https?:\/\/[^\s]+)/i)
     || text.match(/Method:\s*(?:post|put|patch)[\s\S]*?(https?:\/\/[^\s]+)/i);
   const endpoint = endpointMatch?.[1] || '';
-  const keyBehaviors = extractSectionBullets(text, /^(Key behavior|Key Changes|Summary)\s*:?\s*$/i, [/^(Test Plan|Assumptions|Update API|SCENARIOS|the payload is)\b/i]);
+  const isLongTextOverflowRequest = /long\s+(continuous\s+)?text|overflow|clipp|truncate|ellipsis|wrap|layout\s+break|breaks\s+layout|controlled\s+scroll/i.test(text);
+  const affectedAreas = uniqueItems([
+    ...extractSectionBullets(text, /^Affected Areas\s*:?\s*$/i, [/^(Actual Result|Expected Result|Test Plan|Assumptions|some example areas)\b/i]),
+    ...extractSectionLines(text, /^Affected Areas\s*:?\s*$/i, [/^(Actual Result|Expected Result|Test Plan|Assumptions|some example areas)\b/i])
+  ]);
+  const actualResult = (text.match(/Actual Result\s*:?\s*([\s\S]*?)(?=\n\s*(Expected Result|Test Plan|Assumptions|$))/i)?.[1] || '').trim();
+  const expectedResult = (text.match(/Expected Result\s*:?\s*([\s\S]*?)(?=\n\s*(Test Plan|Assumptions|$))/i)?.[1] || '').trim();
+  const rawKeyBehaviors = extractSectionBullets(text, /^(Key behavior|Key Changes|Summary)\s*:?\s*$/i, [/^(Test Plan|Assumptions|Update API|SCENARIOS|the payload is|Affected Areas|Actual Result|Expected Result)\b/i]);
+  const keyBehaviors = rawKeyBehaviors.length
+    ? rawKeyBehaviors
+    : isLongTextOverflowRequest
+      ? [
+          'Prevent valid max-length continuous text from overflowing, clipping, or overlapping nearby UI.',
+          'Apply wrapping, ellipsis, or controlled scrolling consistently across Journey Builder, current journey, Journey Preview, Share Preview, and Activity Preview.',
+          'Cover long names and descriptions in Link, Document, Survey, Video, and Simulation activity displays.',
+          'Verify stage sidebar, stage overview, preview header, and activity detail panels remain intact.'
+        ]
+      : [];
   const testPlan = uniqueItems([
     ...extractSectionBullets(text, /^Test Plan\s*:?\s*$/i, [/^(Assumptions|Update API|SCENARIOS|the payload is)\b/i]),
-    ...extractMatches(text, /tests\/[^\s`]+\.js/g)
+    ...extractMatches(text, /tests\/[^\s`]+\.js/g),
+    ...(isLongTextOverflowRequest ? [
+      'Use max-length continuous text fixtures for Journey Builder, current journey, Journey Preview, Share Preview, and Activity Preview surfaces.',
+      'Verify responsive wrapping/truncation behavior at supported desktop and mobile widths.',
+      'Run targeted component, Jest, or visual regression tests for the impacted display components.'
+    ] : [])
   ]);
   const assumptions = extractSectionBullets(text, /^Assumptions\s*:?\s*$/i, [/^(Update API|SCENARIOS|the payload is)\b/i]);
   const updateApiScenarios = linesFromText(text)
@@ -3187,7 +3785,8 @@ function parseRequirementSignals(input = '') {
     .map((line) => line.replace(/^[-*]\s*/, '').trim());
   const mentionedFiles = uniqueItems([
     ...extractMatches(text, /[\w./-]*activity_util\.jsx/g),
-    ...extractMatches(text, /tests\/[^\s`]+\.js/g)
+    ...extractMatches(text, /tests\/[^\s`]+\.js/g),
+    ...extractMentionedRepoPaths(text)
   ]);
   const isCompletedJiraImport = lower.includes('classification: completed in jira') || lower.includes('recommended mode: verification');
   const isAssessmentPreviewRequest = lower.includes('preview') && (lower.includes('persisted') || lower.includes('save draft') || lower.includes('publish'));
@@ -3259,19 +3858,23 @@ function parseRequirementSignals(input = '') {
 
   return {
     title,
+    issueKey,
     targetRepo,
     endpoint,
     keyBehaviors,
     testPlan,
     assumptions,
+    affectedAreas,
+    actualResult,
+    expectedResult,
     clarifyingQuestions,
     updateApiScenarios,
     mentionedFiles,
     scopeSignals: {
-      frontend: lower.includes('preview') || lower.includes('field') || lower.includes('checkbox') || lower.includes('react'),
+      frontend: lower.includes('preview') || lower.includes('field') || lower.includes('checkbox') || lower.includes('react') || isLongTextOverflowRequest,
       backend: lower.includes('api') || lower.includes('post') || lower.includes('payload'),
-      data: lower.includes('db') || lower.includes('persisted') || lower.includes('saved'),
-      tests: lower.includes('jest') || lower.includes('test plan') || lower.includes('tests/')
+      data: lower.includes('db') || lower.includes('persisted') || lower.includes('saved') || lower.includes('current journey'),
+      tests: lower.includes('jest') || lower.includes('test plan') || lower.includes('tests/') || isLongTextOverflowRequest
     },
     workState: {
       completedJiraImport: isCompletedJiraImport,
@@ -3281,6 +3884,12 @@ function parseRequirementSignals(input = '') {
     domainSignals: {
       assessment: lower.includes('assessment'),
       preview: lower.includes('preview'),
+      longTextOverflow: isLongTextOverflowRequest,
+      journeyBuilder: lower.includes('journey builder'),
+      journeyPreview: lower.includes('journey preview') || lower.includes('journey_preview'),
+      activityPreview: lower.includes('activity preview') || lower.includes('activity_preview'),
+      sharePreview: lower.includes('share preview') || lower.includes('previewed_journeys'),
+      visualLayout: isLongTextOverflowRequest || lower.includes('layout'),
       createFlow: lower.includes('create flow'),
       editFlow: lower.includes('edit flow'),
       privileges: lower.includes('view_for_support_admin') || lower.includes('update_activity'),
@@ -3346,10 +3955,11 @@ function detectRepoSignals(repoPath) {
   };
 }
 
-function buildRequirementAnalysis({ assignmentId, input = '', sourceType = 'manual' }) {
+function buildRequirementAnalysis({ assignmentId, input = '', repoPath = '', sourceType = 'manual' }) {
   const text = String(input || '').trim();
   const now = new Date().toISOString();
-  applyAssignmentContext({ assignmentId, input: text });
+  setActiveAssignmentId(assignmentId);
+  applyAssignmentContext({ assignmentId, input: text, repoPath });
   const signals = parseRequirementSignals(text);
   const functionalRequirements = signals.keyBehaviors.length
     ? signals.keyBehaviors
@@ -3358,6 +3968,29 @@ function buildRequirementAnalysis({ assignmentId, input = '', sourceType = 'manu
       'Analyze requirement gaps and ask decision-critical clarification questions.',
       'Draft technical design, implementation plan, test plan, and PR readiness evidence.'
     ];
+  const nonFunctionalRequirements = signals.domainSignals.longTextOverflow
+    ? [
+        'Long valid content must not overflow, overlap, clip, or break layout at supported viewport sizes.',
+        'Wrapping, truncation, ellipsis, or controlled scrolling must preserve readability and keyboard/screen-reader behavior.',
+        'Fixes should prefer existing product styling and reusable layout utilities instead of one-off fragile CSS.',
+        'Visual regression, component, or targeted manual evidence is required before PR readiness.',
+        'Write actions require explicit human approval.'
+      ]
+    : signals.domainSignals.assessment
+      ? [
+          'Preview must use persisted DB data and never unsaved local edits.',
+          'Existing privilege restrictions must remain intact, including VIEW_FOR_SUPPORT_ADMIN.',
+          'Update API payload behavior must preserve existing/new/deleted question and answer semantics.',
+          'Testing, accessibility, security, and maintainability gates are required.',
+          'Write actions require explicit human approval.'
+        ]
+      : [
+          'Changes must preserve existing product behavior outside the stated scope.',
+          'Accessibility, security, performance, and maintainability gates are required.',
+          'Existing authorization, validation, loading, empty, error, and success states must be preserved unless explicitly changed.',
+          'Targeted tests or accepted-risk evidence are required before PR readiness.',
+          'Write actions require explicit human approval.'
+        ];
   const analysis = {
     assignmentId,
     sourceType,
@@ -3366,15 +3999,12 @@ function buildRequirementAnalysis({ assignmentId, input = '', sourceType = 'manu
     apiEndpoint: signals.endpoint,
     summary: signals.title !== 'Requirement-driven implementation' ? signals.title : text ? text.slice(0, 280) : 'No requirement text provided yet.',
     functionalRequirements,
-    nonFunctionalRequirements: [
-      'Preview must use persisted DB data and never unsaved local edits.',
-      'Existing privilege restrictions must remain intact, including VIEW_FOR_SUPPORT_ADMIN.',
-      'Update API payload behavior must preserve existing/new/deleted question and answer semantics.',
-      'Testing, accessibility, security, and maintainability gates are required.',
-      'Write actions require explicit human approval.'
-    ],
+    nonFunctionalRequirements,
     scopeSignals: signals.scopeSignals,
     domainSignals: signals.domainSignals,
+    affectedAreas: signals.affectedAreas,
+    actualResult: signals.actualResult,
+    expectedResult: signals.expectedResult,
     testPlan: signals.testPlan,
     updateApiScenarios: signals.updateApiScenarios,
     clarifyingQuestions: signals.clarifyingQuestions,
@@ -3387,16 +4017,16 @@ function buildRequirementAnalysis({ assignmentId, input = '', sourceType = 'manu
       'Acceptance criteria should be mapped to tests before PR readiness.'
     ].filter(Boolean)
   };
-  statements.insertRequirement.run(
-    createId('req'),
+  requirementRepository.createRequirement({
+    id: createId('req'),
     assignmentId,
     sourceType,
-    text || 'No requirement text provided.',
-    analysis.summary,
-    'REQUIREMENT_ANALYZED',
-    now,
-    now
-  );
+    rawText: text || 'No requirement text provided.',
+    summary: analysis.summary,
+    status: 'REQUIREMENT_ANALYZED',
+    createdAt: now,
+    updatedAt: now
+  });
   createRunEvent(createId('run'), 'requirement_analyzed', 'ok', { assignmentId, sourceType }, assignmentId);
   return analysis;
 }
@@ -3406,6 +4036,17 @@ function buildRepoAnalysis({ assignmentId, repoPath }) {
   const pathToAnalyze = repoPath || assignment?.repoPath || appRoot;
   applyAssignmentContext({ assignmentId, repoPath: pathToAnalyze });
   const signals = detectRepoSignals(pathToAnalyze);
+  const latestRequirement = requirementRepository.listByAssignment(assignmentId)[0] || {};
+  const requirementForImpact = [
+    latestRequirement.rawText,
+    latestRequirement.summary,
+    assignment?.requirement,
+    assignment?.title
+  ].filter(Boolean).join('\n');
+  const impactAnalysis = buildRepoImpactAnalysis({
+    repoPath: pathToAnalyze,
+    requirementTextValue: requirementForImpact
+  });
   const analysis = {
     assignmentId,
     ...signals,
@@ -3413,31 +4054,27 @@ function buildRepoAnalysis({ assignmentId, repoPath }) {
     validationPattern: 'Use existing backend validation and safe frontend form validation before adding dependencies.',
     errorHandlingPattern: 'Prefer user-safe errors, retry/fallback messages, and audit events.',
     namingConvention: 'Follow repository file and component naming before introducing new patterns.',
-    likelyImpactedFiles: [
-      'server/index.js',
-      'server/governance/*',
-      'server/standards/odt-standards.json',
-      'src/main.jsx',
-      'src/styles.css',
-      'docs/*'
-    ],
+    impactAnalysis,
+    likelyImpactedFiles: impactAnalysis.likelyImpactedFiles,
+    candidateTestFiles: impactAnalysis.candidateTestFiles,
     filesToReviewOnly: [
       'package.json',
       'vite.config.js',
-      'README.md'
-    ],
+      'README.md',
+      ...impactAnalysis.candidateTestFiles
+    ].filter(Boolean),
     status: signals.exists ? 'REPO_ANALYZED' : 'NEEDS_REVIEW'
   };
   const now = new Date().toISOString();
-  statements.insertRepoAnalysis.run(
-    createId('repo'),
+  repoAnalysisRepository.createAnalysis({
+    id: createId('repo'),
     assignmentId,
-    pathToAnalyze,
-    JSON.stringify(analysis),
-    analysis.status,
-    now,
-    now
-  );
+    repoPath: pathToAnalyze,
+    analysis,
+    status: analysis.status,
+    createdAt: now,
+    updatedAt: now
+  });
   createRunEvent(createId('run'), 'repo_analyzed', signals.exists ? 'ok' : 'warning', { assignmentId, repoPath: pathToAnalyze }, assignmentId);
   return analysis;
 }
@@ -3451,17 +4088,30 @@ function storeBrowserRepoAnalysis({ assignmentId, browserAnalysis }) {
     exists: true,
     selectionMode: 'browser-folder-picker',
     ...browserAnalysis,
+    impactAnalysis: {
+      scannedFiles: 0,
+      matchedFiles: 0,
+      searchTerms: [],
+      explicitFileMentions: [],
+      likelyImpactedFiles: [],
+      candidateTestFiles: [],
+      rankedCandidates: [],
+      notes: 'Browser folder picker mode can inspect allowed metadata, but Chrome does not expose the absolute path. Paste the local repo path to enable backend path/content scoring and worker launch.'
+    },
+    likelyImpactedFiles: [],
+    candidateTestFiles: [],
+    filesToReviewOnly: browserAnalysis.topLevelEntries || [],
     status: browserAnalysis.status || 'REPO_ANALYZED'
   };
-  statements.insertRepoAnalysis.run(
-    createId('repo'),
+  repoAnalysisRepository.createAnalysis({
+    id: createId('repo'),
     assignmentId,
     repoPath,
-    JSON.stringify(analysis),
-    analysis.status,
-    now,
-    now
-  );
+    analysis,
+    status: analysis.status,
+    createdAt: now,
+    updatedAt: now
+  });
   createRunEvent(createId('run'), 'repo_analyzed_browser_folder', 'ok', {
     assignmentId,
     folderName: analysis.folderName,
@@ -3473,6 +4123,9 @@ function storeBrowserRepoAnalysis({ assignmentId, browserAnalysis }) {
 function buildTechnicalDesign({ assignmentId, requirement = {}, repoAnalysis = {}, title = 'Governed Developer Workflow Design' }) {
   const signals = parseRequirementSignals(requirementText(requirement));
   const isVerificationMode = signals.workState?.completedJiraImport;
+  const repoImpact = repoAnalysis.impactAnalysis || {};
+  const rankedImpactFiles = (repoImpact.rankedCandidates || []).map((item) => item.file);
+  const longTextOverflow = Boolean(signals.domainSignals?.longTextOverflow);
   const designTitle = signals.title !== 'Requirement-driven implementation'
     ? `${signals.title} ${isVerificationMode ? 'Verification Design' : 'Technical Design'}`
     : title;
@@ -3517,58 +4170,87 @@ function buildTechnicalDesign({ assignmentId, requirement = {}, repoAnalysis = {
     requirementSummary: requirement.summary || signals.title || 'Requirement-driven implementation.',
     targetRepo: signals.targetRepo || repoAnalysis.repoPath,
     scope: signals.keyBehaviors.length ? signals.keyBehaviors : [
-      'Implement persisted-data preview gating for Assessment activity create/edit workflows.',
-      'Align Preview validation with reusable Assessment question validation helpers.',
-      'Preserve privilege behavior and update API payload semantics.'
+      `Implement the requested ${signals.title || 'work item'} behavior using the selected repository context.`,
+      'Confirm UI, API, data, and test impact from read-only repo analysis before delegating writes.',
+      'Capture acceptance criteria, standards impact, and PR readiness evidence before closeout.'
     ],
     outOfScope: [
-      'Changing support-admin privilege restrictions',
-      'Changing non-Assessment preview behavior unless shared code requires it',
-      'Installing new dependencies without explicit approval'
+      'Changing unrelated workflows or files not supported by the current requirement evidence.',
+      'Installing new dependencies without explicit approval.',
+      'Bypassing standards, review, or write approval gates.'
     ],
-    existingArchitectureObserved: repoAnalysis.frameworks?.length ? repoAnalysis.frameworks : ['React activity edit/create UI', 'Jest test suite'],
-    proposedArchitecture: 'Keep Preview enablement derived from saved/submitted Assessment question data. Mark preview dirty on any Assessment edit, and recompute previewability only after successful Save Draft or Publish.',
+    existingArchitectureObserved: repoAnalysis.frameworks?.length ? repoAnalysis.frameworks : ['Repository patterns need read-only analysis confirmation'],
+    proposedArchitecture: 'Use the repository’s existing patterns first. Keep the change scoped to the requirement, capture impacted files and tests as evidence, and delegate implementation only after standards and human approval.',
     apiChanges: signals.endpoint ? [
       `Validate update payload behavior for ${signals.endpoint}`,
-      'Do not send deleted question blocks.',
-      'Do not send removed answer blocks.',
-      'Do not send ids for newly added questions or newly added answers.'
-    ] : signals.updateApiScenarios,
-    impactedAreas: [
-      'Assessment activity utility validation',
-      'Assessment create/edit publish panel Preview state',
-      'Question, answer, and correct-answer change handlers',
-      'Save Draft and Publish success/failure handling'
-    ],
+      'Confirm request/response payload rules from current requirement and repo evidence.',
+      'Capture API compatibility, validation, and error-state expectations before implementation.'
+    ] : signals.updateApiScenarios.length
+      ? signals.updateApiScenarios
+      : longTextOverflow
+        ? ['No backend/API change is assumed until repo analysis or reviewer evidence proves displayed text is shaped by API payload limits.']
+        : [],
+    impactedAreas: uniqueItems([
+      ...(signals.affectedAreas || []),
+      ...(signals.scopeSignals.frontend ? ['Frontend/UI behavior'] : []),
+      ...(signals.scopeSignals.backend ? ['Backend/API integration'] : []),
+      ...(signals.scopeSignals.data ? ['Persisted data or database behavior'] : []),
+      ...(signals.scopeSignals.tests ? ['Automated test coverage'] : []),
+      ...(repoAnalysis.likelyFolders || []).map((folder) => `Repository folder: ${folder}`),
+      ...(repoImpact.moduleHints || []).map((folder) => `Candidate module: ${folder}`)
+    ]),
     candidateFiles: uniqueItems([
       ...signals.mentionedFiles,
-      'activity_util.jsx',
-      'Assessment edit/create publish panel components',
+      ...(repoAnalysis.likelyImpactedFiles || []),
+      ...rankedImpactFiles,
+      ...(repoAnalysis.candidateTestFiles || []),
       ...signals.testPlan
     ]),
-    accessibility: 'Accessibility review required. UI work should be reviewed against WCAG 2.2, VPAT impact, Section 508 where applicable, keyboard navigation, visible focus, labels, contrast, loading/empty/error states, and Redwood-like clarity.',
-    security: 'Do not expose secrets or alter authorization behavior. Preserve VIEW_FOR_SUPPORT_ADMIN restrictions and existing UPDATE_ACTIVITY edit behavior.',
-    testing: signals.testPlan.length ? signals.testPlan : ['Add utility tests and edit/publish Preview state tests.'],
-    flexibility: 'Draft save rules may remain looser than Preview. Preview remains stricter because it reflects persisted/renderable DB question data.',
-    rollback: 'Limit changes to Assessment preview gating and update-payload serialization paths so the patch can be reverted without broad activity workflow impact.'
+    accessibility: longTextOverflow
+      ? 'Accessibility review should verify that wrapping, truncation, tooltip, title, scrolling, focus, and screen-reader behavior stay usable for long valid text on every affected surface.'
+      : 'Accessibility review required. UI work should be reviewed against WCAG 2.2, VPAT impact, Section 508 where applicable, keyboard navigation, visible focus, labels, contrast, loading/empty/error states, and Redwood-like clarity.',
+    security: signals.domainSignals.assessment
+      ? 'Do not expose secrets or alter authorization behavior. Preserve VIEW_FOR_SUPPORT_ADMIN restrictions and existing UPDATE_ACTIVITY edit behavior.'
+      : 'Do not expose secrets or alter authorization behavior. Keep the change scoped to rendering/layout unless current repo evidence requires API or data changes.',
+    testing: signals.testPlan.length ? signals.testPlan : longTextOverflow
+      ? [
+          'Render max-length continuous text in each affected Journey and Activity display surface.',
+          'Verify no overlap, clipping, horizontal page breakage, or unreadable truncation at supported breakpoints.',
+          'Run targeted component/Jest/visual checks for ranked candidate files and nearest tests.'
+        ]
+      : ['Identify and run the smallest reliable targeted test/build command for the impacted area.'],
+    flexibility: longTextOverflow
+      ? 'Use wrapping, ellipsis, or controlled scrolling according to the container purpose. Reviewer must confirm which surfaces require full readable text versus compact truncation.'
+      : 'Design choices may be refined by reviewer notes, but behavior, tests, standards gates, and approval evidence must stay tied to the active requirement.',
+    rollback: longTextOverflow
+      ? 'Keep layout changes scoped to affected display components or shared text utilities so overflow fixes can be reverted without changing unrelated activity behavior.'
+      : 'Keep changes small and scoped to the ranked impact surface so rollback does not disturb unrelated workflows.'
   };
   const now = new Date().toISOString();
-  statements.insertTechnicalDesign.run(
-    createId('design'),
+  technicalDesignRepository.createDesign({
+    id: createId('design'),
     assignmentId,
-    designTitle,
-    JSON.stringify(design),
-    'TECH_DESIGN_DRAFTED',
-    now,
-    now
-  );
+    title: designTitle,
+    design,
+    status: 'TECH_DESIGN_DRAFTED',
+    createdAt: now,
+    updatedAt: now
+  });
   return design;
 }
 
 function buildImplementationPlan({ assignmentId, design = {}, title = 'Standards-Governed Implementation Plan' }) {
-  const latestRequirement = statements.selectRequirementsByAssignment.all(assignmentId)[0] || {};
+  const latestRequirement = requirementRepository.listByAssignment(assignmentId)[0] || {};
   const signals = parseRequirementSignals(requirementText(latestRequirement));
   const isVerificationMode = signals.workState?.completedJiraImport;
+  const latestRepoRow = repoAnalysisRepository.listByAssignment(assignmentId)[0] || {};
+  const repoAnalysis = parseJsonValue(latestRepoRow.analysisJson, {});
+  const repoImpact = repoAnalysis.impactAnalysis || {};
+  const rankedCandidates = repoImpact.rankedCandidates || [];
+  const scoredFileEvidence = rankedCandidates.slice(0, 15).map((item) => (
+    `${item.file} - score ${item.score} (${item.confidence || 'low'}): ${item.reason || 'repo-ranked candidate'}`
+  ));
+  const longTextOverflow = Boolean(signals.domainSignals?.longTextOverflow);
   const planTitle = signals.title !== 'Requirement-driven implementation'
     ? `${signals.title} ${isVerificationMode ? 'Verification Plan' : 'Implementation Plan'}`
     : title;
@@ -3630,46 +4312,65 @@ function buildImplementationPlan({ assignmentId, design = {}, title = 'Standards
   } : {
     title: planTitle,
     assignmentId,
-    scope: design.scope || signals.keyBehaviors || ['Assessment Preview Enablement'],
+    scope: design.scope || signals.keyBehaviors || [`Implement ${signals.title || 'the requested work item'} with governed evidence.`],
+    impactSummary: {
+      scannedFiles: repoImpact.scannedFiles || 0,
+      matchedFiles: repoImpact.matchedFiles || 0,
+      blastRadius: repoImpact.blastRadius || 0,
+      searchTerms: repoImpact.searchTerms || [],
+      notes: repoImpact.notes || ''
+    },
+    impactedFileScores: rankedCandidates.slice(0, 20),
     filesToChange: uniqueItems([
-      'activity_util.jsx',
-      'Assessment edit/create publish panel components',
-      ...signals.mentionedFiles
-    ]),
+      ...signals.mentionedFiles,
+      ...(repoAnalysis.likelyImpactedFiles || []),
+      ...(design.candidateFiles || [])
+    ]).filter((item) => !/tests?\//i.test(item)).slice(0, 18),
     filesToReview: uniqueItems([
-      'AssessmentQuestions shared component path',
-      'Activity update payload serialization path',
+      ...(design.candidateFiles || []),
+      ...scoredFileEvidence,
+      ...(design.impactedAreas || []),
       ...signals.testPlan
     ]),
     backendTasks: signals.updateApiScenarios.length ? signals.updateApiScenarios : [
-      'Verify update API payload serialization for existing, deleted, and newly added Assessment questions and answers.'
+      ...(design.apiChanges || []),
+      longTextOverflow ? 'Confirm whether displayed text comes from frontend state, API payloads, persisted data, or shared preview rendering before changing backend code.' : 'Confirm whether the current requirement needs backend/API/data changes before implementation.',
+      'Record any API compatibility, validation, authorization, or error-handling expectations.'
     ],
-    frontendTasks: [
-      'Add or reuse isAssessmentPreviewable(questions).',
-      'Disable Preview for new Assessment create until a successful Save Draft or Publish redirects to edit.',
-      'Initialize edit Preview state from saved GET Assessment questions.',
-      'Disable Preview immediately after any Assessment field, question, answer, or correct-answer change.',
-      'Re-enable Preview only after successful Save Draft or Publish when submitted/saved questions are previewable.',
-      'Keep failed Save Draft or Publish attempts from enabling Preview.'
+    frontendTasks: signals.keyBehaviors.length ? signals.keyBehaviors : [
+      'Map the requirement to the affected UI states and components.',
+      'Preserve existing interaction, loading, empty, error, success, keyboard, and accessibility behavior.',
+      'Keep copy and layout consistent with the product’s design system.'
     ],
-    validationTasks: [
-      'Require at least one Assessment question for Preview.',
-      'Require each previewable question to have question text.',
-      'Require at least two answer options with text.',
-      'Require at least one selected correct answer per question.',
-      'Reuse existing Assessment validation helpers where possible.'
+    validationTasks: longTextOverflow ? [
+      'Create or reuse max-length continuous text fixtures for affected Journey and Activity surfaces.',
+      'Verify Journey Builder, Current Journey, Journey Preview, Share Preview, and Activity Preview do not overflow, clip, overlap, or break layout.',
+      'Check desktop/mobile responsive widths and record visual evidence or targeted test output.',
+      'Capture reviewer findings, accepted risk, and build/test proof before PR readiness.'
+    ] : [
+      'Map every acceptance criterion to at least one verification step.',
+      'Run targeted tests or record why they cannot be run.',
+      'Capture reviewer findings, accepted risk, and build/test proof before PR readiness.'
     ],
-    accessibilityTasks: [
-      'Preserve keyboard access and visible disabled state for Preview.',
-      'Do not rely on color only to communicate disabled Preview.',
-      'Keep existing Assessment question tooltip behavior through the shared component path.'
+    accessibilityTasks: longTextOverflow ? [
+      'Verify long text remains readable or has an intentional tooltip/title/expanded affordance when truncated.',
+      'Preserve keyboard focus order and screen-reader labels in preview and activity detail surfaces.',
+      'Avoid color-only or visually hidden-only communication for overflow handling.'
+    ] : [
+      'Preserve keyboard access, visible focus, labels, contrast, and screen-reader behavior for affected UI.',
+      'Verify loading, empty, error, success, and disabled states remain understandable.',
+      'Keep shared component fixes reusable instead of creating inconsistent page-only behavior.'
     ],
     securityTasks: [
       'Preserve support-admin restrictions.',
       'Do not introduce new secrets or client-side credentials.',
       'Keep dependency installs blocked unless separately approved.'
     ],
-    testTasks: signals.testPlan.length ? signals.testPlan : ['Run targeted Jest tests for Assessment utility and publish/edit behavior.'],
+    testTasks: uniqueItems([
+      ...signals.testPlan,
+      ...(repoAnalysis.candidateTestFiles || []).map((file) => `Review or run nearest test: ${file}`),
+      ...(signals.testPlan.length || repoAnalysis.candidateTestFiles?.length ? [] : ['Identify and run the smallest reliable targeted test/build command for the impacted area.'])
+    ]),
     approvalRequired: [
       'Approve with warnings for non-critical standards exceptions.',
       'Approve for write before implementation agent execution.',
@@ -3677,65 +4378,59 @@ function buildImplementationPlan({ assignmentId, design = {}, title = 'Standards
     ],
     flexibility: 'Policy exceptions can be documented through approval events. Hard safety blockers stay blocked.',
     risks: [
-      'Preview may accidentally expose unsaved edits if dirty-state handling misses a question/answer change path.',
-      'Save Draft may allow incomplete data while Preview must remain stricter.',
-      'Update payload serialization can regress existing questions or answers if id omission/removal rules are not tested.'
+      'Repo impact may be incomplete until read-only analysis confirms affected files.',
+      'Acceptance criteria may be ambiguous without clarification decisions.',
+      'Older ODT artifacts from another task must stay historical and not drive this plan.'
     ]
   };
   const now = new Date().toISOString();
-  statements.insertImplementationPlan.run(
-    createId('plan'),
+  implementationPlanRepository.createPlan({
+    id: createId('plan'),
     assignmentId,
-    planTitle,
-    JSON.stringify(plan),
-    'PLAN_REVIEW',
-    now,
-    now
-  );
-  statements.insertTestPlan.run(
-    createId('testplan'),
+    title: planTitle,
+    plan,
+    status: 'PLAN_REVIEW',
+    createdAt: now,
+    updatedAt: now
+  });
+  testPlanRepository.createTestPlan({
+    id: createId('testplan'),
     assignmentId,
-    isVerificationMode ? 'completed-jira-verification' : 'pre-implementation',
-    JSON.stringify({
+    phase: isVerificationMode ? 'completed-jira-verification' : 'pre-implementation',
+    plan: {
       backend: plan.backendTasks,
       frontend: plan.frontendTasks,
       accessibility: plan.accessibilityTasks,
       coverage: isVerificationMode
         ? ['jira done status', 'commit evidence', 'branch or PR state', 'build/test evidence', 'accepted risk if evidence is missing']
-        : ['utility cases', 'edit flow', 'create flow', 'save success', 'save failure', 'publish success', 'publish failure', 'update payload scenarios'],
+        : signals.domainSignals?.longTextOverflow
+          ? ['max-length continuous text', 'journey builder', 'current journey', 'journey preview', 'share preview', 'activity preview', 'activity types', 'responsive layout', 'accessibility readability']
+          : signals.domainSignals?.assessment
+            ? ['utility cases', 'edit flow', 'create flow', 'save success', 'save failure', 'publish success', 'publish failure', 'update payload scenarios']
+            : ['acceptance criteria', 'component behavior', 'API/data compatibility', 'error states', 'accessibility', 'targeted regression tests'],
       targetedCommands: plan.testTasks
-    }),
-    'DRAFT',
-    now,
-    now
-  );
+    },
+    status: 'DRAFT',
+    createdAt: now,
+    updatedAt: now
+  });
   return plan;
 }
 
 function persistStandardsReview({ assignmentId, phase, artifact, review }) {
   const now = new Date().toISOString();
   const checkId = createId('stdcheck');
-  statements.insertStandardsCheck.run(
-    checkId,
+  standardsCheckRepository.createCheck({
+    id: checkId,
     assignmentId,
     phase,
-    review.standardsVersion,
-    review.status,
-    JSON.stringify(review.summary || {}),
-    JSON.stringify(artifact || {}),
-    now
-  );
-  review.findings.forEach((finding) => {
-    statements.insertStandardsFinding.run(
-      createId('finding'),
-      checkId,
-      assignmentId,
-      finding.category,
-      finding.status,
-      finding.message,
-      finding.recommendation,
-      now
-    );
+    standardsVersion: review.standardsVersion,
+    status: review.status,
+    summary: review.summary || {},
+    artifact: artifact || {},
+    findings: review.findings || [],
+    createFindingId: () => createId('finding'),
+    createdAt: now
   });
   createRunEvent(createId('run'), 'standards_check_completed', review.status === 'PASS' ? 'ok' : 'warning', {
     assignmentId,
@@ -3746,62 +4441,126 @@ function persistStandardsReview({ assignmentId, phase, artifact, review }) {
   return { ...review, id: checkId, assignmentId, createdAt: now };
 }
 
+const workflowEvidenceRepository = createWorkflowEvidenceRepository({
+  statements,
+  getAssignment,
+  parseJsonValue,
+  parseAgentWorkerRun,
+  parseAgentRelayItem,
+  parseIntakeAssetRow
+});
+
+const aiWorkAuditPackRepository = createAiWorkAuditPackRepository({
+  statements
+});
+
+const approvalEventRepository = createApprovalEventRepository({
+  statements
+});
+
+const agentFoundryRunRepository = createAgentFoundryRunRepository({
+  statements,
+  parseAgentFoundryRun: parseAgentFoundryRow
+});
+
+const agentRelayRepository = createAgentRelayRepository({
+  statements,
+  parseAgentRelayItem
+});
+
+const agentEventRepository = createAgentEventRepository({
+  statements
+});
+
+const agentWorkerRunRepository = createAgentWorkerRunRepository({
+  statements,
+  parseAgentWorkerRun
+});
+
+const aiUsageRepository = createAiUsageRepository({
+  statements
+});
+
+const chatMessageRepository = createChatMessageRepository({
+  statements
+});
+
+const connectorEventRepository = createConnectorEventRepository({
+  statements
+});
+
+const dependencyRequestRepository = createDependencyRequestRepository({
+  statements
+});
+
+const implementationPlanRepository = createImplementationPlanRepository({
+  statements,
+  parseJsonValue
+});
+
+const implementationEvidenceRepository = createImplementationEvidenceRepository({
+  statements
+});
+
+const intakeAssetRepository = createIntakeAssetRepository({
+  statements,
+  parseIntakeAssetRow
+});
+
+const prReadinessReportRepository = createPrReadinessReportRepository({
+  statements
+});
+
+const repoAnalysisRepository = createRepoAnalysisRepository({
+  statements,
+  parseJsonValue
+});
+
+const requirementRepository = createRequirementRepository({
+  statements
+});
+
+const reviewCommentRepository = createReviewCommentRepository({
+  statements
+});
+
+const runEventRepository = createRunEventRepository({
+  statements
+});
+
+const standardsCheckRepository = createStandardsCheckRepository({
+  statements
+});
+
+const technicalDesignRepository = createTechnicalDesignRepository({
+  statements,
+  parseJsonValue
+});
+
+const testPlanRepository = createTestPlanRepository({
+  statements,
+  parseJsonValue
+});
+
 function collectEvidence(assignmentId = 'assignment-local-mvp') {
-  const checks = statements.selectStandardsChecksByAssignment.all(assignmentId).map((check) => ({
-    ...check,
-    summary: parseJsonValue(check.summary, {}),
-    artifact: parseJsonValue(check.artifact, {})
-  }));
-  const findings = statements.selectStandardsFindingsByAssignment.all(assignmentId);
-  const attachJson = (row, key) => ({ ...row, [key]: parseJsonValue(row[key], {}) });
-  const parseImplementationEvidence = (row) => ({
-    ...row,
-    changedFiles: parseJsonValue(row.changedFilesJson, []),
-    commands: parseJsonValue(row.commandsJson, []),
-    tests: parseJsonValue(row.testsJson, [])
-  });
-	  const parseAgentFoundryRun = (row) => ({
-	    ...row,
-	    inputSources: parseJsonValue(row.inputSourcesJson, []),
-	    output: parseJsonValue(row.outputJson, {})
-	  });
-	  const parseWorkerRun = (row) => parseAgentWorkerRun(row);
-		  const agentEvents = statements.selectAgentEventsByAssignment.all(assignmentId).map((row) => ({
-	    ...row,
-	    detailJson: parseJsonValue(row.detail, {})
-	  }));
-	  ensureRelayItemsForAssignment(assignmentId);
-		  const evidence = {
-    assignment: getAssignment(assignmentId),
-    requirements: statements.selectRequirementsByAssignment.all(assignmentId),
-    repoAnalysis: statements.selectRepoAnalysisByAssignment.all(assignmentId).map((row) => attachJson(row, 'analysisJson')),
-    technicalDesigns: statements.selectTechnicalDesignsByAssignment.all(assignmentId).map((row) => attachJson(row, 'designJson')),
-    implementationPlans: statements.selectImplementationPlansByAssignment.all(assignmentId).map((row) => attachJson(row, 'planJson')),
-    standardsChecks: checks.map((check) => ({
-      ...check,
-      findings: findings.filter((finding) => finding.standardsCheckId === check.id)
-    })),
-    standardsFindings: findings,
-    approvals: statements.selectApprovalsByAssignment.all(assignmentId),
-    dependencyRequests: statements.selectDependencyRequestsByAssignment.all(assignmentId),
-    reviewComments: statements.selectReviewCommentsByAssignment.all(assignmentId),
-    agentEvents,
-    testPlans: statements.selectTestPlansByAssignment.all(assignmentId).map((row) => attachJson(row, 'planJson')),
-    implementationEvidence: statements.selectImplementationEvidenceByAssignment.all(assignmentId).map(parseImplementationEvidence),
-	    prReadinessReports: statements.selectPrReportsByAssignment.all(assignmentId).map((row) => attachJson(row, 'reportJson')),
-		    intakeAssets: statements.selectIntakeAssetsByAssignment.all(assignmentId).map(parseIntakeAssetRow),
-		    agentFoundryRuns: statements.selectAgentFoundryRunsByAssignment.all(assignmentId).map(parseAgentFoundryRun),
-		    agentWorkerRuns: statements.selectAgentWorkerRunsByAssignment.all(assignmentId).map(parseWorkerRun),
-		    agentRelayItems: statements.selectAgentRelayItemsByAssignment.all(assignmentId).map(parseAgentRelayItem)
-		  };
+  ensureRelayItemsForAssignment(assignmentId);
+  const evidence = workflowEvidenceRepository.getAssignmentEvidence(assignmentId);
   const freshness = splitEvidenceByFreshness(evidence);
   evidence.current = freshness.current;
   evidence.historical = freshness.historical;
   evidence.requirementSignals = parseRequirementSignals(evidence.requirements?.[0]?.rawText || '');
   evidence.reviewCycleCloseout = deriveReviewCycleCloseout(scopedCurrentEvidence(evidence));
-  evidence.workflowState = deriveWorkflowState(evidence);
+  evidence.workflowState = deriveWorkflowStateFromModule(evidence);
   return evidence;
 }
+
+const workflowService = createWorkflowService({
+  collectEvidence
+});
+
+const projectContractService = createProjectContractService({
+  repository: projectContractRepository
+});
 
 function getActiveStandardsFindings(evidence) {
   if (evidence.current) return evidence.current.standardsChecks?.[0]?.findings || [];
@@ -3881,15 +4640,26 @@ function latestPostImplementationCheck(evidence) {
   return (evidence.standardsChecks || []).find((check) => check.phase === 'post-implementation') || null;
 }
 
+function activeImplementationEvidenceRecords(evidence = {}) {
+  const latest = (evidence.implementationEvidence || [])[0] || null;
+  return latest ? [latest] : [];
+}
+
+function getActiveImplementationTests(evidence = {}) {
+  return activeImplementationEvidenceRecords(evidence).flatMap((record) => record.tests || []);
+}
+
+function getActiveImplementationCommands(evidence = {}) {
+  return activeImplementationEvidenceRecords(evidence).flatMap((record) => record.commands || []);
+}
+
 function getFailedImplementationTests(evidence) {
-  return (evidence.implementationEvidence || [])
-    .flatMap((record) => record.tests || [])
+  return getActiveImplementationTests(evidence)
     .filter((test) => test.status === 'failed');
 }
 
 function getIncompleteImplementationTests(evidence) {
-  return (evidence.implementationEvidence || [])
-    .flatMap((record) => record.tests || [])
+  return getActiveImplementationTests(evidence)
     .filter((test) => ['not_run', 'unknown', ''].includes(String(test.status || '').toLowerCase()));
 }
 
@@ -3915,361 +4685,6 @@ function humanizeLabel(value) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function buildWorkflowDecisionTrail(evidence = {}) {
-  const trail = [];
-  const add = ({ type, label, status, detail, createdAt, page }) => {
-    if (!label || !createdAt) return;
-    trail.push({
-      type,
-      label,
-      status: status || 'recorded',
-      detail: detail || '',
-      createdAt,
-      page: page || 'overview'
-    });
-  };
-
-  (evidence.requirements || []).forEach((item) => add({
-    type: 'requirement',
-    label: 'Requirement analyzed',
-    status: item.status,
-    detail: item.summary || item.rawText || 'Requirement evidence captured.',
-    createdAt: item.updatedAt || item.createdAt,
-    page: 'intake'
-  }));
-
-  (evidence.repoAnalysis || []).forEach((item) => add({
-    type: 'repo',
-    label: 'Repository analyzed',
-    status: item.status,
-    detail: item.repoPath || item.repo_path || item.analysisJson?.repoName || 'Read-only repository analysis captured.',
-    createdAt: item.updatedAt || item.createdAt,
-    page: 'intake'
-  }));
-
-  (evidence.technicalDesigns || []).forEach((item) => add({
-    type: 'design',
-    label: 'Technical design drafted',
-    status: item.status,
-    detail: item.title || 'Architecture brief drafted.',
-    createdAt: item.updatedAt || item.createdAt,
-    page: 'planner'
-  }));
-
-  (evidence.implementationPlans || []).forEach((item) => add({
-    type: 'plan',
-    label: 'Implementation plan drafted',
-    status: item.status,
-    detail: item.title || 'Implementation blueprint drafted.',
-    createdAt: item.updatedAt || item.createdAt,
-    page: 'planner'
-  }));
-
-  (evidence.standardsChecks || []).forEach((item) => add({
-    type: 'standards',
-    label: item.phase === 'post-implementation' ? 'Post-implementation standards check' : 'Standards check completed',
-    status: item.status,
-    detail: item.summary?.message || item.summary?.overall || `${item.phase} review against ${item.standardsVersion}.`,
-    createdAt: item.createdAt,
-    page: 'standards'
-  }));
-
-  (evidence.approvals || []).forEach((item) => add({
-    type: 'approval',
-    label: humanizeLabel(item.approvalType || 'approval'),
-    status: item.status,
-    detail: item.notes || `Decision by ${item.approvedBy || 'local-user'}.`,
-    createdAt: item.approvedAt,
-    page: 'standards'
-  }));
-
-  (evidence.dependencyRequests || []).forEach((item) => add({
-    type: 'dependency',
-    label: `Dependency ${item.packageName}`,
-    status: item.status,
-    detail: `${item.license || 'UNKNOWN'} - ${item.reason || 'Dependency approval request.'}`,
-    createdAt: item.decidedAt || item.requestedAt,
-    page: 'standards'
-  }));
-
-  (evidence.reviewComments || []).forEach((item) => add({
-    type: 'review',
-    label: `${humanizeLabel(item.severity)} review comment`,
-    status: item.status,
-    detail: item.resolutionNotes || item.comment,
-    createdAt: item.updatedAt || item.createdAt,
-    page: 'review'
-  }));
-
-  (evidence.agentEvents || []).forEach((item) => add({
-    type: 'agent',
-    label: humanizeLabel(item.eventType || 'agent event'),
-    status: item.status,
-    detail: item.detailJson?.message || item.detailJson?.mode || `${item.agentId || 'agent'} event recorded.`,
-    createdAt: item.createdAt,
-    page: 'team'
-  }));
-
-  (evidence.agentFoundryRuns || []).forEach((item) => add({
-    type: 'agent-foundry',
-    label: `${item.output?.specialistName || item.domainLabel || 'Agent Foundry'} review`,
-    status: item.status,
-    detail: item.output?.summary || `${item.domainLabel || item.domainId} specialist evidence recorded.`,
-    createdAt: item.createdAt,
-    page: 'team'
-  }));
-
-  (evidence.implementationEvidence || []).forEach((item) => add({
-    type: 'implementation',
-    label: 'Implementation evidence recorded',
-    status: item.status,
-    detail: item.summary || `${item.changedFiles?.length || 0} changed file(s), ${item.tests?.length || 0} test result(s).`,
-    createdAt: item.createdAt,
-    page: 'review'
-  }));
-
-  (evidence.prReadinessReports || []).forEach((item) => add({
-    type: 'pr',
-    label: 'PR readiness pack generated',
-    status: item.reportJson?.status || item.status,
-    detail: item.reportJson?.summary || 'PR-ready evidence package generated.',
-    createdAt: item.createdAt,
-    page: 'pr'
-  }));
-
-  return trail
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 18);
-}
-
-function deriveWorkflowState(evidence = {}) {
-  const jiraVerificationProfile = deriveJiraVerificationProfile(evidence);
-  const currentEvidence = scopedCurrentEvidence(evidence);
-  const hasRequirement = Boolean(evidence.requirements?.length || evidence.assignment?.requirement);
-  const hasRepo = Boolean(currentEvidence.repoAnalysis?.length || jiraVerificationProfile?.repoPath);
-  const hasDesign = Boolean(currentEvidence.technicalDesigns?.length);
-  const hasPlan = Boolean(currentEvidence.implementationPlans?.length);
-  const latestCheck = currentEvidence.standardsChecks?.[0] || null;
-  const postImplementationCheck = latestPostImplementationCheck(currentEvidence);
-  const writeApproved = hasWriteApproval(currentEvidence);
-  const unresolvedStandardsBlockers = getUnresolvedStandardsBlockers(currentEvidence);
-  const openReviewBlockers = getOpenReviewBlockers(currentEvidence);
-  const pendingDependencies = (currentEvidence.dependencyRequests || []).filter((request) => request.status === 'pending');
-  const latestHandoff = (currentEvidence.agentEvents || []).find((event) => event.eventType === 'handoff_prepared');
-  const latestImplementationEvidence = currentEvidence.implementationEvidence?.[0] || null;
-  const latestPrReport = currentEvidence.prReadinessReports?.[0]?.reportJson || null;
-  const latestPrRecord = currentEvidence.prReadinessReports?.[0] || null;
-  const reviewCycleCloseout = deriveReviewCycleCloseout(currentEvidence);
-  const jiraImportedAt = timeMillis(jiraVerificationProfile?.createdAt || 0);
-  const latestImplementationEvidenceAfterJira = Boolean(
-    latestImplementationEvidence
-    && (!jiraImportedAt || timeMillis(latestImplementationEvidence.createdAt || latestImplementationEvidence.updatedAt) >= jiraImportedAt)
-  );
-  const latestPrReportAfterJira = Boolean(
-    latestPrRecord
-    && (!jiraImportedAt || timeMillis(latestPrRecord.createdAt) >= jiraImportedAt)
-  );
-  const completedJiraNeedsVerification = Boolean(jiraVerificationProfile && !latestImplementationEvidenceAfterJira && !latestPrReportAfterJira);
-  const failedTests = getFailedImplementationTests(currentEvidence);
-  const incompleteTests = getIncompleteImplementationTests(currentEvidence);
-  const acceptedImplementationRisk = hasAcceptedImplementationRisk(currentEvidence);
-  const acceptedVerificationRisk = hasAcceptedVerificationRisk(currentEvidence);
-  const passedTests = (currentEvidence.implementationEvidence || [])
-    .flatMap((record) => record.tests || [])
-    .filter((test) => String(test.status || '').toLowerCase() === 'passed');
-  const reviewableBuildVerifierRuns = (currentEvidence.agentWorkerRuns || [])
-    .filter((run) => run.workerRole === 'build-verifier' && workerHasReviewableOutput(run));
-  const completedJiraBuildReady = !jiraVerificationProfile || passedTests.length > 0 || reviewableBuildVerifierRuns.length > 0 || acceptedVerificationRisk;
-  const activeBlockDecision = latestDecisionEvent(currentEvidence.approvals || [], ['block_implementation']);
-  const blockedByDecision = Boolean(activeBlockDecision && !writeApproved);
-
-  const prReportAppliesToCurrentWork = !jiraVerificationProfile || latestPrReportAfterJira;
-  const blockedReasons = [
-    ...unresolvedStandardsBlockers.map((finding) => ({
-      category: 'standards',
-      message: finding.message,
-      action: finding.recommendation,
-      page: 'standards'
-    })),
-    ...openReviewBlockers.map((comment) => ({
-      category: 'review',
-      message: comment.comment,
-      action: 'Resolve, accept risk, or request rework.',
-      page: 'review'
-    })),
-    ...(blockedByDecision ? [{
-      category: 'approval',
-      message: activeBlockDecision.notes || 'Implementation is blocked by human decision.',
-      action: 'Review Standards or approve a newer write decision.',
-      page: 'standards'
-    }] : []),
-    ...(prReportAppliesToCurrentWork && latestPrReport?.status === 'BLOCKED' ? (latestPrReport.blockingItems || []).map((item) => ({
-      category: item.category || 'pr-readiness',
-      message: item.message,
-      action: item.requiredAction,
-      page: item.category === 'dependency' ? 'standards' : item.category === 'implementation-evidence' || item.category === 'testing' ? 'review' : 'pr'
-    })) : []),
-    ...(failedTests.length && !acceptedImplementationRisk ? [{
-      category: 'testing',
-      message: `${failedTests.length} failed test result(s) need action.`,
-      action: 'Fix failed tests or accept implementation risk with review notes.',
-      page: 'review'
-    }] : []),
-    ...(incompleteTests.length && !acceptedVerificationRisk ? [{
-      category: 'testing',
-      message: `${incompleteTests.length} test result(s) are not run or have unknown status.`,
-      action: 'Run the tests, replace pending evidence with passed/failed output, or accept verification risk with review notes.',
-      page: 'review'
-    }] : [])
-  ];
-
-  let state = 'INTAKE_STARTED';
-  let stage = 'intake';
-  let label = 'Intake Started';
-  let nextAction = { label: 'Start Intake', detail: 'Capture requirement, Jira, repo, and scope.', page: 'intake' };
-
-  if (hasRequirement) {
-    state = 'REQUIREMENT_ANALYZED';
-    stage = 'intake';
-    label = 'Requirement Analyzed';
-    nextAction = { label: 'Analyze Repository', detail: 'Attach repo context before design and planning.', page: 'intake' };
-  }
-  if (hasRepo) {
-    state = 'REPO_ANALYZED';
-    stage = 'analyze';
-    label = 'Repo Analyzed';
-    nextAction = { label: 'Draft Design', detail: 'Create technical design and implementation plan.', page: 'planner' };
-  }
-  if (hasDesign) {
-    state = 'TECH_DESIGN_DRAFTED';
-    stage = 'design';
-    label = 'Technical Design Drafted';
-    nextAction = { label: 'Draft Implementation Plan', detail: 'Complete implementation and test planning.', page: 'planner' };
-  }
-  if (hasPlan) {
-    state = latestCheck ? 'PLAN_REVIEW' : 'STANDARDS_REVIEW_PENDING';
-    stage = latestCheck ? 'standards' : 'design';
-    label = latestCheck ? 'Plan Review' : 'Standards Review Pending';
-    nextAction = latestCheck
-      ? { label: 'Review Standards Gate', detail: 'Review findings and approval options.', page: 'standards' }
-      : { label: 'Run Standards Check', detail: 'Create pre-write standards evidence.', page: 'standards' };
-  }
-  if (latestCheck && !blockedReasons.length) {
-    state = 'STANDARDS_REVIEW_PASSED';
-    stage = 'standards';
-    label = 'Standards Reviewed';
-    nextAction = { label: 'Approve Write Scope', detail: 'Capture human approval for the latest standards review.', page: 'standards' };
-  }
-  if (writeApproved && !unresolvedStandardsBlockers.length && !openReviewBlockers.length) {
-    state = 'APPROVED_TO_WRITE';
-    stage = 'implement';
-    label = 'Approved To Write';
-    nextAction = { label: 'Delegate To Agent', detail: 'Prepare a governed Codex/Cline handoff.', page: 'team' };
-  }
-  if (latestHandoff && writeApproved && !unresolvedStandardsBlockers.length && !openReviewBlockers.length) {
-    state = 'IMPLEMENTING';
-    stage = 'implement';
-    label = 'Implementing';
-    nextAction = { label: 'Record Implementation Evidence', detail: 'Capture changed files, commands, and test outcomes.', page: 'review' };
-  }
-  if (latestImplementationEvidenceAfterJira || (!jiraVerificationProfile && latestImplementationEvidence)) {
-    state = 'IMPLEMENTATION_EVIDENCE_RECORDED';
-    stage = 'test';
-    label = 'Implementation Evidence Recorded';
-    nextAction = postImplementationCheck
-      ? { label: 'Prepare PR Pack', detail: 'Generate the PR-ready package from evidence.', page: 'pr' }
-      : { label: 'Run Post-Implementation Check', detail: 'Validate the implementation evidence against standards.', page: 'review' };
-  }
-  if (postImplementationCheck) {
-    state = 'POST_IMPLEMENTATION_REVIEW';
-    stage = 'test';
-    label = 'Post-Implementation Review';
-    nextAction = { label: 'Prepare PR Pack', detail: 'Generate the PR-ready package from evidence.', page: 'pr' };
-  }
-  if (reviewCycleCloseout.requiresCloseout && !reviewCycleCloseout.readyForPrPack && !blockedReasons.length) {
-    state = 'REVIEW_CYCLE_CLOSEOUT';
-    stage = 'test';
-    label = 'Review Cycle Closeout';
-    nextAction = reviewCycleCloseout.nextAction || { label: 'Continue Review Cycle', detail: 'Complete rework, review, verification, and PR-ready evidence.', page: 'review' };
-  }
-  if (latestPrReportAfterJira && latestPrReport?.status === 'PR_READY_REVIEW' && !blockedReasons.length) {
-    state = 'PR_READY';
-    stage = 'pr';
-    label = 'Ready For PR Review';
-    nextAction = { label: 'Copy PR Markdown', detail: 'Review and copy the generated PR package.', page: 'pr' };
-  }
-  if (completedJiraNeedsVerification && !blockedReasons.length) {
-    state = 'JIRA_COMPLETED_VERIFICATION';
-    stage = 'review';
-    label = 'Completed Jira Verification';
-    nextAction = {
-      label: 'Launch Reviewer',
-      detail: `${jiraVerificationProfile.summary} Use Reviewer first, then capture build/test evidence before PR readiness.`,
-      page: 'team',
-      targetWorkerRole: 'reviewer'
-    };
-  }
-  if (blockedReasons.length) {
-    state = 'BLOCKED';
-    label = 'Blocked';
-    stage = latestImplementationEvidence ? 'test' : latestCheck ? 'standards' : stage;
-    nextAction = {
-      label: 'Review Blocking Items',
-      detail: blockedReasons[0]?.action || 'Review blockers before continuing.',
-      page: blockedReasons[0]?.page || 'standards'
-    };
-  }
-
-  const completed = {
-    requirement: hasRequirement,
-    repo: hasRepo,
-    technicalDesign: hasDesign,
-    implementationPlan: hasPlan,
-    standardsCheck: Boolean(latestCheck),
-    writeApproval: writeApproved,
-    agentHandoff: Boolean(latestHandoff),
-    implementationEvidence: Boolean(latestImplementationEvidenceAfterJira || (!jiraVerificationProfile && latestImplementationEvidence)),
-    postImplementationCheck: Boolean(postImplementationCheck),
-    prPack: Boolean(latestPrReportAfterJira || (!jiraVerificationProfile && latestPrReport))
-  };
-
-  return {
-    assignmentId: evidence.assignment?.id || 'assignment-local-mvp',
-    state,
-    label,
-    stage,
-    status: blockedReasons.length ? 'blocked' : state === 'PR_READY' ? 'ready' : 'in_progress',
-    nextAction,
-    verificationProfile: jiraVerificationProfile,
-    blockedReasons,
-    completed,
-    decisionTrail: buildWorkflowDecisionTrail(evidence),
-    allowedActions: {
-      canRunStandardsCheck: Boolean(hasPlan || jiraVerificationProfile),
-      canApproveWrite: Boolean(latestCheck && !openReviewBlockers.length && !writeApproved),
-      canDelegateWrite: Boolean(!completedJiraNeedsVerification && writeApproved && !blockedByDecision && !unresolvedStandardsBlockers.length && !openReviewBlockers.length),
-      canLaunchVerification: Boolean(jiraVerificationProfile && !blockedByDecision && !openReviewBlockers.length),
-      canRecordImplementationEvidence: Boolean((completedJiraNeedsVerification || writeApproved || latestHandoff) && !blockedByDecision && !unresolvedStandardsBlockers.length && !openReviewBlockers.length),
-      canPreparePr: Boolean((latestImplementationEvidenceAfterJira || (!jiraVerificationProfile && latestImplementationEvidence)) && completedJiraBuildReady && !blockedByDecision && !pendingDependencies.length && (!failedTests.length || acceptedImplementationRisk) && (!incompleteTests.length || acceptedVerificationRisk) && (!reviewCycleCloseout.requiresCloseout || reviewCycleCloseout.readyForPrPack)),
-      dependencyInstallsRequireSeparateApproval: true
-    },
-    counts: {
-      standardsBlockers: unresolvedStandardsBlockers.length,
-      reviewBlockers: openReviewBlockers.length,
-      pendingDependencies: pendingDependencies.length,
-      failedTests: failedTests.length,
-      incompleteTests: incompleteTests.length,
-      prBlockingItems: latestPrReport?.blockingItems?.length || 0
-    },
-    latest: {
-      standardsCheckId: latestCheck?.id || '',
-      postImplementationCheckId: postImplementationCheck?.id || '',
-      implementationEvidenceId: latestImplementationEvidence?.id || '',
-      prReportStatus: latestPrReport?.status || ''
-    }
-  };
-}
-
 function timeMillis(value = '') {
   const parsed = new Date(value || 0).getTime();
   return Number.isFinite(parsed) ? parsed : 0;
@@ -4292,156 +4707,20 @@ function workerHasReviewableOutput(run = {}) {
   return Boolean(
     String(output.rawText || '').trim()
     || output.responseBytes > 0
-    || ['completed', 'response_ready', 'needs_input'].includes(status)
+    || ['completed', 'response_ready', 'needs_input', 'needs_review'].includes(status)
   );
 }
 
-function closeoutStep(id, label, status, detail, evidence = {}) {
-  return { id, label, status, detail, ...evidence };
+function isImplementationWorkerRun(run = {}) {
+  return ['fullstack-dev', 'backend-dev', 'frontend-dev'].includes(String(run.workerRole || '').toLowerCase());
 }
 
-function deriveReviewCycleCloseout(evidence = {}) {
-  const reworkItems = (evidence.agentRelayItems || []).filter((item) => item.itemType === 'rework');
-  const latestReworkItem = latestByTime(reworkItems);
-  const activeReworkItems = reworkItems.filter((item) => ['open', 'assigned', 'answered'].includes(String(item.status || '').toLowerCase()));
-  const reworkStartedAt = timeMillis(latestReworkItem?.createdAt);
-  const implementationEvidence = evidence.implementationEvidence || [];
-  const workerRuns = evidence.agentWorkerRuns || [];
-  const latestReworkEvidence = latestByTime(
-    implementationEvidence,
-    (item) => !latestReworkItem || timeMillis(item.createdAt) >= reworkStartedAt
-  );
-  const latestReworkEvidenceAt = timeMillis(latestReworkEvidence?.createdAt);
-  const latestReviewerRun = latestByTime(
-    workerRuns,
-    (run) => run.workerRole === 'reviewer'
-      && workerHasReviewableOutput(run)
-      && latestReworkEvidence
-      && workerRunTime(run) >= latestReworkEvidenceAt,
-    workerRunTime
-  );
-  const latestReviewerRunAt = workerRunTime(latestReviewerRun || {});
-  const latestBuildVerifierRun = latestByTime(
-    workerRuns,
-    (run) => run.workerRole === 'build-verifier'
-      && workerHasReviewableOutput(run)
-      && latestReviewerRun
-      && workerRunTime(run) >= latestReviewerRunAt,
-    workerRunTime
-  );
-  const latestBuildVerifierRunAt = workerRunTime(latestBuildVerifierRun || {});
-  const latestPrReportAfterBuild = latestByTime(
-    evidence.prReadinessReports || [],
-    (report) => latestBuildVerifierRun && timeMillis(report.createdAt) >= latestBuildVerifierRunAt
-  );
-  const latestPrReport = latestPrReportAfterBuild?.reportJson || null;
-  const openReviewBlockers = getOpenReviewBlockers(evidence);
-  const failedTests = getFailedImplementationTests(evidence);
-  const acceptedImplementationRisk = hasAcceptedImplementationRisk(evidence);
-  const requiresCloseout = Boolean(reworkItems.length);
+function isActiveWorkerStatus(status = '') {
+  return ['starting', 'running', 'delegated_visible', 'stop_requested'].includes(String(status || '').toLowerCase());
+}
 
-  const steps = [
-    closeoutStep(
-      'rework-relay',
-      'Review finding routed',
-      latestReworkItem ? 'complete' : 'not_started',
-      latestReworkItem
-        ? `Latest rework relay targets ${latestReworkItem.targetLane || latestReworkItem.targetWorkerRole || 'the next worker'}.`
-        : 'No review finding has been sent to the rework relay yet.',
-      { evidenceId: latestReworkItem?.id || '', targetWorkerRole: latestReworkItem?.targetWorkerRole || 'fullstack-dev' }
-    ),
-    closeoutStep(
-      'rework-evidence',
-      'Senior Full Stack Dev rework evidence',
-      latestReworkEvidence ? 'complete' : latestReworkItem ? 'current' : 'waiting',
-      latestReworkEvidence
-        ? `Implementation evidence ${latestReworkEvidence.id} was recorded after the latest rework relay.`
-        : 'Launch Senior Full Stack Dev for the rework item, then ingest/record implementation evidence.',
-      { evidenceId: latestReworkEvidence?.id || '', targetWorkerRole: 'fullstack-dev' }
-    ),
-    closeoutStep(
-      'reviewer-rerun',
-      'Reviewer rerun after rework',
-      latestReviewerRun ? 'complete' : latestReworkEvidence ? 'current' : 'waiting',
-      latestReviewerRun
-        ? `Reviewer run ${latestReviewerRun.id} has output after the rework evidence.`
-        : 'Launch Reviewer after rework evidence is recorded so findings are checked again.',
-      { workerRunId: latestReviewerRun?.id || '', targetWorkerRole: 'reviewer' }
-    ),
-    closeoutStep(
-      'build-verifier-rerun',
-      'Build Verifier rerun after review',
-      latestBuildVerifierRun ? 'complete' : latestReviewerRun ? 'current' : 'waiting',
-      latestBuildVerifierRun
-        ? `Build Verifier run ${latestBuildVerifierRun.id} has output after the reviewer pass.`
-        : 'Launch Build Verifier after reviewer rerun to capture final build/test evidence.',
-      { workerRunId: latestBuildVerifierRun?.id || '', targetWorkerRole: 'build-verifier' }
-    ),
-    closeoutStep(
-      'pr-ready-pack',
-      'PR-ready package after verification',
-      latestPrReportAfterBuild ? (latestPrReport?.status === 'PR_READY_REVIEW' ? 'complete' : 'blocked') : latestBuildVerifierRun ? 'current' : 'waiting',
-      latestPrReportAfterBuild
-        ? `PR readiness pack is ${latestPrReport?.status || 'recorded'}.`
-        : 'Generate the PR-ready package after Build Verifier output is captured.',
-      { reportId: latestPrReportAfterBuild?.id || '', page: 'pr' }
-    )
-  ];
-
-  let status = requiresCloseout ? 'REWORK_EVIDENCE_REQUIRED' : 'NO_REWORK_REQUESTED';
-  let label = requiresCloseout ? 'Rework Evidence Required' : 'No Rework Cycle Queued';
-  let nextAction = requiresCloseout
-    ? { label: 'Launch Rework Worker', detail: 'Open Agent Team and launch Senior Full Stack Dev with the rework relay context.', page: 'team', targetWorkerRole: 'fullstack-dev' }
-    : { label: 'No Rework Cycle', detail: 'No review finding is currently routed for rework.', page: 'review' };
-  let readyForPrPack = !requiresCloseout;
-
-  if (requiresCloseout && latestReworkEvidence && !latestReviewerRun) {
-    status = 'REVIEWER_RERUN_REQUIRED';
-    label = 'Reviewer Rerun Required';
-    nextAction = { label: 'Launch Reviewer', detail: 'Open Agent Team and launch the Reviewer after rework evidence.', page: 'team', targetWorkerRole: 'reviewer' };
-  } else if (requiresCloseout && latestReviewerRun && openReviewBlockers.length) {
-    status = 'REVIEW_FINDINGS_OPEN';
-    label = 'Review Findings Open';
-    nextAction = { label: 'Send Findings To Rework', detail: 'Resolve, accept risk, or send reviewer blockers back to Senior Full Stack Dev Rework.', page: 'review', targetWorkerRole: 'fullstack-dev' };
-  } else if (requiresCloseout && latestReviewerRun && !latestBuildVerifierRun) {
-    status = 'BUILD_VERIFICATION_REQUIRED';
-    label = 'Build Verification Required';
-    nextAction = { label: 'Launch Build Verifier', detail: 'Open Agent Team and launch Build Verifier after reviewer rerun.', page: 'team', targetWorkerRole: 'build-verifier' };
-  } else if (requiresCloseout && latestBuildVerifierRun && failedTests.length && !acceptedImplementationRisk) {
-    status = 'VERIFICATION_FINDINGS_OPEN';
-    label = 'Verification Findings Open';
-    nextAction = { label: 'Review Failed Tests', detail: 'Fix failed tests or accept implementation risk with explicit review notes.', page: 'review' };
-  } else if (requiresCloseout && latestBuildVerifierRun && !latestPrReportAfterBuild) {
-    status = 'PR_PACK_REQUIRED';
-    label = 'PR Pack Required';
-    readyForPrPack = true;
-    nextAction = { label: 'Prepare PR Pack', detail: 'Generate PR-ready evidence after reviewer and build-verifier reruns.', page: 'pr' };
-  } else if (requiresCloseout && latestPrReportAfterBuild) {
-    status = latestPrReport?.status === 'PR_READY_REVIEW' ? 'PR_READY_REVIEW' : 'PR_BLOCKED';
-    label = latestPrReport?.status === 'PR_READY_REVIEW' ? 'PR Ready For Review' : 'PR Pack Blocked';
-    readyForPrPack = true;
-    nextAction = latestPrReport?.status === 'PR_READY_REVIEW'
-      ? { label: 'Copy PR Markdown', detail: 'PR-ready package is available for human review.', page: 'pr' }
-      : { label: 'Review PR Blockers', detail: 'Resolve PR readiness blockers or accept risk with evidence.', page: 'pr' };
-  }
-
-  return {
-    assignmentId: evidence.assignment?.id || 'assignment-local-mvp',
-    requiresCloseout,
-    status,
-    label,
-    readyForPrPack,
-    activeReworkCount: activeReworkItems.length,
-    nextAction,
-    steps,
-    latest: {
-      reworkRelayItemId: latestReworkItem?.id || '',
-      reworkEvidenceId: latestReworkEvidence?.id || '',
-      reviewerRunId: latestReviewerRun?.id || '',
-      buildVerifierRunId: latestBuildVerifierRun?.id || '',
-      prReportId: latestPrReportAfterBuild?.id || ''
-    }
-  };
+function isPreparedWorkerStatus(status = '') {
+  return ['bundle_created', 'manual_fallback'].includes(String(status || '').toLowerCase());
 }
 
 function dependencyContractRows(evidence, status) {
@@ -4477,9 +4756,7 @@ function createReworkRelayFromReviewComment({ comment, createdBy = process.env.U
   const targetWorkerRole = 'fullstack-dev';
   const severity = String(comment.severity || '').toLowerCase() === 'blocker' ? 'blocker' : 'needs_review';
   const uniqueKey = `review:${comment.id}:rework:${stableTextHash(comment.comment || '')}`;
-  const existingRelayItem = parseAgentRelayItem(
-    statements.selectAgentRelayItemsByAssignment.all(comment.assignmentId).find((item) => item.uniqueKey === uniqueKey)
-  );
+  const existingRelayItem = agentRelayRepository.findByUniqueKey(comment.assignmentId, uniqueKey);
   if (existingRelayItem) {
     return existingRelayItem;
   }
@@ -4495,29 +4772,27 @@ function createReworkRelayFromReviewComment({ comment, createdBy = process.env.U
     reviewCreatedAt: comment.createdAt || '',
     requiredAction: 'Address this review finding in a focused rework pass, then return changed files, tests, risks, and verification notes to ODT.'
   };
-  statements.insertAgentRelayItem.run(
-    relayId,
-    comment.assignmentId,
-    '',
-    'reviewer',
-    'Reviewer',
+  const relayItem = agentRelayRepository.createRelayItem({
+    id: relayId,
+    assignmentId: comment.assignmentId,
+    sourceWorkerRunId: '',
+    sourceWorkerRole: 'reviewer',
+    sourceWorkerRoleLabel: 'Reviewer',
     targetWorkerRole,
     targetLane,
-    'rework',
-    'open',
+    itemType: 'rework',
+    status: 'open',
     severity,
-    `Rework required: ${humanizeLabel(comment.targetType || 'review')}`,
-    comment.comment,
-    JSON.stringify(context),
-    JSON.stringify({}),
+    title: `Rework required: ${humanizeLabel(comment.targetType || 'review')}`,
+    message: comment.comment,
+    context,
+    decision: {},
     uniqueKey,
-    createdBy || 'odt-review',
-    now,
-    now,
-    null
-  );
-  const relayItem = parseAgentRelayItem(statements.selectAgentRelayItemById.get(relayId))
-    || parseAgentRelayItem(statements.selectAgentRelayItemsByAssignment.all(comment.assignmentId).find((item) => item.uniqueKey === uniqueKey));
+    createdBy: createdBy || 'odt-review',
+    createdAt: now,
+    updatedAt: now,
+    resolvedAt: null
+  });
   createRunEvent(createId('run'), 'review_rework_relay_created', severity === 'blocker' ? 'warning' : 'ok', {
     assignmentId: comment.assignmentId,
     reviewCommentId: comment.id,
@@ -4550,20 +4825,19 @@ function createReviewComment({ assignmentId = 'assignment-local-mvp', targetType
   if (!allowedStatuses.has(normalizedStatus)) throw new Error('Review status is not supported.');
   const id = createId('review');
   const now = new Date().toISOString();
-  statements.insertReviewComment.run(
+  const createdComment = reviewCommentRepository.createComment({
     id,
     assignmentId,
-    normalizedTargetType,
+    targetType: normalizedTargetType,
     targetId,
-    normalizedSeverity,
-    text,
-    normalizedStatus,
+    severity: normalizedSeverity,
+    comment: text,
+    status: normalizedStatus,
     createdBy,
-    now,
-    now,
+    createdAt: now,
+    updatedAt: now,
     resolutionNotes
-  );
-  const createdComment = statements.selectReviewCommentById.get(id);
+  });
   const relayItem = normalizedStatus === 'open' && ['warning', 'blocker'].includes(normalizedSeverity)
     ? createReworkRelayFromReviewComment({ comment: createdComment, createdBy })
     : null;
@@ -4578,7 +4852,7 @@ function createReviewComment({ assignmentId = 'assignment-local-mvp', targetType
 }
 
 function updateReviewCommentDecision({ id, status, resolutionNotes = '' } = {}) {
-  const existing = statements.selectReviewCommentById.get(id);
+  const existing = reviewCommentRepository.getById(id);
   if (!existing) {
     const error = new Error('Review comment not found.');
     error.statusCode = 404;
@@ -4587,8 +4861,12 @@ function updateReviewCommentDecision({ id, status, resolutionNotes = '' } = {}) 
   const allowedStatuses = new Set(['open', 'resolved', 'accepted_risk']);
   const nextStatus = String(status || existing.status).toLowerCase();
   if (!allowedStatuses.has(nextStatus)) throw new Error('Review comment status is not supported.');
-  statements.updateReviewCommentStatus.run(nextStatus, new Date().toISOString(), resolutionNotes, id);
-  const updated = statements.selectReviewCommentById.get(id);
+  const updated = reviewCommentRepository.updateStatus({
+    id,
+    status: nextStatus,
+    updatedAt: new Date().toISOString(),
+    resolutionNotes
+  });
   createRunEvent(createId('run'), 'review_comment_updated', nextStatus === 'open' ? 'warning' : 'ok', {
     assignmentId: updated.assignmentId,
     commentId: id,
@@ -4598,7 +4876,7 @@ function updateReviewCommentDecision({ id, status, resolutionNotes = '' } = {}) 
 }
 
 function sendReviewCommentToReworkRelay({ commentId = '', requestedBy = process.env.USER || 'local-user' } = {}) {
-  const comment = statements.selectReviewCommentById.get(commentId);
+  const comment = reviewCommentRepository.getById(commentId);
   if (!comment) {
     const error = new Error('Review comment not found.');
     error.statusCode = 404;
@@ -4623,15 +4901,15 @@ function requestPlanRework({ assignmentId = 'assignment-local-mvp', notes = '', 
     resolutionNotes: 'Rework requested.'
   });
   const now = new Date().toISOString();
-  statements.insertApprovalEvent.run(
-    createId('approval'),
+  approvalEventRepository.createApproval({
+    id: createId('approval'),
     assignmentId,
-    'plan_review',
-    'needs_changes',
-    process.env.USER || 'local-user',
-    now,
-    commentText
-  );
+    approvalType: 'plan_review',
+    status: 'needs_changes',
+    approvedBy: process.env.USER || 'local-user',
+    approvedAt: now,
+    notes: commentText
+  });
 
   const requirement = evidence.requirements[0] || {};
   const repoAnalysis = evidence.repoAnalysis[0]?.analysisJson || {};
@@ -4789,21 +5067,147 @@ function uniqueLimited(items = [], limit = 40) {
     .slice(0, limit);
 }
 
+function cleanEvidencePathCandidate(value = '') {
+  return String(value || '')
+    .trim()
+    .replace(/^file:\/\//i, '')
+    .replace(/^<|>$/g, '')
+    .replace(/^`|`$/g, '')
+    .replace(/:\d+(?::\d+)?$/, '')
+    .trim();
+}
+
+function extractFilePathsFromEvidenceLines(lines = []) {
+  const candidates = [];
+  const extensionPattern = '(?:js|jsx|ts|tsx|css|scss|html|json|md|yml|yaml|java|py|go|rb|sql|xml|properties|sh|cjs|mjs)';
+  const pathPattern = new RegExp(`(?:^|[\\s\`"'([<{])((?:\\.?/?[A-Za-z0-9_.@+-]+/)+[A-Za-z0-9_.@+-]+\\.${extensionPattern}|[A-Za-z0-9_.@+-]+\\.${extensionPattern})(?:$|[\\s\`"',).:\\]}>])`, 'gi');
+  const markdownLinkPattern = /\[([^\]]+)\]\(([^)]+)\)/g;
+
+  lines.forEach((line) => {
+    const stripped = stripEvidenceLine(line);
+    let linkMatch = markdownLinkPattern.exec(stripped);
+    while (linkMatch) {
+      candidates.push(linkMatch[2]);
+      candidates.push(linkMatch[1]);
+      linkMatch = markdownLinkPattern.exec(stripped);
+    }
+
+    const lineWithoutLinks = stripped.replace(markdownLinkPattern, ' ');
+    let pathMatch = pathPattern.exec(lineWithoutLinks);
+    while (pathMatch) {
+      candidates.push(pathMatch[1]);
+      pathMatch = pathPattern.exec(lineWithoutLinks);
+    }
+  });
+
+  return uniqueLimited(
+    candidates
+      .map(cleanEvidencePathCandidate)
+      .filter((candidate) => candidate && !/^(http|https):/i.test(candidate) && !candidate.includes('node_modules/')),
+    80
+  );
+}
+
 function extractChangedFilesFromWorkerOutput(text = '') {
   const sectionLines = [
     ...extractMarkdownSectionLines(text, ['files changed', 'changed files', 'modified files', 'files updated']),
     ...extractMarkdownSectionLines(text, ['summary of changes'])
   ];
-  const pathPattern = /(?:^|[\s`"'(])((?:[A-Za-z0-9_.@+-]+\/)+[A-Za-z0-9_.@+-]+\.[A-Za-z0-9]+|[A-Za-z0-9_.@+-]+\.(?:js|jsx|ts|tsx|css|scss|html|json|md|yml|yaml|java|py|go|rb|sql|xml|properties|sh|cjs|mjs))(?:$|[\s`"',).:])/g;
-  const matches = [];
-  const source = `${sectionLines.join('\n')}\n${text}`;
-  let match = pathPattern.exec(source);
-  while (match) {
-    const candidate = stripEvidenceLine(match[1]).replace(/^\.?\//, '');
-    if (!/^(http|https):/i.test(candidate) && !candidate.includes('node_modules/')) matches.push(candidate);
-    match = pathPattern.exec(source);
+  const explicitSectionPaths = extractFilePathsFromEvidenceLines(sectionLines);
+  if (explicitSectionPaths.length) return uniqueLimited(explicitSectionPaths, 50);
+
+  const fallbackLines = String(text || '').replace(/\r/g, '').split('\n')
+    .filter((line) => !/^\s*[-*]\s*(?:`)?(?:npm|pnpm|yarn|npx|node|jest|vitest|pytest|mvn|gradle|make|cargo|python|go\s+test)\b/i.test(line));
+  return uniqueLimited(extractFilePathsFromEvidenceLines(fallbackLines), 50);
+}
+
+function runGitRead(repoPath = '', args = [], timeout = 10000) {
+  if (!repoPath || !existsSync(repoPath)) {
+    return { ok: false, status: null, stdout: '', stderr: 'Repository path does not exist.' };
   }
-  return uniqueLimited(matches, 50);
+  const result = spawnSync('git', ['-C', repoPath, ...args], {
+    encoding: 'utf8',
+    timeout
+  });
+  return {
+    ok: result.status === 0,
+    status: result.status,
+    stdout: String(result.stdout || '').trim(),
+    stderr: String(result.stderr || result.error?.message || '').trim()
+  };
+}
+
+function normalizeRepoRelativePath(value = '', repoPath = '') {
+  let normalized = cleanEvidencePathCandidate(value);
+  const normalizedRepoPath = String(repoPath || '').replace(/\/+$/, '');
+  if (normalizedRepoPath && normalized.startsWith(`${normalizedRepoPath}/`)) {
+    normalized = normalized.slice(normalizedRepoPath.length + 1);
+  }
+  return normalized
+    .trim()
+    .replace(/^`|`$/g, '')
+    .replace(/^\.?\//, '')
+    .replace(/^\//, '')
+    .trim();
+}
+
+function getWorkerTargetRepoPath({ assignmentId = 'assignment-local-mvp', run = null } = {}) {
+  const statusFileJson = readWorkerStatusFile(run?.statusFile);
+  return String(
+    statusFileJson.targetRepoPath
+    || run?.output?.launchStatus?.targetRepoPath
+    || run?.output?.targetRepoPath
+    || getAssignment(assignmentId)?.repoPath
+    || ''
+  ).trim();
+}
+
+function verifyWorkerRepoState({ assignmentId = 'assignment-local-mvp', run = null, responseText = '' } = {}) {
+  const repoPath = getWorkerTargetRepoPath({ assignmentId, run });
+  const declaredChangedFiles = extractChangedFilesFromWorkerOutput(responseText).map((file) => normalizeRepoRelativePath(file, repoPath)).filter(Boolean);
+  const emptyResult = {
+    repoPath,
+    verifiedAt: new Date().toISOString(),
+    declaredChangedFiles,
+    gitChangedFiles: [],
+    gitStatusShort: '',
+    status: 'not_checked',
+    warnings: []
+  };
+  if (!repoPath || repoPath.startsWith('browser-selected:') || !existsSync(repoPath)) {
+    return {
+      ...emptyResult,
+      status: 'warning',
+      warnings: ['Target repository path is unavailable, so ODT could not verify worker-declared changed files.']
+    };
+  }
+  const diffResult = runGitRead(repoPath, ['diff', '--name-only']);
+  const stagedResult = runGitRead(repoPath, ['diff', '--cached', '--name-only']);
+  const statusResult = runGitRead(repoPath, ['status', '--short']);
+  const gitChangedFiles = uniqueLimited([
+    ...(diffResult.stdout ? diffResult.stdout.split('\n') : []),
+    ...(stagedResult.stdout ? stagedResult.stdout.split('\n') : [])
+  ].map(normalizeRepoRelativePath).filter(Boolean), 200);
+  const warnings = [];
+  if (!diffResult.ok || !stagedResult.ok || !statusResult.ok) {
+    warnings.push('Git verification command failed; review worker output and repository state manually.');
+  }
+  if (declaredChangedFiles.length && !gitChangedFiles.length) {
+    warnings.push('Worker output declares changed files, but the target repository currently has no git diff.');
+  }
+  const missingDeclaredFiles = declaredChangedFiles.filter((file) => (
+    gitChangedFiles.length && !gitChangedFiles.some((gitFile) => gitFile === file || gitFile.endsWith(`/${file}`) || file.endsWith(`/${gitFile}`))
+  ));
+  if (missingDeclaredFiles.length) {
+    warnings.push(`Worker-declared files are not present in the current git diff: ${missingDeclaredFiles.slice(0, 8).join(', ')}${missingDeclaredFiles.length > 8 ? ', ...' : ''}.`);
+  }
+  return {
+    ...emptyResult,
+    gitChangedFiles,
+    gitStatusShort: statusResult.stdout,
+    status: warnings.length ? 'warning' : 'verified',
+    warnings
+  };
 }
 
 function extractCommandsFromWorkerOutput(text = '') {
@@ -4811,6 +5215,7 @@ function extractCommandsFromWorkerOutput(text = '') {
     ...extractMarkdownSectionLines(text, ['commands run', 'commands/tests run and outcomes', 'tests run', 'verification commands', 'commands'])
   ];
   const commandStart = /^(?:`)?(?:(?:npm|pnpm|yarn|npx|node|jest|vitest|pytest|mvn|gradle|make|cargo|python)\b|(?:go\s+test\b)|(?:bundle\s+exec\b))/i;
+  const inlineCommandPattern = /`((?:(?:npm|pnpm|yarn|npx|node|jest|vitest|pytest|mvn|gradle|make|cargo|python)\b|(?:go\s+test\b)|(?:bundle\s+exec\b))[^`]+)`/i;
   const lines = `${commandLines.join('\n')}\n${text}`
     .replace(/\r/g, '')
     .split('\n')
@@ -4818,10 +5223,13 @@ function extractCommandsFromWorkerOutput(text = '') {
   const matches = lines
     .map(stripEvidenceLine)
     .map((line) => {
+      const inlineMatch = line.match(inlineCommandPattern);
+      if (inlineMatch?.[1]) return inlineMatch[1].trim();
       const match = line.match(commandStart);
       if (!match || typeof match.index !== 'number') return '';
       return line.slice(match.index)
         .replace(/^`|`$/g, '')
+        .replace(/`.*$/, '')
         .replace(/\s+\|\s+(passed|failed|skipped|not_run|not run|success|ok|error).*$/i, '')
         .trim();
     })
@@ -4930,16 +5338,6 @@ function extractImplementationEvidenceFromWorkerRun(run) {
   }
 }
 
-function parseImplementationEvidenceRow(row) {
-  if (!row) return null;
-  return {
-    ...row,
-    changedFiles: parseJsonValue(row.changedFilesJson, []),
-    commands: parseJsonValue(row.commandsJson, []),
-    tests: parseJsonValue(row.testsJson, [])
-  };
-}
-
 function parseIntakeAssetRow(row) {
   if (!row) return null;
   let analysisJson = typeof row.analysisJson === 'string'
@@ -4957,7 +5355,7 @@ function parseIntakeAssetRow(row) {
         fileType: row.fileType || classifyFileType(row.originalName, row.mimeType),
         bytes
       });
-      statements.updateIntakeAssetAnalysis.run(JSON.stringify(analysisJson), row.id);
+      intakeAssetRepository.updateAnalysis({ assetId: row.id, analysis: analysisJson });
     } catch {
       analysisJson = {
         version: 'asset-analysis-1.0',
@@ -5004,12 +5402,48 @@ function runPostImplementationStandardsCheck({ assignmentId = 'assignment-local-
     artifact,
     assignment: { ...(currentEvidence.assignment || {}), writeApproved: hasWriteApproval(currentEvidence) }
   });
-  return persistStandardsReview({
+  const persistedReview = persistStandardsReview({
     assignmentId,
     phase: 'post-implementation',
     artifact,
     review
   });
+  persistAiWorkAuditPackSnapshot({
+    assignmentId,
+    stage: 'post-implementation-check',
+    status: persistedReview.status,
+    generatedAt: persistedReview.createdAt
+  });
+  return persistedReview;
+}
+
+function persistAiWorkAuditPackSnapshot({
+  assignmentId = 'assignment-local-mvp',
+  stage = 'implementation-evidence',
+  status = 'recorded',
+  generatedAt = new Date().toISOString()
+} = {}) {
+  const evidence = collectEvidence(assignmentId);
+  const pack = buildAiWorkAuditPack({
+    evidence,
+    generatedAt
+  });
+  const snapshot = aiWorkAuditPackRepository.createPack({
+    id: createId('auditpack'),
+    assignmentId,
+    stage,
+    status,
+    pack,
+    createdAt: generatedAt
+  });
+  createRunEvent(createId('run'), 'ai_work_audit_pack_persisted', status === 'blocked' ? 'warning' : 'ok', {
+    assignmentId,
+    auditPackId: snapshot.id,
+    stage,
+    status,
+    workflowState: pack.summary?.workflowState || 'UNKNOWN'
+  }, assignmentId);
+  return snapshot;
 }
 
 function recordImplementationEvidence({
@@ -5037,22 +5471,20 @@ function recordImplementationEvidence({
   const now = new Date().toISOString();
   const failedTests = normalizedTests.filter((test) => test.status === 'failed');
   const normalizedStatus = String(status || (failedTests.length ? 'needs_review' : 'recorded')).toLowerCase();
-  statements.insertImplementationEvidence.run(
+  const evidenceRecord = implementationEvidenceRepository.createEvidence({
     id,
     assignmentId,
-    eventRunId,
+    runId: eventRunId,
     phase,
-    JSON.stringify(normalizedChangedFiles),
-    JSON.stringify(normalizedCommands),
-    JSON.stringify(normalizedTests),
-    normalizedSummary || 'Implementation evidence recorded for governed review.',
-    normalizedStatus,
+    changedFiles: normalizedChangedFiles,
+    commands: normalizedCommands,
+    tests: normalizedTests,
+    summary: normalizedSummary || 'Implementation evidence recorded for governed review.',
+    status: normalizedStatus,
     createdBy,
-    now,
-    now
-  );
-
-  const evidenceRecord = parseImplementationEvidenceRow(statements.selectImplementationEvidenceById.get(id));
+    createdAt: now,
+    updatedAt: now
+  });
   createRunEvent(eventRunId, 'implementation_evidence_recorded', failedTests.length ? 'warning' : 'ok', {
     assignmentId,
     evidenceId: id,
@@ -5068,11 +5500,17 @@ function recordImplementationEvidence({
       tests: normalizedTests
     }, assignmentId);
   }
+  const auditPack = persistAiWorkAuditPackSnapshot({
+    assignmentId,
+    stage: 'implementation-evidence',
+    status: normalizedStatus,
+    generatedAt: now
+  });
 
   const postCheck = runPostCheck
     ? runPostImplementationStandardsCheck({ assignmentId, evidenceRecord })
     : null;
-  return { assignmentId, evidence: evidenceRecord, postCheck };
+  return { assignmentId, evidence: evidenceRecord, postCheck, auditPack };
 }
 
 function markdownList(items, fallback = 'None recorded.') {
@@ -5092,6 +5530,12 @@ function buildPrMarkdown(report) {
   const blockerLines = (report.blockingItems || []).map((item) => `${item.category}: ${item.message} Required action: ${item.requiredAction}`);
   return [
     `# ${report.prTitle}`,
+    '',
+    '## Pack ID',
+    report.packId || report.id || 'Not assigned.',
+    '',
+    '## Work Item',
+    report.workKey || report.linkedJira || report.assignmentId || 'Not tagged.',
     '',
     '## Summary',
     report.summary,
@@ -5147,8 +5591,57 @@ function buildPrMarkdown(report) {
   ].join('\n');
 }
 
-function buildCurrentAgentContract(assignmentId, executionAgent = getStoredSetting('executionAgent', 'codex'), options = {}) {
+function selectProjectContractForAssignment(assignmentId = 'assignment-local-mvp', evidence = {}) {
+  return selectProjectContractForAssignmentContext({
+    contracts: projectContractService.listContracts(),
+    assignmentId,
+    evidence
+  });
+}
+
+function summarizeProjectReadiness(readiness = null) {
+  if (!readiness) {
+    return {
+      status: 'missing',
+      score: 0,
+      blockedChecks: [],
+      warningChecks: []
+    };
+  }
+  const blockedChecks = (readiness.checks || []).filter((item) => item.status === 'blocked');
+  const warningChecks = (readiness.checks || []).filter((item) => ['warning', 'manual'].includes(item.status));
+  return {
+    status: readiness.status,
+    score: readiness.score,
+    blockedChecks,
+    warningChecks
+  };
+}
+
+function getBranchReadinessCheck(readiness = null) {
+  return (readiness?.checks || []).find((item) => item.id === 'branch-readiness') || null;
+}
+
+function branchReadinessBlocksWrite(readiness = null, evidence = {}) {
+  const check = getBranchReadinessCheck(readiness);
+  if (!check) return null;
+  const status = String(check.status || '').toLowerCase();
+  if (!['manual', 'blocked'].includes(status)) return null;
+  const override = hasApprovedEvent(evidence.approvals || [], ['branch_readiness_override']);
+  return override ? null : check;
+}
+
+async function buildCurrentAgentContract(assignmentId, executionAgent = getStoredSetting('executionAgent', 'codex'), options = {}) {
   const evidence = collectEvidence(assignmentId);
+  const projectContractSelection = selectProjectContractForAssignment(assignmentId, evidence);
+  const projectContract = projectContractSelection.contract || null;
+  const projectReadiness = projectContract ? await projectContractService.buildReadiness(projectContract.id) : null;
+  const targetRepoPath = projectContract?.repoPath || projectContractSelection.targetRepoPath || evidence.assignment?.repoPath || '';
+  const assignmentForContract = {
+    ...(evidence.assignment || { id: assignmentId, title: assignmentId, requirement: '' }),
+    repoPath: targetRepoPath,
+    baseBranch: projectContract?.baseBranch || evidence.assignment?.baseBranch || ''
+  };
   const writeApproved = hasWriteApproval(evidence);
   const unresolvedBlockers = getUnresolvedStandardsBlockers(evidence);
   const openReviewBlockers = getOpenReviewBlockers(evidence);
@@ -5159,8 +5652,9 @@ function buildCurrentAgentContract(assignmentId, executionAgent = getStoredSetti
   const pendingDependencies = dependencyContractRows(evidence, 'pending');
   return {
     evidence,
+    projectContractSelection,
     contract: buildAgentContract({
-      assignment: evidence.assignment || { id: assignmentId, title: assignmentId, requirement: '' },
+      assignment: assignmentForContract,
       mode: writeApproved && !unresolvedBlockers.length && !blockingOpenReviewBlockers.length ? 'write-approved' : 'read-only',
       executionAgent,
       repoAnalysis: evidence.repoAnalysis[0]?.analysisJson || {},
@@ -5181,6 +5675,8 @@ function buildCurrentAgentContract(assignmentId, executionAgent = getStoredSetti
       })),
       approvedDependencies,
       pendingDependencies,
+      projectContract,
+      projectReadiness,
       standards: {
         ...loadStandardsRegistry(),
         latestStandardsCheckId: evidence.standardsChecks[0]?.id || '',
@@ -5195,15 +5691,17 @@ function buildCurrentAgentContract(assignmentId, executionAgent = getStoredSetti
   };
 }
 
-function prepareAgentDelegation({ assignmentId = 'assignment-local-mvp', executionAgent, requireWriteApproved = true, workerRoleId = '', notes = '' } = {}) {
+async function prepareAgentDelegation({ assignmentId = 'assignment-local-mvp', executionAgent, requireWriteApproved = true, workerRoleId = '', notes = '' } = {}) {
   const selectedAgent = executionAgent || getStoredSetting('executionAgent', 'codex');
   const runId = createId('run');
-  const { evidence, contract } = buildCurrentAgentContract(assignmentId, selectedAgent, { workerRoleId });
+  const { evidence, contract, projectContractSelection } = await buildCurrentAgentContract(assignmentId, selectedAgent, { workerRoleId });
   const latestCheckId = evidence.standardsChecks[0]?.id || '';
   const selectedRole = workerRoleId ? getAgentWorkerRole(workerRoleId) : null;
   const jiraVerificationProfile = deriveJiraVerificationProfile(evidence);
   const implementationWorkerIds = new Set(['fullstack-dev', 'backend-dev', 'frontend-dev']);
   const activeReworkForSelectedRole = selectedRole ? getActiveReworkRelayItemsForWorker(evidence, selectedRole.id).length > 0 : false;
+  const projectReadinessSummary = summarizeProjectReadiness(contract.projectReadiness);
+  const branchReadinessCheck = branchReadinessBlocksWrite(contract.projectReadiness, evidence);
   const blockedReasons = [];
   const warnings = [];
   if (jiraVerificationProfile && selectedRole && implementationWorkerIds.has(selectedRole.id) && !activeReworkForSelectedRole) {
@@ -5215,6 +5713,24 @@ function prepareAgentDelegation({ assignmentId = 'assignment-local-mvp', executi
       : contract.standards.blockingOpenReviewBlockers?.length
         ? 'Open review blockers must be resolved or accepted as risk.'
         : 'Write approval for the latest standards review is required.');
+  }
+  if (projectReadinessSummary.status === 'blocked') {
+    blockedReasons.push(`Project Contract readiness is blocked: ${projectReadinessSummary.blockedChecks.map((item) => item.detail).join(' ') || 'blocked check requires action.'}`);
+  }
+  if (requireWriteApproved && selectedRole?.requiresWriteApproval && branchReadinessCheck) {
+    blockedReasons.push(`Branch readiness is not safe for write workers: ${branchReadinessCheck.detail} ${branchReadinessCheck.remediation || 'Create or switch to a task branch before launching implementation.'}`.trim());
+  }
+  if (!contract.projectContract) {
+    const targetRepoPath = projectContractSelection?.targetRepoPath || contract.repoPath || '';
+    warnings.push(projectContractSelection?.reason === 'no_matching_contract_for_target_repo'
+      ? `No Project Contract matches target repo ${targetRepoPath}. ODT will launch against the assignment repo, but command policy must be confirmed from assignment evidence.`
+      : 'No Project Contract is saved for this assignment. ODT will use existing assignment/repo evidence, but workers may need manual command confirmation.');
+  } else if (projectReadinessSummary.status !== 'ready') {
+    warnings.push(`Project Contract ${contract.projectContract.id} readiness is ${projectReadinessSummary.status} (${projectReadinessSummary.score}%). Review warnings before launching long-running workers.`);
+  }
+  if (getBranchReadinessCheck(contract.projectReadiness)) {
+    const branchCheck = getBranchReadinessCheck(contract.projectReadiness);
+    warnings.push(`Branch readiness: ${branchCheck.status}. ${branchCheck.detail}`);
   }
   if (contract.standards.reworkLaunchAllowed) {
     warnings.push('Open review blockers are being handled by this assigned rework worker. Build verification and PR readiness remain blocked until reviewer rerun passes.');
@@ -5235,6 +5751,10 @@ function prepareAgentDelegation({ assignmentId = 'assignment-local-mvp', executi
     blockers: contract.standards.unresolvedBlockers || [],
     blockedReasons,
     warnings,
+    branchReadiness: getBranchReadinessCheck(contract.projectReadiness),
+    projectContract: contract.projectContract,
+    projectContractSelection,
+    projectReadiness: contract.projectReadiness,
     nextStep: status === 'prepared'
       ? `Paste this handoff into ${selectedAgent.toUpperCase()} or continue with the selected supervised agent workflow.`
       : 'Return to Standards, resolve or override findings, and capture write approval for the latest standards check.',
@@ -5249,13 +5769,23 @@ function prepareAgentDelegation({ assignmentId = 'assignment-local-mvp', executi
     executionAgent: selectedAgent,
     mode: contract.mode,
     requireWriteApproved,
-    latestStandardsCheckId: latestCheckId
+    latestStandardsCheckId: latestCheckId,
+    projectContractId: contract.projectContract?.id || '',
+    projectContractSelectionReason: projectContractSelection?.reason || '',
+    projectReadinessStatus: projectReadinessSummary.status,
+    projectReadinessScore: projectReadinessSummary.score,
+    branchReadinessStatus: getBranchReadinessCheck(contract.projectReadiness)?.status || ''
   }, assignmentId);
   createRunEvent(runId, 'agent_contract_created', blockedReasons.length ? 'blocked' : 'ok', {
     requestType: 'agent-handoff',
     executionAgent: selectedAgent,
     mode: contract.mode,
     allowedActions: contract.allowedActions,
+    projectContractId: contract.projectContract?.id || '',
+    projectContractSelectionReason: projectContractSelection?.reason || '',
+    projectReadinessStatus: projectReadinessSummary.status,
+    projectReadinessScore: projectReadinessSummary.score,
+    branchReadiness: getBranchReadinessCheck(contract.projectReadiness),
     blockedReasons,
     warnings
   }, assignmentId);
@@ -5264,6 +5794,11 @@ function prepareAgentDelegation({ assignmentId = 'assignment-local-mvp', executi
     executionAgent: selectedAgent,
     status,
     dependencyInstalls: contract.allowedActions.installDependencies ? 'approved' : 'blocked',
+    projectContractId: contract.projectContract?.id || '',
+    projectContractSelectionReason: projectContractSelection?.reason || '',
+    projectReadinessStatus: projectReadinessSummary.status,
+    projectReadinessScore: projectReadinessSummary.score,
+    branchReadiness: getBranchReadinessCheck(contract.projectReadiness),
     warnings,
     nextStep: handoff.nextStep
   }, assignmentId);
@@ -5272,6 +5807,10 @@ function prepareAgentDelegation({ assignmentId = 'assignment-local-mvp', executi
     mode: contract.mode,
     latestStandardsCheckId: latestCheckId,
     allowedActions: contract.allowedActions,
+    projectContractId: contract.projectContract?.id || '',
+    projectReadinessStatus: projectReadinessSummary.status,
+    projectReadinessScore: projectReadinessSummary.score,
+    branchReadiness: getBranchReadinessCheck(contract.projectReadiness),
     blockedReasons,
     warnings,
     notes
@@ -5447,34 +5986,32 @@ function createRelayItemsForWorkerRun(run) {
       targetLane,
       targetWorkerRole
     };
-    statements.insertAgentRelayItem.run(
-      relayId,
-      run.assignmentId,
-      run.id,
-      run.workerRole,
-      run.workerRoleLabel,
+    return agentRelayRepository.createRelayItem({
+      id: relayId,
+      assignmentId: run.assignmentId,
+      sourceWorkerRunId: run.id,
+      sourceWorkerRole: run.workerRole,
+      sourceWorkerRoleLabel: run.workerRoleLabel,
       targetWorkerRole,
       targetLane,
-      'question',
-      question.status || 'open',
-      'needs_review',
-      `Question for ${targetLane}`,
+      itemType: 'question',
+      status: question.status || 'open',
+      severity: 'needs_review',
+      title: `Question for ${targetLane}`,
       message,
-      JSON.stringify(context),
-      JSON.stringify({}),
+      context,
+      decision: {},
       uniqueKey,
-      'odt-worker-ingest',
-      now,
-      now,
-      null
-    );
-    return parseAgentRelayItem(statements.selectAgentRelayItemById.get(relayId))
-      || parseAgentRelayItem(statements.selectAgentRelayItemsByAssignment.all(run.assignmentId).find((item) => item.uniqueKey === uniqueKey));
+      createdBy: 'odt-worker-ingest',
+      createdAt: now,
+      updatedAt: now,
+      resolvedAt: null
+    });
   }).filter(Boolean);
 }
 
 function ensureRelayItemsForAssignment(assignmentId = 'assignment-local-mvp') {
-  const workerRuns = statements.selectAgentWorkerRunsByAssignment.all(assignmentId).map(parseAgentWorkerRun);
+  const workerRuns = agentWorkerRunRepository.listByAssignment(assignmentId);
   workerRuns.forEach((run) => createRelayItemsForWorkerRun(run));
 }
 
@@ -5511,7 +6048,7 @@ function collectAgentRelayContext(evidence, currentRoleId) {
 }
 
 function decideAgentRelayItem({ relayItemId = '', assignmentId = 'assignment-local-mvp', action = 'answer', decision = '', targetWorkerRole = '', targetLane = '', decidedBy = 'local-user' } = {}) {
-  const relay = parseAgentRelayItem(statements.selectAgentRelayItemById.get(relayItemId));
+  const relay = agentRelayRepository.getById(relayItemId);
   if (!relay || relay.assignmentId !== assignmentId) {
     const error = new Error('Relay item not found for this assignment.');
     error.statusCode = 404;
@@ -5547,16 +6084,16 @@ function decideAgentRelayItem({ relayItemId = '', assignmentId = 'assignment-loc
     error.statusCode = 400;
     throw error;
   }
-  statements.updateAgentRelayItem.run(
-    nextTargetRole,
-    nextTargetLane,
-    nextStatus,
-    relay.severity,
-    JSON.stringify(nextDecision),
-    now,
-    resolvedAt,
-    relayItemId
-  );
+  agentRelayRepository.updateRelayItem({
+    relayItemId,
+    targetWorkerRole: nextTargetRole,
+    targetLane: nextTargetLane,
+    status: nextStatus,
+    severity: relay.severity,
+    decision: nextDecision,
+    updatedAt: now,
+    resolvedAt
+  });
   createRunEvent(relay.context?.sourceRunId || createId('run'), 'agent_relay_item_updated', 'ok', {
     assignmentId,
     relayItemId,
@@ -5574,7 +6111,7 @@ function decideAgentRelayItem({ relayItemId = '', assignmentId = 'assignment-loc
     action: normalizedAction,
     decision: nextDecision.decision
   });
-  return parseAgentRelayItem(statements.selectAgentRelayItemById.get(relayItemId));
+  return agentRelayRepository.getById(relayItemId);
 }
 
 function collectWorkerRelayEvidence(evidence, currentRoleId) {
@@ -5698,6 +6235,10 @@ function compactEvidenceForApi(evidence = {}) {
       output: compactJsonForApi(run.output || {}, { maxString: 1800, maxArray: 30, maxDepth: 6 }),
       outputJson: truncateForApi(run.outputJson || '', 2400)
     })),
+    aiWorkAuditPacks: (evidence.aiWorkAuditPacks || []).map((pack) => ({
+      ...pack,
+      packJson: compactJsonForApi(pack.packJson || {}, { maxString: 4000, maxArray: 60, maxDepth: 7 })
+    })),
     prReadinessReports: (evidence.prReadinessReports || []).map((report) => ({
       ...report,
       reportJson: compactJsonForApi(report.reportJson || {}, { maxString: 4000, maxArray: 60, maxDepth: 7 })
@@ -5750,17 +6291,61 @@ function mapLaunchStatusToWorkerStatus(status = '', responseBytes = 0) {
   return responseBytes > 0 ? 'response_ready' : normalized || 'unknown';
 }
 
+function isProcessAlive(pid) {
+  const value = Number(pid);
+  if (!Number.isFinite(value) || value <= 0) return false;
+  try {
+    process.kill(value, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function inferWorkerTerminalStatus({ statusFileJson = {}, logTail = '', responseBytes = 0 } = {}) {
+  const currentStatus = String(statusFileJson.status || '').toLowerCase();
+  if (!['running', 'starting', 'delegated_visible', 'stop_requested'].includes(currentStatus)) {
+    return statusFileJson;
+  }
+  const finishedMatch = String(logTail || '').match(/Agent task finished with exit code\s+(\d+)/i);
+  const backgroundPid = Number(statusFileJson.backgroundPid);
+  if (!finishedMatch && (!backgroundPid || isProcessAlive(backgroundPid))) {
+    return statusFileJson;
+  }
+  const exitCode = finishedMatch ? Number(finishedMatch[1]) : Number(statusFileJson.exitCode ?? 1);
+  const completedStatus = exitCode === 0 ? 'completed' : exitCode === 130 ? 'stopped' : 'failed';
+  const now = new Date().toISOString();
+  return {
+    ...statusFileJson,
+    status: completedStatus,
+    exitCode,
+    completedAt: statusFileJson.completedAt || now,
+    updatedAt: now,
+    note: completedStatus === 'completed'
+      ? 'Codex worker completed. Review and ingest response evidence in ODT.'
+      : completedStatus === 'stopped'
+        ? 'Codex worker stopped by ODT request.'
+        : 'Codex worker failed. Review log evidence in ODT.',
+    responseBytes,
+    logTail
+  };
+}
+
 function syncWorkerRunStatus({ assignmentId = 'assignment-local-mvp', workerRunId = '' } = {}) {
-  const run = parseAgentWorkerRun(statements.selectAgentWorkerRunById.get(workerRunId));
+  const run = agentWorkerRunRepository.getById(workerRunId);
   if (!run || run.assignmentId !== assignmentId) {
     const error = new Error('Agent worker run not found for this assignment.');
     error.statusCode = 404;
     throw error;
   }
-  const statusFileJson = readWorkerStatusFile(run.statusFile);
+  let statusFileJson = readWorkerStatusFile(run.statusFile);
   const responseBytes = fileSizeIfExists(run.responseFile);
   const logBytes = fileSizeIfExists(run.logFile);
   const logTail = readTextSnippet(run.logFile, 5000, { tail: true });
+  statusFileJson = inferWorkerTerminalStatus({ statusFileJson, logTail, responseBytes });
+  if (run.statusFile && statusFileJson.status && existsSync(run.statusFile)) {
+    writeFileSync(run.statusFile, `${JSON.stringify(statusFileJson, null, 2)}\n`, 'utf8');
+  }
   const status = mapLaunchStatusToWorkerStatus(statusFileJson.status || run.status, responseBytes);
   const now = new Date().toISOString();
   const completedAt = ['response_ready', 'completed', 'failed', 'codex_missing', 'failed_to_open', 'stopped'].includes(status)
@@ -5775,14 +6360,14 @@ function syncWorkerRunStatus({ assignmentId = 'assignment-local-mvp', workerRunI
     logTail,
     refreshedAt: now
   };
-  statements.updateAgentWorkerOutput.run(
+  agentWorkerRunRepository.updateWorkerOutput({
+    workerRunId,
     status,
-    JSON.stringify(output),
-    JSON.stringify(run.questions || []),
-    now,
-    completedAt || null,
-    workerRunId
-  );
+    output,
+    questions: run.questions || [],
+    updatedAt: now,
+    completedAt: completedAt || null
+  });
   createRunEvent(run.runId, 'agent_worker_status_refreshed', status.includes('fail') || status.includes('missing') ? 'warning' : 'ok', {
     assignmentId,
     workerRunId,
@@ -5794,7 +6379,7 @@ function syncWorkerRunStatus({ assignmentId = 'assignment-local-mvp', workerRunI
     statusFile: run.statusFile
   }, assignmentId);
   return {
-    workerRun: parseAgentWorkerRun(statements.selectAgentWorkerRunById.get(workerRunId)),
+    workerRun: agentWorkerRunRepository.getById(workerRunId),
     statusFile: statusFileJson,
     responseBytes,
     logBytes,
@@ -5802,8 +6387,176 @@ function syncWorkerRunStatus({ assignmentId = 'assignment-local-mvp', workerRunI
   };
 }
 
+function launchPreparedWorkerRun({ assignmentId = 'assignment-local-mvp', workerRunId = '' } = {}) {
+  const run = agentWorkerRunRepository.getById(workerRunId);
+  if (!run || run.assignmentId !== assignmentId) {
+    const error = new Error('Agent worker run not found for this assignment.');
+    error.statusCode = 404;
+    throw error;
+  }
+  const currentStatus = mapLaunchStatusToWorkerStatus(readWorkerStatusFile(run.statusFile).status || run.status, fileSizeIfExists(run.responseFile));
+  if (!['bundle_created', 'manual_fallback'].includes(currentStatus)) {
+    const error = new Error(`Only prepared bundles can be launched. Current worker status is ${currentStatus || 'unknown'}.`);
+    error.statusCode = 409;
+    throw error;
+  }
+  if (!run.scriptFile || !existsSync(run.scriptFile)) {
+    const error = new Error('Prepared worker bundle is missing its launch script.');
+    error.statusCode = 409;
+    throw error;
+  }
+
+  const role = getAgentWorkerRole(run.workerRole) || {
+    id: run.workerRole,
+    label: run.workerRoleLabel || run.workerRole,
+    sandboxMode: run.sandboxMode,
+    requiresWriteApproval: run.mode === 'write-approved'
+  };
+  const runDir = run.bundleDir || dirname(run.scriptFile);
+  const consoleFile = run.statusFile ? join(dirname(run.statusFile), 'worker-console.command') : '';
+  const statusBase = {
+    ...(readWorkerStatusFile(run.statusFile) || {}),
+    assignmentId,
+    workerRunId: run.id,
+    runId: run.runId,
+    executionAgent: run.executionAgent,
+    workerRole: run.workerRole,
+    workerRoleLabel: run.workerRoleLabel,
+    mode: run.mode,
+    sandboxMode: run.sandboxMode,
+    launchMode: 'terminal',
+    bundleDir: run.bundleDir,
+    handoffFile: run.handoffFile,
+    promptFile: run.promptFile,
+    scriptFile: run.scriptFile,
+    consoleFile,
+    responseFile: run.responseFile,
+    logFile: run.logFile,
+    statusFile: run.statusFile,
+    manualCommand: run.manualCommand
+  };
+
+  const persistWorkerState = ({ status, launchMode, launchStatus, output }) => upsertAgentWorkerRunRecord({
+    id: run.id,
+    assignmentId,
+    runId: run.runId,
+    role,
+    executionAgent: run.executionAgent,
+    mode: run.mode,
+    sandboxMode: run.sandboxMode,
+    status,
+    launchMode,
+    bundlePaths: {
+      bundleDir: run.bundleDir,
+      handoffFile: run.handoffFile,
+      promptFile: run.promptFile,
+      scriptFile: run.scriptFile,
+      responseFile: run.responseFile,
+      logFile: run.logFile,
+      statusFile: run.statusFile
+    },
+    manualCommand: run.manualCommand,
+    output: {
+      ...(run.output || {}),
+      ...output,
+      launchStatus,
+      stopFile: run.stopFile || run.output?.stopFile || launchStatus.stopFile || ''
+    },
+    questions: run.questions || [],
+    sequenceIndex: run.sequenceIndex
+  });
+
+  try {
+    const backgroundLaunch = launchBackgroundWorker(run.scriptFile, runDir);
+    let terminalConsole = null;
+    let terminalConsoleError = '';
+    if (consoleFile && existsSync(consoleFile)) {
+      try {
+        terminalConsole = openVisibleTerminal(consoleFile, runDir);
+      } catch (consoleError) {
+        terminalConsoleError = consoleError.message;
+      }
+    }
+    const launchedStatus = {
+      ...statusBase,
+      status: 'running',
+      launcher: backgroundLaunch.launcher,
+      backgroundPid: backgroundLaunch.pid,
+      launcherCommand: backgroundLaunch.command,
+      terminalConsole,
+      terminalConsoleError,
+      startedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      completedAt: null,
+      exitCode: null,
+      note: terminalConsole
+        ? `Started prepared Codex ${role.label} bundle and opened a visible Terminal log console.`
+        : `Started prepared Codex ${role.label} bundle. Terminal log console could not open, but Agent Team live log remains available.`
+    };
+    const observedResponseBytes = fileSizeIfExists(run.responseFile);
+    const observedLogTail = readTextSnippet(run.logFile, 5000, { tail: true });
+    const observedStatus = inferWorkerTerminalStatus({
+      statusFileJson: {
+        ...launchedStatus,
+        ...readWorkerStatusFile(run.statusFile),
+        launcher: backgroundLaunch.launcher,
+        backgroundPid: backgroundLaunch.pid,
+        launcherCommand: backgroundLaunch.command,
+        terminalConsole,
+        terminalConsoleError
+      },
+      logTail: observedLogTail,
+      responseBytes: observedResponseBytes
+    });
+    const observedWorkerStatus = mapLaunchStatusToWorkerStatus(observedStatus.status, observedResponseBytes);
+    const terminalWorkerFinished = ['response_ready', 'completed', 'failed', 'codex_missing', 'failed_to_open', 'stopped'].includes(observedWorkerStatus);
+    const persistedLaunchStatus = terminalWorkerFinished
+      ? {
+        ...launchedStatus,
+        ...observedStatus,
+        launcher: backgroundLaunch.launcher,
+        backgroundPid: backgroundLaunch.pid,
+        launcherCommand: backgroundLaunch.command,
+        terminalConsole,
+        terminalConsoleError,
+        responseBytes: observedResponseBytes,
+        logTail: observedLogTail
+      }
+      : launchedStatus;
+    if (run.statusFile) writeFileSync(run.statusFile, `${JSON.stringify(persistedLaunchStatus, null, 2)}\n`, 'utf8');
+    const workerRun = persistWorkerState({
+      status: terminalWorkerFinished ? observedWorkerStatus : 'running',
+      launchMode: 'terminal',
+      launchStatus: persistedLaunchStatus,
+      output: { summary: persistedLaunchStatus.note }
+    });
+    createRunEvent(run.runId, terminalConsole ? 'agent_worker_terminal_launched' : 'agent_worker_background_launched', terminalWorkerFinished ? observedWorkerStatus : 'running', persistedLaunchStatus, assignmentId);
+    createAgentEvent(assignmentId, run.executionAgent, 'worker_bundle_launched', terminalWorkerFinished ? observedWorkerStatus : 'running', persistedLaunchStatus);
+    return { status: terminalWorkerFinished ? observedWorkerStatus : terminalConsole ? 'launched' : 'launched_background', launch: persistedLaunchStatus, workerRun };
+  } catch (err) {
+    const fallbackStatus = {
+      ...statusBase,
+      status: 'manual_fallback',
+      error: err.message,
+      manualFallback: true,
+      updatedAt: new Date().toISOString(),
+      note: 'ODT could not launch this prepared bundle automatically. Use the manual command to start the worker.'
+    };
+    if (run.statusFile) writeFileSync(run.statusFile, `${JSON.stringify(fallbackStatus, null, 2)}\n`, 'utf8');
+    const workerRun = persistWorkerState({
+      status: 'manual_fallback',
+      launchMode: run.launchMode || 'bundle-only',
+      launchStatus: fallbackStatus,
+      output: { summary: fallbackStatus.note, error: err.message }
+    });
+    createRunEvent(run.runId, 'agent_worker_manual_fallback', 'warning', fallbackStatus, assignmentId);
+    createAgentEvent(assignmentId, run.executionAgent, 'worker_bundle_launch_failed', 'warning', fallbackStatus);
+    return { status: 'manual_fallback', launch: fallbackStatus, workerRun };
+  }
+}
+
 function nextWorkerSequence(assignmentId) {
-  const rows = statements.selectAgentWorkerRunsByAssignment.all(assignmentId);
+  const rows = agentWorkerRunRepository.listByAssignment(assignmentId);
   return rows.reduce((max, row) => Math.max(max, Number(row.sequenceIndex) || 0), 0) + 1;
 }
 
@@ -5844,7 +6597,7 @@ function extractReviewerFindings(text = '') {
   const findings = [];
   const lines = String(text || '').replace(/\r/g, '').split('\n');
   let current = null;
-  const headingPattern = /^\s*(?:\d+[.)]|[-*])\s+(?:\*\*)?(critical|high|blocker|medium|warning|needs[_\s-]?review|low|info|comment|p[0-3])(?:\*\*)?\s*:?\s*(.*)$/i;
+  const headingPattern = /^\s*(?:(?:\d+[.)]|[-*])\s+)?(?:\*\*)?(critical|high|blocker|medium|warning|needs[_\s-]?review|low|info|comment|p[0-3])(?:\s+(?:finding|findings|issue|issues|risk|risks|gap|gaps|test\s+gap|concern|concerns|note|notes))?(?:\*\*)?\s*:?\s*(.*)$/i;
   const stopSectionPattern = /^\s*(?:#{1,6}\s+|\*\*(?:answers?|summary|files reviewed|commands?|accessibility|security|known risks?|follow-up))/i;
 
   const flush = () => {
@@ -5903,7 +6656,7 @@ function createReviewCommentsForReviewerRun(run, responseText = '') {
     .filter((finding) => ['blocker', 'warning'].includes(finding.severity));
   if (!findings.length) return [];
 
-  const existingComments = statements.selectReviewCommentsByAssignment.all(run.assignmentId);
+  const existingComments = reviewCommentRepository.listByAssignment(run.assignmentId);
   return findings.map((finding, index) => {
     const marker = `sourceWorkerRunId=${run.id};findingIndex=${index + 1}`;
     const existing = existingComments.find((comment) => String(comment.resolutionNotes || '').includes(marker));
@@ -5947,7 +6700,7 @@ function autoResolveReviewCommentsForReviewerRun(run, responseText = '', reviewe
   if (!reviewerOutputIndicatesCleanCloseout(responseText, reviewerFindings)) return [];
   const now = new Date().toISOString();
   const runTime = timeMillis(run.completedAt || run.updatedAt || run.createdAt || now);
-  const comments = statements.selectReviewCommentsByAssignment.all(run.assignmentId)
+  const comments = reviewCommentRepository.listByAssignment(run.assignmentId)
     .filter((comment) => (
       comment.status === 'open'
       && ['blocker', 'warning'].includes(comment.severity)
@@ -5961,34 +6714,39 @@ function autoResolveReviewCommentsForReviewerRun(run, responseText = '', reviewe
     ));
   if (!comments.length) return [];
 
-  const relayItems = statements.selectAgentRelayItemsByAssignment.all(run.assignmentId).map(parseAgentRelayItem);
+  const relayItems = agentRelayRepository.listByAssignment(run.assignmentId);
   const resolved = comments.map((comment) => {
     const note = [
       String(comment.resolutionNotes || '').trim(),
       `Auto-resolved by reviewer rerun ${run.id}: reviewer output indicated prior blocker/warning findings were addressed.`
     ].filter(Boolean).join('\n');
-    statements.updateReviewCommentStatus.run('resolved', now, note, comment.id);
+    reviewCommentRepository.updateStatus({
+      id: comment.id,
+      status: 'resolved',
+      updatedAt: now,
+      resolutionNotes: note
+    });
     relayItems
       .filter((item) => item.context?.reviewCommentId === comment.id && ['open', 'assigned', 'answered'].includes(String(item.status || '').toLowerCase()))
       .forEach((item) => {
-        statements.updateAgentRelayItem.run(
-          item.targetWorkerRole || '',
-          item.targetLane || '',
-          'resolved',
-          item.severity || comment.severity,
-          JSON.stringify({
+        agentRelayRepository.updateRelayItem({
+          relayItemId: item.id,
+          targetWorkerRole: item.targetWorkerRole || '',
+          targetLane: item.targetLane || '',
+          status: 'resolved',
+          severity: item.severity || comment.severity,
+          decision: {
             ...(item.decision || {}),
             action: 'auto_resolve',
             decision: `Resolved after reviewer rerun ${run.id} confirmed the finding was addressed.`,
             decidedBy: 'odt-reviewer-ingest',
             decidedAt: now
-          }),
-          now,
-          now,
-          item.id
-        );
+          },
+          updatedAt: now,
+          resolvedAt: now
+        });
       });
-    return statements.selectReviewCommentById.get(comment.id);
+    return reviewCommentRepository.getById(comment.id);
   });
 
   createRunEvent(run.runId || createId('run'), 'review_comments_auto_resolved', 'ok', {
@@ -6010,37 +6768,36 @@ function autoResolveReviewCommentsForReviewerRun(run, responseText = '', reviewe
 
 function upsertAgentWorkerRunRecord({ id, assignmentId, runId, role, executionAgent, mode, sandboxMode, status, launchMode, bundlePaths, manualCommand, output = {}, questions = [], completedAt = null, sequenceIndex = null }) {
   const now = new Date().toISOString();
-  statements.upsertAgentWorkerRun.run(
+  return agentWorkerRunRepository.upsertWorkerRun({
     id,
     assignmentId,
     runId,
-    role.id,
-    role.label,
+    workerRole: role.id,
+    workerRoleLabel: role.label,
     executionAgent,
     mode,
     sandboxMode,
     status,
-    sequenceIndex || nextWorkerSequence(assignmentId),
+    sequenceIndex: sequenceIndex || nextWorkerSequence(assignmentId),
     launchMode,
-    bundlePaths.bundleDir || '',
-    bundlePaths.handoffFile || '',
-    bundlePaths.promptFile || '',
-    bundlePaths.scriptFile || '',
-    bundlePaths.responseFile || '',
-    bundlePaths.logFile || '',
-    bundlePaths.statusFile || '',
-    manualCommand || '',
-    JSON.stringify(output || {}),
-    JSON.stringify(questions || []),
-    now,
-    now,
+    bundleDir: bundlePaths.bundleDir || '',
+    handoffFile: bundlePaths.handoffFile || '',
+    promptFile: bundlePaths.promptFile || '',
+    scriptFile: bundlePaths.scriptFile || '',
+    responseFile: bundlePaths.responseFile || '',
+    logFile: bundlePaths.logFile || '',
+    statusFile: bundlePaths.statusFile || '',
+    manualCommand: manualCommand || '',
+    output,
+    questions,
+    createdAt: now,
+    updatedAt: now,
     completedAt
-  );
-  return parseAgentWorkerRun(statements.selectAgentWorkerRunById.get(id));
+  });
 }
 
 function ingestWorkerOutput({ assignmentId = 'assignment-local-mvp', workerRunId = '' } = {}) {
-  const run = parseAgentWorkerRun(statements.selectAgentWorkerRunById.get(workerRunId));
+  const run = agentWorkerRunRepository.getById(workerRunId);
   if (!run || run.assignmentId !== assignmentId) {
     const error = new Error('Agent worker run not found for this assignment.');
     error.statusCode = 404;
@@ -6054,31 +6811,45 @@ function ingestWorkerOutput({ assignmentId = 'assignment-local-mvp', workerRunId
   }
   const questions = extractWorkerQuestions(responseText);
   const reviewerFindings = run.workerRole === 'reviewer' ? extractReviewerFindings(responseText) : [];
+  const repoVerification = verifyWorkerRepoState({ assignmentId, run, responseText });
+  const responseBytes = fileSizeIfExists(run.responseFile);
+  const logBytes = fileSizeIfExists(run.logFile);
+  const now = new Date().toISOString();
   const output = {
+    ...(run.output || {}),
     summary: summarizeWorkerOutput(responseText),
     rawText: responseText,
     reviewerFindings,
+    repoVerification,
+    responseBytes,
+    logBytes,
     responseFile: run.responseFile,
     logTail: readTextSnippet(run.logFile, 5000, { tail: true }),
-    ingestedAt: new Date().toISOString()
+    refreshedAt: now,
+    ingestedAt: now
   };
-  const completedAt = new Date().toISOString();
-  const nextStatus = questions.length ? 'needs_input' : reviewerFindings.some((finding) => ['blocker', 'warning'].includes(finding.severity)) ? 'needs_review' : 'completed';
-  statements.updateAgentWorkerOutput.run(
-    nextStatus,
-    JSON.stringify(output),
-    JSON.stringify(questions),
-    completedAt,
-    completedAt,
-    workerRunId
-  );
-  createRunEvent(run.runId, 'agent_worker_output_ingested', questions.length || reviewerFindings.some((finding) => ['blocker', 'warning'].includes(finding.severity)) ? 'warning' : 'ok', {
+  const completedAt = now;
+  const nextStatus = questions.length
+    ? 'needs_input'
+    : reviewerFindings.some((finding) => ['blocker', 'warning'].includes(finding.severity)) || repoVerification.status === 'warning'
+      ? 'needs_review'
+      : 'completed';
+  agentWorkerRunRepository.updateWorkerOutput({
+    workerRunId,
+    status: nextStatus,
+    output,
+    questions,
+    updatedAt: completedAt,
+    completedAt
+  });
+  createRunEvent(run.runId, 'agent_worker_output_ingested', questions.length || reviewerFindings.some((finding) => ['blocker', 'warning'].includes(finding.severity)) || repoVerification.status === 'warning' ? 'warning' : 'ok', {
     assignmentId,
     workerRunId,
     workerRole: run.workerRole,
     workerRoleLabel: run.workerRoleLabel,
     questions: questions.length,
     reviewerFindings: reviewerFindings.length,
+    repoVerification,
     summary: output.summary
   }, assignmentId);
   createAgentEvent(assignmentId, run.executionAgent, 'worker_output_ingested', nextStatus, {
@@ -6087,9 +6858,22 @@ function ingestWorkerOutput({ assignmentId = 'assignment-local-mvp', workerRunId
     workerRoleLabel: run.workerRoleLabel,
     questions,
     reviewerFindings,
+    repoVerification,
     summary: output.summary
   });
-  const updatedRun = parseAgentWorkerRun(statements.selectAgentWorkerRunById.get(workerRunId));
+  if (repoVerification.status === 'warning') {
+    createRunEvent(run.runId, 'worker_repo_verification_warning', 'warning', {
+      assignmentId,
+      workerRunId,
+      workerRole: run.workerRole,
+      workerRoleLabel: run.workerRoleLabel,
+      repoPath: repoVerification.repoPath,
+      declaredChangedFiles: repoVerification.declaredChangedFiles,
+      gitChangedFiles: repoVerification.gitChangedFiles,
+      warnings: repoVerification.warnings
+    }, assignmentId);
+  }
+  const updatedRun = agentWorkerRunRepository.getById(workerRunId);
   const relayItems = createRelayItemsForWorkerRun(updatedRun);
   const reviewerComments = createReviewCommentsForReviewerRun(updatedRun, responseText);
   const autoResolvedReviewComments = autoResolveReviewCommentsForReviewerRun(updatedRun, responseText, reviewerFindings);
@@ -6125,7 +6909,7 @@ function ingestWorkerOutput({ assignmentId = 'assignment-local-mvp', workerRunId
 }
 
 function recordImplementationEvidenceFromWorkerRun({ assignmentId = 'assignment-local-mvp', workerRunId = '', runPostCheck = true, dryRun = false } = {}) {
-  let run = parseAgentWorkerRun(statements.selectAgentWorkerRunById.get(workerRunId));
+  let run = agentWorkerRunRepository.getById(workerRunId);
   if (!run || run.assignmentId !== assignmentId) {
     const error = new Error('Agent worker run not found for this assignment.');
     error.statusCode = 404;
@@ -6141,6 +6925,17 @@ function recordImplementationEvidenceFromWorkerRun({ assignmentId = 'assignment-
     throw error;
   }
   const extracted = extractImplementationEvidenceFromWorkerRun(run);
+  const repoVerification = run.output?.repoVerification?.verifiedAt
+    ? run.output.repoVerification
+    : verifyWorkerRepoState({ assignmentId, run, responseText: rawText });
+  const repoWarnings = Array.isArray(repoVerification.warnings) ? repoVerification.warnings : [];
+  if (repoVerification.status === 'verified' && Array.isArray(repoVerification.gitChangedFiles) && repoVerification.gitChangedFiles.length) {
+    extracted.changedFiles = repoVerification.gitChangedFiles;
+  }
+  extracted.repoVerification = repoVerification;
+  extracted.warnings = uniqueLimited([...(extracted.warnings || []), ...repoWarnings], 40);
+  const blocksImplementationEvidence = repoVerification.status === 'warning'
+    && repoWarnings.some((warning) => /no git diff|declares changed files|not present in the current git diff/i.test(warning));
   if (dryRun) {
     createRunEvent(run.runId || createId('run'), 'implementation_evidence_extraction_previewed', extracted.warnings.length ? 'warning' : 'ok', {
       assignmentId,
@@ -6148,14 +6943,28 @@ function recordImplementationEvidenceFromWorkerRun({ assignmentId = 'assignment-
       changedFiles: extracted.changedFiles.length,
       commands: extracted.commands.length,
       tests: extracted.tests.length,
-      warnings: extracted.warnings
+      warnings: extracted.warnings,
+      repoVerification
     }, assignmentId);
     return {
       assignmentId,
       dryRun: true,
       extracted,
-      workerRun: parseAgentWorkerRun(statements.selectAgentWorkerRunById.get(workerRunId))
+      workerRun: agentWorkerRunRepository.getById(workerRunId)
     };
+  }
+  if (blocksImplementationEvidence) {
+    createRunEvent(run.runId || createId('run'), 'implementation_evidence_repo_verification_blocked', 'warning', {
+      assignmentId,
+      workerRunId,
+      workerRole: run.workerRole,
+      workerRoleLabel: run.workerRoleLabel,
+      repoVerification
+    }, assignmentId);
+    const error = new Error('ODT blocked implementation evidence recording because worker output does not match the current target repository diff.');
+    error.statusCode = 409;
+    error.repoVerification = repoVerification;
+    throw error;
   }
   const result = recordImplementationEvidence({
     assignmentId,
@@ -6176,7 +6985,8 @@ function recordImplementationEvidenceFromWorkerRun({ assignmentId = 'assignment-
     changedFiles: extracted.changedFiles.length,
     commands: extracted.commands.length,
     tests: extracted.tests.length,
-    warnings: extracted.warnings
+    warnings: extracted.warnings,
+    repoVerification
   }, assignmentId);
   createAgentEvent(assignmentId, run.executionAgent || 'agent', 'worker_evidence_derived', extracted.warnings.length ? 'needs_review' : 'completed', {
     workerRunId,
@@ -6185,11 +6995,11 @@ function recordImplementationEvidenceFromWorkerRun({ assignmentId = 'assignment-
     evidenceId: result.evidence.id,
     extracted
   });
-  return { ...result, extracted, workerRun: parseAgentWorkerRun(statements.selectAgentWorkerRunById.get(workerRunId)) };
+  return { ...result, extracted, workerRun: agentWorkerRunRepository.getById(workerRunId) };
 }
 
 function requestStopWorkerRun({ assignmentId = 'assignment-local-mvp', workerRunId = '', requestedBy = process.env.USER || 'local-user', reason = '' } = {}) {
-  const run = parseAgentWorkerRun(statements.selectAgentWorkerRunById.get(workerRunId));
+  const run = agentWorkerRunRepository.getById(workerRunId);
   if (!run || run.assignmentId !== assignmentId) {
     const error = new Error('Agent worker run not found for this assignment.');
     error.statusCode = 404;
@@ -6236,14 +7046,14 @@ function requestStopWorkerRun({ assignmentId = 'assignment-local-mvp', workerRun
       ? 'If the visible Terminal worker does not stop within a few seconds, focus that Terminal tab and press Ctrl+C.'
       : 'No active worker process was detected. Review the worker status before relaunching.'
   };
-  statements.updateAgentWorkerOutput.run(
-    active ? 'stop_requested' : run.status,
-    JSON.stringify(output),
-    JSON.stringify(run.questions || []),
-    now,
-    active ? null : run.completedAt,
-    workerRunId
-  );
+  agentWorkerRunRepository.updateWorkerOutput({
+    workerRunId,
+    status: active ? 'stop_requested' : run.status,
+    output,
+    questions: run.questions || [],
+    updatedAt: now,
+    completedAt: active ? null : run.completedAt
+  });
   createRunEvent(run.runId || createId('run'), 'agent_worker_stop_requested', active ? 'warning' : 'ok', {
     ...stopPayload,
     stopFile,
@@ -6263,7 +7073,7 @@ function requestStopWorkerRun({ assignmentId = 'assignment-local-mvp', workerRun
     reason: stopPayload.reason
   });
   return {
-    workerRun: parseAgentWorkerRun(statements.selectAgentWorkerRunById.get(workerRunId)),
+    workerRun: agentWorkerRunRepository.getById(workerRunId),
     stopFile,
     signalResult,
     active,
@@ -6279,6 +7089,8 @@ function buildWorkerPrompt({ handoff, contract, evidence, bundlePaths, workerRol
   const latestPlan = evidence.implementationPlans?.[0]?.planJson || {};
   const latestTestPlan = evidence.testPlans?.[0]?.planJson || {};
   const latestStandards = evidence.standardsChecks?.[0] || {};
+  const projectContract = contract.projectContract || null;
+  const projectReadiness = contract.projectReadiness || null;
   const workerRelay = collectWorkerRelayEvidence(evidence, workerRole.id);
   const agentRelayContext = collectAgentRelayContext(evidence, workerRole.id);
   const intakeAssets = (evidence.intakeAssets || []).map((asset) => ({
@@ -6312,6 +7124,9 @@ function buildWorkerPrompt({ handoff, contract, evidence, bundlePaths, workerRol
     '- Do not modify the ODT Workbench repository.',
     '- Do not create a branch, commit, push, raise a PR, or update external systems.',
     '- Do not run destructive commands.',
+    '- Treat the Project Contract section as the source of truth for build/test/run commands.',
+    '- Do not run any command pattern listed under Project Contract blockedCommands.',
+    '- If the Project Contract differs from a guessed command, use the Project Contract or stop and ask.',
     '- Do not install dependencies or modify dependency manifests unless ODT explicitly marks installDependencies as true and the package is listed in approvedDependencies.',
     '- Follow existing repository patterns and keep changes tightly scoped.',
     '- Run the requested tests when feasible. If a test cannot run, record the reason.',
@@ -6320,6 +7135,26 @@ function buildWorkerPrompt({ handoff, contract, evidence, bundlePaths, workerRol
     '## Target Repository',
     `- Path: ${contract.repoPath || 'not configured'}`,
     `- Base branch: ${contract.baseBranch || 'not captured'}`,
+    '',
+    '## Project Contract',
+    projectContract
+      ? `- Contract: ${projectContract.projectName} (${projectContract.id})`
+      : '- No saved Project Contract was found for this assignment.',
+    projectContract ? `- Risk: ${projectContract.riskProfile || 'medium'}` : '',
+    projectContract ? `- Install: ${projectContract.installCommand || 'not recorded'}` : '',
+    projectContract ? `- Build: ${projectContract.buildCommand || 'not recorded'}` : '',
+    projectContract ? `- Test: ${projectContract.testCommand || 'not recorded'}` : '',
+    projectContract ? `- Run UI: ${projectContract.runUiCommand || 'not recorded'}` : '',
+    projectContract ? `- Run API: ${projectContract.runApiCommand || 'not recorded'}` : '',
+    projectContract ? `- Deploy: ${projectContract.deployCommand || 'deployment requires separate approval'}` : '',
+    projectContract?.blockedCommands?.length ? `- Blocked commands: ${projectContract.blockedCommands.join(', ')}` : '- Blocked commands: use ODT default destructive-action policy.',
+    projectReadiness ? `- Readiness: ${projectReadiness.status} (${projectReadiness.score}%)` : '- Readiness: not checked because no Project Contract is saved.',
+    projectReadiness?.checks?.length ? '```json' : '',
+    projectReadiness?.checks?.length ? JSON.stringify({
+      contract: projectContract,
+      readiness: projectReadiness
+    }, null, 2) : '',
+    projectReadiness?.checks?.length ? '```' : '',
     '',
     '## Worker Lane',
     `- Role: ${workerRole.label}`,
@@ -6424,21 +7259,28 @@ function buildWorkerPrompt({ handoff, contract, evidence, bundlePaths, workerRol
   ].join('\n');
 }
 
-function buildCodexLaunchScript({ repoPath, promptFile, responseFile, logFile, statusFile, stopFile, codexExecutable, skipGitRepoCheck, sandboxMode, workerRole }) {
-  const codexArgs = skipGitRepoCheck
-    ? 'exec -C "$PWD" -s "$SANDBOX_MODE" -o "$RESPONSE_FILE" --skip-git-repo-check -'
-    : 'exec -C "$PWD" -s "$SANDBOX_MODE" -o "$RESPONSE_FILE" -';
+function buildCodexLaunchScript({ repoPath, promptFile, responseFile, logFile, statusFile, stopFile, codexExecutable, codexModel, skipGitRepoCheck, sandboxMode, workerRole }) {
+  const readOnlyWorker = !workerRole.requiresWriteApproval;
+  const codexWorkDir = readOnlyWorker ? dirname(statusFile) : repoPath;
+  const codexSandboxMode = readOnlyWorker ? 'workspace-write' : (sandboxMode || 'workspace-write');
+  const codexRepoCheckFlag = readOnlyWorker || skipGitRepoCheck ? ' --skip-git-repo-check' : '';
+  const codexModelFlag = codexModel ? ' -m "$CODEX_MODEL"' : '';
+  const codexArgs = `exec -C "$CODEX_WORKDIR"${codexModelFlag} -s "$CODEX_SANDBOX_MODE" -o "$RESPONSE_FILE"${codexRepoCheckFlag} -`;
   return [
     '#!/bin/bash',
     'set -u',
-    `cd ${shellQuote(repoPath)}`,
+    `TARGET_REPO_PATH=${shellQuote(repoPath)}`,
+    `CODEX_WORKDIR=${shellQuote(codexWorkDir)}`,
     `PROMPT_FILE=${shellQuote(promptFile)}`,
 	    `RESPONSE_FILE=${shellQuote(responseFile)}`,
 	    `LOG_FILE=${shellQuote(logFile)}`,
 	    `STATUS_FILE=${shellQuote(statusFile)}`,
 	    `STOP_FILE=${shellQuote(stopFile)}`,
 	    `CODEX_BIN=${shellQuote(codexExecutable || 'codex')}`,
-	    `SANDBOX_MODE=${shellQuote(sandboxMode || 'read-only')}`,
+	    `CODEX_MODEL=${shellQuote(codexModel || '')}`,
+	    `REQUESTED_SANDBOX_MODE=${shellQuote(sandboxMode || 'read-only')}`,
+	    `CODEX_SANDBOX_MODE=${shellQuote(codexSandboxMode)}`,
+    'cd "$CODEX_WORKDIR"',
     'mkdir -p "$(dirname "$RESPONSE_FILE")"',
     'mkdir -p "$(dirname "$LOG_FILE")"',
     'mkdir -p "$(dirname "$STATUS_FILE")"',
@@ -6474,9 +7316,12 @@ function buildCodexLaunchScript({ repoPath, promptFile, responseFile, logFile, s
 	    '}',
 	    'write_status "running" "" "Codex worker script started."',
 	    'rm -f "$STOP_FILE"',
-    `echo "[odt] Delegating ${workerRole.label} to Codex (visible terminal session)." | tee -a "$LOG_FILE"`,
-    'echo "[odt] Target repo: $PWD" | tee -a "$LOG_FILE"',
-    'echo "[odt] Sandbox: $SANDBOX_MODE" | tee -a "$LOG_FILE"',
+    `echo "[odt] Delegating ${workerRole.label} to Codex (supervised ODT worker session)." | tee -a "$LOG_FILE"`,
+    'echo "[odt] Target repo: $TARGET_REPO_PATH" | tee -a "$LOG_FILE"',
+    'echo "[odt] Codex workdir: $CODEX_WORKDIR" | tee -a "$LOG_FILE"',
+    'echo "[odt] Requested sandbox: $REQUESTED_SANDBOX_MODE" | tee -a "$LOG_FILE"',
+    'echo "[odt] Codex sandbox: $CODEX_SANDBOX_MODE" | tee -a "$LOG_FILE"',
+    'if [ -n "$CODEX_MODEL" ]; then echo "[odt] Codex model: $CODEX_MODEL" | tee -a "$LOG_FILE"; fi',
     'echo "[odt] Prompt: $PROMPT_FILE" | tee -a "$LOG_FILE"',
     'echo "[odt] Response: $RESPONSE_FILE" | tee -a "$LOG_FILE"',
     'echo "" | tee -a "$LOG_FILE"',
@@ -6484,6 +7329,18 @@ function buildCodexLaunchScript({ repoPath, promptFile, responseFile, logFile, s
     '  export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"',
     '  . "$NVM_DIR/nvm.sh"',
     'fi',
+    'ODT_CLEAN_SHELL_DIR="$(dirname "$STATUS_FILE")/clean-shell-startup"',
+    'mkdir -p "$ODT_CLEAN_SHELL_DIR"',
+    ': > "$ODT_CLEAN_SHELL_DIR/.zshenv"',
+    ': > "$ODT_CLEAN_SHELL_DIR/.zshrc"',
+    ': > "$ODT_CLEAN_SHELL_DIR/.zprofile"',
+    ': > "$ODT_CLEAN_SHELL_DIR/.bashrc"',
+    'export ZDOTDIR="$ODT_CLEAN_SHELL_DIR"',
+    'export BASH_ENV=/dev/null',
+    'export ENV=/dev/null',
+    'export SHELL=/bin/bash',
+    'export ODT_WORKER_CLEAN_SHELL=1',
+    'echo "[odt] Worker shell startup: clean ODT shell profile active." | tee -a "$LOG_FILE"',
     'echo "[odt] Node: $(command -v node 2>/dev/null || true) $(node -v 2>/dev/null || true)" | tee -a "$LOG_FILE"',
     'echo "[odt] codex: $CODEX_BIN $("$CODEX_BIN" --version 2>/dev/null || true)" | tee -a "$LOG_FILE"',
 	    'if [ ! -x "$CODEX_BIN" ]; then',
@@ -6533,26 +7390,114 @@ function buildCodexLaunchScript({ repoPath, promptFile, responseFile, logFile, s
   ].join('\n');
 }
 
-function openVisibleTerminal(scriptFile, runDir, onComplete) {
+function buildWorkerConsoleScript({ workerRole, logFile, responseFile, statusFile }) {
+  return [
+    '#!/bin/bash',
+    'set -u',
+    `LOG_FILE=${shellQuote(logFile)}`,
+    `RESPONSE_FILE=${shellQuote(responseFile)}`,
+    `STATUS_FILE=${shellQuote(statusFile)}`,
+    `echo "ODT ${workerRole.label} worker console"`,
+    'echo "Log file: $LOG_FILE"',
+    'echo "Response file: $RESPONSE_FILE"',
+    'echo "Status file: $STATUS_FILE"',
+    'echo ""',
+    'echo "This Terminal follows the ODT worker log. Close this window only if you do not need the live tail."',
+    'echo ""',
+    'while [ ! -f "$LOG_FILE" ]; do sleep 1; done',
+    'tail -n +1 -f "$LOG_FILE"',
+    ''
+  ].join('\n');
+}
+
+function openVisibleTerminal(scriptFile, runDir) {
   if (process.platform !== 'darwin') {
     throw new Error('Visible terminal launch is currently implemented for macOS Terminal.');
   }
+  const terminalPath = terminalAppPath();
+  const openAttempts = [
+    {
+      label: 'open command file',
+      args: [scriptFile],
+      command: `/usr/bin/open ${shellQuote(scriptFile)}`
+    },
+    terminalPath ? {
+      label: 'open with Terminal.app path',
+      args: ['-a', terminalPath, scriptFile],
+      command: `/usr/bin/open -a ${shellQuote(terminalPath)} ${shellQuote(scriptFile)}`
+    } : null,
+    {
+      label: 'open with Terminal.app name',
+      args: ['-a', 'Terminal.app', scriptFile],
+      command: `/usr/bin/open -a Terminal.app ${shellQuote(scriptFile)}`
+    }
+  ].filter(Boolean);
+  const openErrors = [];
+  for (const attempt of openAttempts) {
+    const result = spawnSync('/usr/bin/open', attempt.args, {
+      cwd: runDir,
+      env: process.env,
+      encoding: 'utf8',
+      timeout: 10000
+    });
+    if (!result.error && result.status === 0) {
+      return {
+        launcher: 'open',
+        terminalApp: terminalPath || 'Terminal.app',
+        command: attempt.command,
+        stdout: String(result.stdout || '').trim(),
+        stderr: String(result.stderr || '').trim()
+      };
+    }
+    const detail = result.error?.message || String(result.stderr || result.stdout || '').trim() || `exit ${result.status}`;
+    openErrors.push(`${attempt.label}: ${detail}`);
+  }
+
   const command = `bash ${shellQuote(scriptFile)}`;
-  const child = execFile('osascript', [
-    '-e',
-    'tell application "Terminal" to activate',
-    '-e',
-    `tell application "Terminal" to do script "${escapeAppleScriptString(command)}"`
-  ], {
+  const script = [
+    terminalPath
+      ? `tell application ${applescriptStringLiteral(terminalPath)}`
+      : 'tell application id "com.apple.Terminal"',
+    'activate',
+    `do script ${applescriptStringLiteral(command)}`,
+    'end tell'
+  ].join('\n');
+  const osascriptResult = spawnSync('/usr/bin/osascript', ['-e', script], {
     cwd: runDir,
     env: process.env,
-    detached: true
-  }, onComplete);
-  child.unref();
-  return child.pid;
+    encoding: 'utf8',
+    timeout: 10000
+  });
+  if (!osascriptResult.error && osascriptResult.status === 0) {
+    return {
+      launcher: 'osascript',
+      terminalApp: 'Terminal',
+      command,
+      stdout: String(osascriptResult.stdout || '').trim(),
+      stderr: String(osascriptResult.stderr || '').trim()
+    };
+  }
+
+  const osascriptError = osascriptResult.error?.message || String(osascriptResult.stderr || osascriptResult.stdout || '').trim();
+  throw new Error(`Unable to open Terminal worker. ${openErrors.join('; ')}; osascript: ${osascriptError || `exit ${osascriptResult.status}`}`);
 }
 
-function launchCodexWorker({ assignmentId = 'assignment-local-mvp', executionAgent, workerRole = 'lead-planner', launchMode = 'terminal', notes = '' } = {}) {
+function launchBackgroundWorker(scriptFile, runDir) {
+  const child = spawn('/bin/bash', [scriptFile], {
+    cwd: runDir,
+    env: process.env,
+    detached: true,
+    stdio: 'ignore'
+  });
+  child.unref();
+  return {
+    launcher: 'background',
+    pid: child.pid,
+    command: `/bin/bash ${shellQuote(scriptFile)}`
+  };
+}
+
+async function launchCodexWorker({ assignmentId = 'assignment-local-mvp', executionAgent, workerRole = 'lead-planner', launchMode = 'terminal', notes = '' } = {}) {
   const selectedAgent = executionAgent || getStoredSetting('executionAgent', 'codex');
   if (selectedAgent !== 'codex') {
     const error = new Error('Only Codex terminal launch is wired in this slice. Use governed handoff for Cline/manual until those launchers are allowlisted.');
@@ -6566,6 +7511,7 @@ function launchCodexWorker({ assignmentId = 'assignment-local-mvp', executionAge
     throw error;
   }
   const executionHealth = getCodexExecutionHealth();
+  const codexWorkerModel = getCodexWorkerModel();
   if (executionHealth.status !== 'healthy') {
     createAgentEvent(assignmentId, selectedAgent, 'execution_health_failed', 'error', executionHealth);
     const error = new Error(executionHealth.message);
@@ -6574,7 +7520,7 @@ function launchCodexWorker({ assignmentId = 'assignment-local-mvp', executionAge
     throw error;
   }
 
-  const delegation = prepareAgentDelegation({
+  const delegation = await prepareAgentDelegation({
     assignmentId,
     executionAgent: selectedAgent,
     requireWriteApproved: role.requiresWriteApproval,
@@ -6629,7 +7575,8 @@ function launchCodexWorker({ assignmentId = 'assignment-local-mvp', executionAge
   mkdirSync(runDir, { recursive: true });
   const handoffFile = join(runDir, 'handoff.json');
   const promptFile = join(runDir, 'prompt.md');
-  const scriptFile = join(runDir, 'launch-codex.sh');
+  const scriptFile = join(runDir, 'launch-codex.command');
+  const consoleFile = join(runDir, 'worker-console.command');
   const responseFile = join(runDir, 'codex-response.md');
   const logFile = join(runDir, 'codex-launch.log');
   const statusFile = join(runDir, 'launch-status.json');
@@ -6641,8 +7588,10 @@ function launchCodexWorker({ assignmentId = 'assignment-local-mvp', executionAge
 
   writeFileSync(handoffFile, `${JSON.stringify(roleHandoff, null, 2)}\n`, 'utf8');
   writeFileSync(promptFile, `${buildWorkerPrompt({ handoff: roleHandoff, contract: roleContract, evidence, bundlePaths, workerRole: role })}\n`, 'utf8');
-  writeFileSync(scriptFile, buildCodexLaunchScript({ repoPath, promptFile, responseFile, logFile, statusFile, stopFile, codexExecutable: executionHealth.executable, skipGitRepoCheck, sandboxMode: role.sandboxMode, workerRole: role }), 'utf8');
+  writeFileSync(scriptFile, buildCodexLaunchScript({ repoPath, promptFile, responseFile, logFile, statusFile, stopFile, codexExecutable: executionHealth.executable, codexModel: codexWorkerModel.model, skipGitRepoCheck, sandboxMode: role.sandboxMode, workerRole: role }), 'utf8');
+  writeFileSync(consoleFile, buildWorkerConsoleScript({ workerRole: role, logFile, responseFile, statusFile }), 'utf8');
   chmodSync(scriptFile, 0o755);
+  chmodSync(consoleFile, 0o755);
   writeFileSync(responseFile, '', 'utf8');
   writeFileSync(logFile, '', 'utf8');
 
@@ -6663,10 +7612,16 @@ function launchCodexWorker({ assignmentId = 'assignment-local-mvp', executionAge
     skipGitRepoCheck,
     executionHealth,
     codexExecutable: executionHealth.executable,
+    codexModel: codexWorkerModel.model,
+    codexModelSource: codexWorkerModel.source,
+    projectContractId: roleContract.projectContract?.id || '',
+    projectReadinessStatus: roleContract.projectReadiness?.status || 'missing',
+    projectReadinessScore: roleContract.projectReadiness?.score ?? null,
     bundleDir: runDir,
     handoffFile,
     promptFile,
     scriptFile,
+    consoleFile,
     responseFile,
     logFile,
     statusFile,
@@ -6685,6 +7640,11 @@ function launchCodexWorker({ assignmentId = 'assignment-local-mvp', executionAge
     workerRoleLabel: role.label,
     launchMode,
     sandboxMode: role.sandboxMode,
+    codexModel: codexWorkerModel.model,
+    codexModelSource: codexWorkerModel.source,
+    projectContractId: roleContract.projectContract?.id || '',
+    projectReadinessStatus: roleContract.projectReadiness?.status || 'missing',
+    projectReadinessScore: roleContract.projectReadiness?.score ?? null,
     bundleDir: runDir,
     promptFile,
     scriptFile,
@@ -6714,26 +7674,26 @@ function launchCodexWorker({ assignmentId = 'assignment-local-mvp', executionAge
 	  }
 
   try {
-    const launcherPid = openVisibleTerminal(scriptFile, runDir, (error) => {
-      if (!error) return;
-      const failedStatus = {
-        ...baseStatus,
-        status: 'failed_to_open',
-        error: error.message,
-        manualFallback: true,
-        updatedAt: new Date().toISOString()
-      };
-      writeFileSync(statusFile, `${JSON.stringify(failedStatus, null, 2)}\n`, 'utf8');
-      createRunEvent(delegation.runId, 'agent_worker_launch_failed', 'error', failedStatus, assignmentId);
-      createAgentEvent(assignmentId, selectedAgent, 'worker_launch_failed', 'error', failedStatus);
-    });
+    const backgroundLaunch = launchBackgroundWorker(scriptFile, runDir);
+    let terminalConsole = null;
+    let terminalConsoleError = '';
+    try {
+      terminalConsole = openVisibleTerminal(consoleFile, runDir);
+    } catch (consoleError) {
+      terminalConsoleError = consoleError.message;
+    }
     const launchedStatus = {
       ...baseStatus,
-      status: 'delegated_visible',
-      launcherPid,
-      terminalApp: 'Terminal',
+      status: 'running',
+      launcher: backgroundLaunch.launcher,
+      backgroundPid: backgroundLaunch.pid,
+      launcherCommand: backgroundLaunch.command,
+      terminalConsole,
+      terminalConsoleError,
       updatedAt: new Date().toISOString(),
-      note: `Opened a visible Terminal session for the Codex ${role.label} worker. Review changes and return evidence to ODT when complete.`
+      note: terminalConsole
+        ? `Started a supervised Codex ${role.label} worker and opened a visible Terminal log console.`
+        : `Started a supervised Codex ${role.label} worker. Terminal log console could not open, but Agent Team live log remains available.`
     };
     writeFileSync(statusFile, `${JSON.stringify(launchedStatus, null, 2)}\n`, 'utf8');
     const workerRun = upsertAgentWorkerRunRecord({
@@ -6751,37 +7711,72 @@ function launchCodexWorker({ assignmentId = 'assignment-local-mvp', executionAge
       output: { summary: launchedStatus.note, stopFile },
       questions: []
     });
-    createRunEvent(delegation.runId, 'agent_worker_terminal_launched', 'running', launchedStatus, assignmentId);
+    createRunEvent(delegation.runId, terminalConsole ? 'agent_worker_terminal_launched' : 'agent_worker_background_launched', 'running', launchedStatus, assignmentId);
     createAgentEvent(assignmentId, selectedAgent, 'worker_launch_prepared', 'running', launchedStatus);
-    return { status: 'launched', launch: launchedStatus, workerRun, delegation };
-  } catch (error) {
-    const fallbackStatus = {
-      ...baseStatus,
-      status: 'manual_fallback',
-      error: error.message,
-      manualFallback: true,
-      updatedAt: new Date().toISOString(),
-      note: 'Terminal launch failed. Use the manual command from ODT to start the Codex worker.'
-    };
-    writeFileSync(statusFile, `${JSON.stringify(fallbackStatus, null, 2)}\n`, 'utf8');
-    const workerRun = upsertAgentWorkerRunRecord({
-      id: workerRunId,
-      assignmentId,
-      runId: delegation.runId,
-      role,
-      executionAgent: selectedAgent,
-      mode: roleContract.mode,
-      sandboxMode: role.sandboxMode,
-      status: 'manual_fallback',
-      launchMode,
-      bundlePaths: { ...bundlePaths, bundleDir: runDir },
-      manualCommand,
-      output: { summary: fallbackStatus.note, error: error.message, stopFile },
-      questions: []
-    });
-    createRunEvent(delegation.runId, 'agent_worker_manual_fallback', 'warning', fallbackStatus, assignmentId);
-    createAgentEvent(assignmentId, selectedAgent, 'worker_launch_prepared', 'warning', fallbackStatus);
-    return { status: 'manual_fallback', launch: fallbackStatus, workerRun, delegation };
+    return { status: terminalConsole ? 'launched' : 'launched_background', launch: launchedStatus, workerRun, delegation };
+  } catch (terminalError) {
+    try {
+      const backgroundLaunch = launchBackgroundWorker(scriptFile, runDir);
+      const backgroundStatus = {
+        ...baseStatus,
+        status: 'running',
+        launchMode: 'background',
+        launcher: backgroundLaunch.launcher,
+        backgroundPid: backgroundLaunch.pid,
+        launcherCommand: backgroundLaunch.command,
+        terminalLaunchError: terminalError.message,
+        updatedAt: new Date().toISOString(),
+        note: `Terminal launch was blocked, so ODT started a background Codex ${role.label} worker. Use Agent Team live log and Stop Worker controls.`
+      };
+      writeFileSync(statusFile, `${JSON.stringify(backgroundStatus, null, 2)}\n`, 'utf8');
+      const workerRun = upsertAgentWorkerRunRecord({
+        id: workerRunId,
+        assignmentId,
+        runId: delegation.runId,
+        role,
+        executionAgent: selectedAgent,
+        mode: roleContract.mode,
+        sandboxMode: role.sandboxMode,
+        status: 'running',
+        launchMode: 'background',
+        bundlePaths: { ...bundlePaths, bundleDir: runDir },
+        manualCommand,
+        output: { summary: backgroundStatus.note, terminalLaunchError: terminalError.message, stopFile },
+        questions: []
+      });
+      createRunEvent(delegation.runId, 'agent_worker_background_launched', 'running', backgroundStatus, assignmentId);
+      createAgentEvent(assignmentId, selectedAgent, 'worker_launch_prepared', 'running', backgroundStatus);
+      return { status: 'launched_background', launch: backgroundStatus, workerRun, delegation };
+    } catch (backgroundError) {
+      const fallbackStatus = {
+        ...baseStatus,
+        status: 'manual_fallback',
+        error: backgroundError.message,
+        terminalLaunchError: terminalError.message,
+        manualFallback: true,
+        updatedAt: new Date().toISOString(),
+        note: 'Terminal and background launch both failed. Use the manual command from ODT to start the Codex worker.'
+      };
+      writeFileSync(statusFile, `${JSON.stringify(fallbackStatus, null, 2)}\n`, 'utf8');
+      const workerRun = upsertAgentWorkerRunRecord({
+        id: workerRunId,
+        assignmentId,
+        runId: delegation.runId,
+        role,
+        executionAgent: selectedAgent,
+        mode: roleContract.mode,
+        sandboxMode: role.sandboxMode,
+        status: 'manual_fallback',
+        launchMode,
+        bundlePaths: { ...bundlePaths, bundleDir: runDir },
+        manualCommand,
+        output: { summary: fallbackStatus.note, error: backgroundError.message, terminalLaunchError: terminalError.message, stopFile },
+        questions: []
+      });
+      createRunEvent(delegation.runId, 'agent_worker_manual_fallback', 'warning', fallbackStatus, assignmentId);
+      createAgentEvent(assignmentId, selectedAgent, 'worker_launch_prepared', 'warning', fallbackStatus);
+      return { status: 'manual_fallback', launch: fallbackStatus, workerRun, delegation };
+    }
   }
 }
 
@@ -6795,7 +7790,7 @@ function parseAgentFoundryRow(row) {
 }
 
 function listAgentFoundryRuns(assignmentId = 'assignment-local-mvp') {
-  const entries = statements.selectAgentFoundryRunsByAssignment.all(assignmentId).map(parseAgentFoundryRow);
+  const entries = agentFoundryRunRepository.listByAssignment(assignmentId);
   const grouped = new Map();
   entries.forEach((entry) => {
     if (!grouped.has(entry.runId)) {
@@ -6864,20 +7859,20 @@ function runAgentFoundry({ assignmentId = 'assignment-local-mvp', phase = 'full-
       provider: aiConfig.provider,
       model
     });
-    statements.insertAgentFoundryRun.run(
-      createId('foundry'),
+    agentFoundryRunRepository.createRunEntry({
+      id: createId('foundry'),
       runId,
       assignmentId,
-      phaseConfig.id,
-      domain.id,
-      domain.label,
-      JSON.stringify(normalizedInputSources),
-      JSON.stringify(output),
-      output.status,
-      aiConfig.provider,
+      phase: phaseConfig.id,
+      domainId: domain.id,
+      domainLabel: domain.label,
+      inputSources: normalizedInputSources,
+      output,
+      status: output.status,
+      provider: aiConfig.provider,
       model,
-      now
-    );
+      createdAt: now
+    });
     outputs.push(output);
     createRunEvent(runId, 'agent_foundry_domain_completed', output.status === 'PASS' ? 'ok' : 'warning', {
       requestType: 'agent-foundry',
@@ -7141,21 +8136,7 @@ function storeIntakeAssets({ assignmentId = 'assignment-local-mvp', files = [], 
       fileType,
       bytes
     });
-    statements.insertIntakeAsset.run(
-      id,
-      assignmentId,
-      file.name,
-      storedName,
-      storedPath,
-      file.mimeType || '',
-      fileType,
-      bytes.length,
-      sourceKind,
-      JSON.stringify(analysis),
-      'stored',
-      now
-    );
-    return {
+    const asset = intakeAssetRepository.createAsset({
       id,
       assignmentId,
       originalName: file.name,
@@ -7165,10 +8146,11 @@ function storeIntakeAssets({ assignmentId = 'assignment-local-mvp', files = [], 
       fileType,
       bytes: bytes.length,
       sourceKind,
-      analysisJson: analysis,
       status: 'stored',
+      analysis,
       createdAt: now
-    };
+    });
+    return asset;
   });
   createRunEvent(createId('run'), 'intake_assets_stored', 'ok', {
     assignmentId,
@@ -7187,7 +8169,7 @@ function storeIntakeAssets({ assignmentId = 'assignment-local-mvp', files = [], 
 }
 
 function enrichIntakeAsset({ assetId, assignmentId = 'assignment-local-mvp', provider = aiConfig.provider } = {}) {
-  const asset = parseIntakeAssetRow(statements.selectIntakeAssetById.get(assetId));
+  const asset = intakeAssetRepository.getById(assetId);
   if (!asset || asset.assignmentId !== assignmentId) {
     const error = new Error('Intake asset not found for this assignment.');
     error.statusCode = 404;
@@ -7243,14 +8225,17 @@ function preparePrReadinessReport({ assignmentId, linkedJira = '', notes = '' })
   const currentEvidence = scopedCurrentEvidence(evidence);
   const jiraVerificationProfile = deriveJiraVerificationProfile(evidence);
   const effectiveLinkedJira = String(linkedJira || jiraVerificationProfile?.issueKey || '').trim();
+  const workKey = normalizeJiraIssueKey(effectiveLinkedJira || evidence.requirements?.[0]?.rawText || evidence.assignment?.title || '') || assignmentId;
+  const generatedAt = new Date().toISOString();
+  const packId = createPrPackId({ generatedAt, linkedJira: workKey, assignmentId });
   const latestCheck = currentEvidence.standardsChecks[0];
   const unresolvedBlockers = getUnresolvedStandardsBlockers(currentEvidence);
   const openReviewBlockers = getOpenReviewBlockers(currentEvidence);
   const pendingDependencies = currentEvidence.dependencyRequests.filter((request) => request.status === 'pending');
   const latestImplementationEvidence = currentEvidence.implementationEvidence?.[0] || null;
   const reviewCycleCloseout = deriveReviewCycleCloseout(currentEvidence);
-  const allTests = (currentEvidence.implementationEvidence || []).flatMap((record) => record.tests || []);
-  const allCommands = (currentEvidence.implementationEvidence || []).flatMap((record) => record.commands || []);
+  const allTests = getActiveImplementationTests(currentEvidence);
+  const allCommands = getActiveImplementationCommands(currentEvidence);
   const workerRuns = currentEvidence.agentWorkerRuns || [];
   const reviewableReviewerRuns = workerRuns.filter((run) => run.workerRole === 'reviewer' && workerHasReviewableOutput(run));
   const reviewableBuildVerifierRuns = workerRuns.filter((run) => run.workerRole === 'build-verifier' && workerHasReviewableOutput(run));
@@ -7363,6 +8348,12 @@ function preparePrReadinessReport({ assignmentId, linkedJira = '', notes = '' })
     buildVerifierOutputs: reviewableBuildVerifierRuns.length
   };
   const report = {
+    id: packId,
+    packId,
+    artifactId: packId,
+    artifactType: 'pr-readiness-pack',
+    assignmentId,
+    workKey,
     title: `PR Readiness Pack: ${evidence.assignment?.title || assignmentId}`,
     prTitle: `${effectiveLinkedJira ? `${effectiveLinkedJira}: ` : ''}${evidence.assignment?.title || 'ODT governed implementation'}`,
     linkedJira: effectiveLinkedJira,
@@ -7409,24 +8400,32 @@ function preparePrReadinessReport({ assignmentId, linkedJira = '', notes = '' })
     riskNotes: blockingItems.length ? blockingItems.map((item) => item.message) : ['Low to medium; validate with repo-specific tests before PR.'],
     rollbackNotes: 'Changes are isolated to odt-workbench-next and can be reverted without modifying the legacy dashboard.',
     reviewerNotes: notes,
-    generatedAt: new Date().toISOString()
+    generatedAt
   };
   report.markdown = buildPrMarkdown(report);
-  statements.insertPrReadinessReport.run(
-    createId('prpack'),
+  prReadinessReportRepository.createReport({
+    id: packId,
     assignmentId,
-    report.title,
-    JSON.stringify(report),
-    report.status,
-    report.generatedAt
-  );
+    title: report.title,
+    report,
+    status: report.status,
+    createdAt: generatedAt
+  });
   createRunEvent(createId('run'), 'pr_readiness_pack_prepared', report.status === 'BLOCKED' ? 'blocked' : 'ok', {
     assignmentId,
+    packId,
+    workKey,
     status: report.status,
     blockingItems: blockingItems.length,
     checklistReady: readinessChecklist.filter((item) => item.checked).length,
     checklistTotal: readinessChecklist.length
   }, assignmentId);
+  persistAiWorkAuditPackSnapshot({
+    assignmentId,
+    stage: 'pr-readiness-pack',
+    status: report.status,
+    generatedAt
+  });
   return report;
 }
 
@@ -8062,7 +9061,7 @@ function buildGuideContext(evidence = {}, snapshot = {}) {
   const standardsFindings = latestCheck?.findings || evidence.standardsFindings || [];
   const unresolvedStandards = getUnresolvedStandardsBlockers(currentEvidence);
   const pendingDependencies = (currentEvidence.dependencyRequests || []).filter((request) => request.status === 'pending');
-  const allTests = (currentEvidence.implementationEvidence || []).flatMap((record) => record.tests || []);
+  const allTests = getActiveImplementationTests(currentEvidence);
   const failedTests = allTests.filter((test) => test.status === 'failed');
   const passedTests = allTests.filter((test) => test.status === 'passed');
   const reviewCycleCloseout = evidence.reviewCycleCloseout || deriveReviewCycleCloseout(evidence);
@@ -8745,30 +9744,45 @@ async function handleAiRequest(response, requestType, body) {
       totalTokens: estimateTokens(input) + estimateTokens(serializedContent)
     };
 
-    statements.insertAiUsage.run(
-      createId('usage'),
+    aiUsageRepository.createUsage({
+      id: createId('usage'),
       requestId,
       runId,
       sessionId,
-      body.userId || null,
+      userId: body.userId || null,
       requestType,
-      selectedProvider,
-      responseModel,
-      String(input || '').length,
-      usage.promptTokens,
-      usage.completionTokens,
-      usage.totalTokens,
+      provider: selectedProvider,
+      model: responseModel,
+      inputChars: String(input || '').length,
+      promptTokens: usage.promptTokens,
+      completionTokens: usage.completionTokens,
+      totalTokens: usage.totalTokens,
       latencyMs,
-      'ok',
-      providerError?.message || null,
-      fallbackUsed ? 1 : 0,
-      JSON.stringify(retrievedSources),
-      new Date().toISOString()
-    );
+      status: 'ok',
+      error: providerError?.message || null,
+      fallbackUsed,
+      sources: retrievedSources
+    });
 
     if (requestType === 'chat') {
-      statements.insertChat.run(createId('msg'), assignmentId, sessionId, 'user', input, selectedProvider, responseModel, new Date().toISOString());
-      statements.insertChat.run(createId('msg'), assignmentId, sessionId, 'assistant', serializedContent, selectedProvider, responseModel, new Date().toISOString());
+      chatMessageRepository.createMessage({
+        id: createId('msg'),
+        assignmentId,
+        sessionId,
+        role: 'user',
+        content: input,
+        provider: selectedProvider,
+        model: responseModel
+      });
+      chatMessageRepository.createMessage({
+        id: createId('msg'),
+        assignmentId,
+        sessionId,
+        role: 'assistant',
+        content: serializedContent,
+        provider: selectedProvider,
+        model: responseModel
+      });
     }
 
     createRunEvent(runId, 'response_generated', 'ok', {
@@ -8809,26 +9823,25 @@ async function handleAiRequest(response, requestType, body) {
   } catch (error) {
     const latencyMs = Date.now() - startedAt;
     const promptTokens = estimateTokens(input);
-    statements.insertAiUsage.run(
-      createId('usage'),
+    aiUsageRepository.createUsage({
+      id: createId('usage'),
       requestId,
       runId,
       sessionId,
-      body.userId || null,
+      userId: body.userId || null,
       requestType,
-      selectedProvider,
-      responseModel,
-      String(input || '').length,
+      provider: selectedProvider,
+      model: responseModel,
+      inputChars: String(input || '').length,
       promptTokens,
-      0,
-      promptTokens,
+      completionTokens: 0,
+      totalTokens: promptTokens,
       latencyMs,
-      'error',
-      error.message,
-      fallbackUsed ? 1 : 0,
-      '[]',
-      new Date().toISOString()
-    );
+      status: 'error',
+      error: error.message,
+      fallbackUsed,
+      sources: []
+    });
     createRunEvent(runId, 'request_failed', 'error', { requestId, requestType, error: error.message, latencyMs }, assignmentId);
     sendJson(response, 400, {
       provider: selectedProvider,
@@ -9000,7 +10013,7 @@ function buildOpenApiSchema() {
               type: 'object',
               properties: {
                 assignmentId: { type: 'string', description: 'Assignment id for evidence storage.' },
-                issueKey: { type: 'string', description: 'Jira issue key, for example JOURNEY-25366.' },
+                issueKey: { type: 'string', description: 'Jira issue key, for example PROJECT-12345.' },
                 repoPath: { type: 'string', description: 'Optional local repo path for read-only Jira-key checks in git history and tracked files.' }
               },
               required: ['issueKey']
@@ -9433,7 +10446,7 @@ function buildOpenApiSchema() {
         get: {
           operationId: 'getAgentContract',
           summary: 'Get governed agent handoff contract',
-          description: 'Returns read-only or write-approved allowed actions and attached standards context for Codex/Cline handoff. Write-approved mode requires approval after the latest standards check.',
+          description: 'Returns read-only or write-approved allowed actions, attached standards context, Project Contract command rules, and readiness snapshot for Codex/Cline handoff. Write-approved mode requires approval after the latest standards check.',
           parameters: [{ name: 'assignmentId', in: 'path', required: true, schema: { type: 'string' }, description: 'Assignment id.' }],
           responses: { 200: { description: 'Agent handoff contract.', content: jsonContent({ type: 'object' }) } }
         }
@@ -9442,7 +10455,7 @@ function buildOpenApiSchema() {
         post: {
           operationId: 'delegateAgentHandoff',
           summary: 'Prepare governed agent handoff run',
-          description: 'Creates auditable run and agent evidence for a Codex/Cline/manual handoff without executing code. Write-approved delegation requires approval after the latest standards check.',
+          description: 'Creates auditable run and agent evidence for a Codex/Cline/manual handoff without executing code. The handoff includes Project Contract commands, blocked-command policy, readiness status, and approval notes. Write-approved delegation requires approval after the latest standards check.',
           requestBody: {
             required: true,
             content: jsonContent({
@@ -9484,7 +10497,7 @@ function buildOpenApiSchema() {
         post: {
           operationId: 'launchCodexWorker',
           summary: 'Launch governed Codex worker',
-          description: 'Creates a write-approved Codex worker bundle and launches a visible macOS Terminal session. The endpoint is allowlisted for Codex only and refuses launch unless the current ODT contract is write-approved.',
+          description: 'Creates a Codex worker bundle with Project Contract commands/readiness and launches a visible macOS Terminal session when allowed. The endpoint is allowlisted for Codex only and refuses write-lane launch unless the current ODT contract is write-approved and Project Contract readiness has no hard blockers.',
           requestBody: {
             required: true,
             content: jsonContent({
@@ -9536,6 +10549,28 @@ function buildOpenApiSchema() {
 	          }
 	        }
 	      },
+      '/api/agents/worker-runs/{workerRunId}/launch': {
+        post: {
+          operationId: 'launchPreparedAgentWorkerRun',
+          summary: 'Launch prepared worker bundle',
+          description: 'Starts an existing bundle_created or manual_fallback worker run without creating a new assignment or worker id.',
+          parameters: [{ name: 'workerRunId', in: 'path', required: true, schema: { type: 'string' }, description: 'Worker run id.' }],
+          requestBody: {
+            required: false,
+            content: jsonContent({
+              type: 'object',
+              properties: {
+                assignmentId: { type: 'string', description: 'Assignment id for ownership verification.' }
+              }
+            })
+          },
+          responses: {
+            200: { description: 'Prepared worker launch result.', content: jsonContent({ type: 'object' }) },
+            404: { description: 'Worker run not found.', content: jsonContent({ type: 'object' }) },
+            409: { description: 'Worker run is not in a launchable prepared state.', content: jsonContent({ type: 'object' }) }
+          }
+        }
+      },
 	      '/api/agents/worker-runs/{workerRunId}/status': {
 	        post: {
 	          operationId: 'refreshAgentWorkerStatus',
@@ -9677,7 +10712,8 @@ function buildOpenApiSchema() {
         get: {
           operationId: 'listValidationRuns',
           summary: 'List ODT validation runs',
-          description: 'Returns recent ODT self-validation runs, including UI smoke status, screenshot paths, and captured command output.',
+          description: 'Returns recent ODT self-validation runs scoped to the active or requested assignment, including UI smoke status, screenshot paths, and captured command output.',
+          parameters: [{ name: 'assignmentId', in: 'query', required: false, schema: { type: 'string' }, description: 'Assignment id used to scope validation history.' }],
           responses: { 200: { description: 'Validation run history.', content: jsonContent({ type: 'object' }) } }
         }
       },
@@ -9697,6 +10733,75 @@ function buildOpenApiSchema() {
             })
           },
           responses: { 200: { description: 'UI smoke validation result.', content: jsonContent({ type: 'object' }) } }
+        }
+      },
+      '/api/project-contracts': {
+        get: {
+          operationId: 'listProjectContracts',
+          summary: 'List project contracts',
+          description: 'Returns governed per-repository build/test/run contracts used by Agent Team readiness and handoff generation.',
+          parameters: [{ name: 'assignmentId', in: 'query', required: false, schema: { type: 'string' }, description: 'Optional assignment scope. Unscoped contracts are also returned by assignment-scoped repository reads.' }],
+          responses: { 200: { description: 'Project contract list.', content: jsonContent({ type: 'object' }) } }
+        },
+        post: {
+          operationId: 'saveProjectContract',
+          summary: 'Create or update a project contract',
+          description: 'Stores non-secret project setup rules, commands, approval notes, known issues, and blocked command patterns.',
+          requestBody: {
+            required: true,
+            content: jsonContent({
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                assignmentId: { type: 'string' },
+                projectName: { type: 'string' },
+                repoPath: { type: 'string' },
+                baseBranch: { type: 'string' },
+                buildCommand: { type: 'string' },
+                testCommand: { type: 'string' },
+                blockedCommands: { type: 'array', items: { type: 'string' } },
+                approvalNotes: { type: 'array', items: { type: 'string' } }
+              },
+              required: ['projectName']
+            })
+          },
+          responses: { 200: { description: 'Stored project contract.', content: jsonContent({ type: 'object' }) } }
+        }
+      },
+      '/api/project-contracts/{contractId}': {
+        get: {
+          operationId: 'getProjectContract',
+          summary: 'Get project contract',
+          description: 'Returns one governed project contract by id.',
+          parameters: [{ name: 'contractId', in: 'path', required: true, schema: { type: 'string' } }],
+          responses: {
+            200: { description: 'Project contract.', content: jsonContent({ type: 'object' }) },
+            404: { description: 'Project contract not found.', content: jsonContent({ type: 'object' }) }
+          }
+        }
+      },
+      '/api/project-contracts/{contractId}/readiness': {
+        post: {
+          operationId: 'checkProjectContractReadiness',
+          summary: 'Run project contract readiness checks',
+          description: 'Runs read-only readiness checks for repo path, git state, Node/npm/Codex availability, documented commands, known issues, approval notes, and blocked command policy.',
+          parameters: [{ name: 'contractId', in: 'path', required: true, schema: { type: 'string' } }],
+          responses: {
+            200: { description: 'Readiness snapshot.', content: jsonContent({ type: 'object' }) },
+            404: { description: 'Project contract not found.', content: jsonContent({ type: 'object' }) }
+          }
+        }
+      },
+      '/api/project-contracts/{contractId}/handoff': {
+        post: {
+          operationId: 'generateProjectContractHandoff',
+          summary: 'Generate project contract handoff',
+          description: 'Builds a governed Markdown handoff that can be attached to Agent Team worker prompts without executing project build, test, deploy, or write commands.',
+          parameters: [{ name: 'contractId', in: 'path', required: true, schema: { type: 'string' } }],
+          responses: {
+            200: { description: 'Project contract handoff.', content: jsonContent({ type: 'object' }) },
+            404: { description: 'Project contract not found.', content: jsonContent({ type: 'object' }) }
+          }
         }
       },
       '/api/settings': {
@@ -9732,7 +10837,8 @@ function buildOpenApiSchema() {
         get: {
           operationId: 'listRuns',
           summary: 'List workbench runs',
-          description: 'Returns recent run summaries aggregated from run events.',
+          description: 'Returns recent run summaries scoped to the active or requested assignment.',
+          parameters: [{ name: 'assignmentId', in: 'query', required: false, schema: { type: 'string' }, description: 'Assignment id used to scope run history.' }],
           responses: { 200: { description: 'Run summary list.', content: jsonContent({ type: 'object' }) } }
         }
       },
@@ -9747,7 +10853,7 @@ function buildOpenApiSchema() {
             required: true,
             description: 'Run identifier returned by /api/runs or AI responses.',
             schema: { type: 'string' }
-          }],
+          }, { name: 'assignmentId', in: 'query', required: false, schema: { type: 'string' }, description: 'Assignment id expected to own the run.' }],
           responses: { 200: { description: 'Run event timeline.', content: jsonContent({ type: 'object' }) } }
         }
       },
@@ -9838,46 +10944,31 @@ function normalizedAiResponseSchema() {
   };
 }
 
-function isUnsafeSettingKey(key) {
-  return /(secret|token|key|password|private|fingerprint|ocid|compartment|tenancy|profile|credential|bearer)/i.test(String(key || ''));
-}
-
 function getSafeSettingsResponse() {
-  const executionAgent = getStoredSetting('executionAgent', 'codex');
-  return {
-    ai: safeAiConfig(),
-    agentPolicy: {
-      selectedExecutionAgent: executionAgent,
-      availableExecutionAgents: ['codex', 'cline', 'manual'],
-      defaultMode: 'read-only',
-      writeActions: 'Require explicit human approval',
-      dependencyInstalls: 'Blocked until dependency approval is captured'
-    },
-    intake: {
-      uploadPolicy,
-      workspaceDir,
-      storageNote: 'Context uploads are stored in the ODT workspace and never copied into target repos automatically.'
-    },
-    connectors: listConnectors(),
-    connectorPolicy: {
-      mcpEnabled: connectorConfig.mcpEnabled,
-      readActions: 'Allowed only when connector is configured and enabled',
-      writeActions: 'Require explicit human approval',
-      destructiveActions: 'Blocked by default'
-    },
-    promptTemplates: statements.selectPromptTemplates.all(),
-    storedSettings: statements.selectSettings.all()
-  };
+  return settingsService.getSafeSettingsResponse();
 }
 
 function getStoredSetting(key, fallback) {
-  const setting = statements.selectSettings.all().find((item) => item.key === key);
-  if (!setting) return fallback;
-  try {
-    return JSON.parse(setting.value);
-  } catch {
-    return setting.value || fallback;
-  }
+  return settingsService.getStoredSetting(key, fallback);
+}
+
+function recordConnectorEvent({
+  connectorId,
+  action = '',
+  mode = 'read',
+  status,
+  detail = {},
+  createdAt = new Date().toISOString()
+} = {}) {
+  return connectorEventRepository.createEvent({
+    id: createId('connector'),
+    connectorId,
+    action,
+    mode,
+    status,
+    detail,
+    createdAt
+  });
 }
 
 async function handleConnectorQuery(response, body) {
@@ -9886,20 +10977,20 @@ async function handleConnectorQuery(response, body) {
   const normalizedAction = action.toLowerCase();
   const mode = String(body.mode || 'read').toLowerCase();
   const now = new Date().toISOString();
-  const eventAssignmentId = body.assignmentId || 'assignment-local-mvp';
+  const eventAssignmentId = body.assignmentId || getActiveAssignmentId();
   if (!connector || !connector.enabled) {
     const reason = connector?.readinessDetail || 'Connector is disabled or not configured.';
-    statements.insertConnectorEvent.run(createId('connector'), body.connectorId || 'unknown', action, mode, 'blocked', JSON.stringify({ reason, assignmentId: eventAssignmentId }), now);
+    recordConnectorEvent({ connectorId: body.connectorId || 'unknown', action, mode, status: 'blocked', detail: { reason, assignmentId: eventAssignmentId }, createdAt: now });
     sendJson(response, 403, { status: 'blocked', reason, connector });
     return;
   }
   if (mode.includes('delete') || mode.includes('destructive')) {
-    statements.insertConnectorEvent.run(createId('connector'), connector.id, action, mode, 'blocked', JSON.stringify({ reason: 'Destructive actions are blocked by default.', assignmentId: eventAssignmentId }), now);
+    recordConnectorEvent({ connectorId: connector.id, action, mode, status: 'blocked', detail: { reason: 'Destructive actions are blocked by default.', assignmentId: eventAssignmentId }, createdAt: now });
     sendJson(response, 403, { status: 'blocked', reason: 'Destructive actions are blocked by default.', connector });
     return;
   }
   if (mode.includes('write') && connector.requireWriteApproval && !body.approved) {
-    statements.insertConnectorEvent.run(createId('connector'), connector.id, action, mode, 'approval_required', JSON.stringify({ reason: 'Write actions require human approval.', assignmentId: eventAssignmentId }), now);
+    recordConnectorEvent({ connectorId: connector.id, action, mode, status: 'approval_required', detail: { reason: 'Write actions require human approval.', assignmentId: eventAssignmentId }, createdAt: now });
     sendJson(response, 403, { status: 'approval_required', reason: 'Write actions require human approval.', connector });
     return;
   }
@@ -9907,8 +10998,8 @@ async function handleConnectorQuery(response, body) {
   if (connector.id === 'jira' && ['get-issue', 'read-issue', 'issue', 'get-ticket', 'read-ticket'].includes(normalizedAction)) {
     const issueKey = normalizeJiraIssueKey(body.issueKey || body.ticketKey || body.query);
     if (!issueKey) {
-      const reason = 'A Jira issue key such as JOURNEY-25366 is required for this read action.';
-      statements.insertConnectorEvent.run(createId('connector'), connector.id, action, mode, 'blocked', JSON.stringify({ reason, assignmentId: eventAssignmentId }), now);
+      const reason = 'A Jira issue key such as PROJECT-12345 is required for this read action.';
+      recordConnectorEvent({ connectorId: connector.id, action, mode, status: 'blocked', detail: { reason, assignmentId: eventAssignmentId }, createdAt: now });
       sendJson(response, 400, { status: 'blocked', reason, connector });
       return;
     }
@@ -9916,7 +11007,7 @@ async function handleConnectorQuery(response, body) {
     const credentials = loadJiraConnectorCredentials(connector);
     if (!credentials.ready) {
       const reason = 'Jira read credentials are not available server-side. Configure JIRA_URL plus a token/password through environment or Codex MCP env-file.';
-      statements.insertConnectorEvent.run(createId('connector'), connector.id, action, mode, 'blocked', JSON.stringify({ reason, assignmentId: eventAssignmentId, issueKey }), now);
+      recordConnectorEvent({ connectorId: connector.id, action, mode, status: 'blocked', detail: { reason, assignmentId: eventAssignmentId, issueKey }, createdAt: now });
       sendJson(response, 403, { status: 'blocked', reason, connector });
       return;
     }
@@ -9924,7 +11015,7 @@ async function handleConnectorQuery(response, body) {
     try {
       const issue = await fetchJiraIssue(issueKey, credentials);
       const note = `Read-only Jira lookup succeeded for ${issueKey}. ODT returned safe issue fields only.`;
-      statements.insertConnectorEvent.run(createId('connector'), connector.id, action, mode, 'ok', JSON.stringify({ note, assignmentId: eventAssignmentId, issueKey }), now);
+      recordConnectorEvent({ connectorId: connector.id, action, mode, status: 'ok', detail: { note, assignmentId: eventAssignmentId, issueKey }, createdAt: now });
       sendJson(response, 200, {
         status: 'ok',
         connector,
@@ -9948,7 +11039,7 @@ async function handleConnectorQuery(response, body) {
         assignmentId: eventAssignmentId,
         issueKey
       };
-      statements.insertConnectorEvent.run(createId('connector'), connector.id, action, mode, 'error', JSON.stringify(detail), now);
+      recordConnectorEvent({ connectorId: connector.id, action, mode, status: 'error', detail, createdAt: now });
       sendJson(response, err.httpStatus || 502, { status: 'error', reason, detail, connector });
     }
     return;
@@ -9957,7 +11048,7 @@ async function handleConnectorQuery(response, body) {
   const okNote = connector.configurationSource === 'codex-config'
     ? `Codex MCP server ${connector.serverName} is detected. ODT read gate is ready; direct Jira MCP query transport is the next adapter layer.`
     : 'Connector gateway is wired for governance. Actual MCP transport is an extension point.';
-  statements.insertConnectorEvent.run(createId('connector'), connector.id, action, mode, 'ok', JSON.stringify({ note: okNote, assignmentId: eventAssignmentId }), now);
+  recordConnectorEvent({ connectorId: connector.id, action, mode, status: 'ok', detail: { note: okNote, assignmentId: eventAssignmentId }, createdAt: now });
   sendJson(response, 200, {
     status: 'ok',
     connector,
@@ -10014,7 +11105,7 @@ const server = createServer(async (request, response) => {
 
     if (request.method === 'POST' && url.pathname === '/api/intake/assets') {
       const body = await readBody(request, Math.ceil(uploadPolicy.maxBatchBytes * 2.2));
-      const assignmentId = body.assignmentId || 'assignment-local-mvp';
+      const assignmentId = body.assignmentId || getActiveAssignmentId();
       sendJson(response, 200, storeIntakeAssets({
         assignmentId,
         files: body.files || [],
@@ -10028,7 +11119,7 @@ const server = createServer(async (request, response) => {
       const assignmentId = intakeAssetListMatch[1];
       sendJson(response, 200, {
         assignmentId,
-        assets: statements.selectIntakeAssetsByAssignment.all(assignmentId).map(parseIntakeAssetRow),
+        assets: intakeAssetRepository.listByAssignment(assignmentId),
         uploadPolicy,
         workspaceDir: join(workspaceDir, assignmentId, 'intake-assets')
       });
@@ -10037,7 +11128,7 @@ const server = createServer(async (request, response) => {
 
     const intakeAssetFileMatch = url.pathname.match(/^\/api\/intake\/assets\/([^/]+)\/file$/);
     if (request.method === 'GET' && intakeAssetFileMatch) {
-      const asset = parseIntakeAssetRow(statements.selectIntakeAssetById.get(intakeAssetFileMatch[1]));
+      const asset = intakeAssetRepository.getById(intakeAssetFileMatch[1]);
       if (!asset || !existsSync(asset.storedPath)) {
         sendJson(response, 404, { error: 'Intake asset not found.' });
         return;
@@ -10052,7 +11143,7 @@ const server = createServer(async (request, response) => {
       try {
         sendJson(response, 200, enrichIntakeAsset({
           assetId: intakeAssetEnrichMatch[1],
-          assignmentId: body.assignmentId || 'assignment-local-mvp',
+          assignmentId: body.assignmentId || getActiveAssignmentId(),
           provider: body.provider || aiConfig.provider
         }));
       } catch (err) {
@@ -10065,9 +11156,10 @@ const server = createServer(async (request, response) => {
       try {
         const body = await readBody(request);
         sendJson(response, 200, await importJiraIssueForIntake({
-          assignmentId: body.assignmentId || 'assignment-local-mvp',
+          assignmentId: body.assignmentId || '',
           issueKey: body.issueKey || body.ticketKey || body.query || '',
-          repoPath: body.repoPath || ''
+          repoPath: body.repoPath || '',
+          createNewAssignment: Boolean(body.createNewAssignment)
         }));
       } catch (err) {
         sendJson(response, err.statusCode || err.httpStatus || 400, { error: err.message || 'Unable to import Jira issue.' });
@@ -10077,12 +11169,18 @@ const server = createServer(async (request, response) => {
 
     if (request.method === 'POST' && url.pathname === '/api/intake/analyze') {
       const body = await readBody(request);
-      const assignmentId = body.assignmentId || 'assignment-local-mvp';
+      const input = body.input || body.requirement || body.text || '';
+      const repoPath = body.repoPath || '';
+      const assignmentId = body.createNewAssignment
+        ? createAssignmentForWork({ input, repoPath }).id
+        : (body.assignmentId || getActiveAssignmentId());
       sendJson(response, 200, {
         assignmentId,
+        activeAssignmentId: assignmentId,
         analysis: buildRequirementAnalysis({
           assignmentId,
-          input: body.input || body.requirement || body.text || '',
+          input,
+          repoPath,
           sourceType: body.sourceType || 'manual'
         })
       });
@@ -10110,7 +11208,7 @@ const server = createServer(async (request, response) => {
 
     if (request.method === 'POST' && url.pathname === '/api/repo/analyze') {
       const body = await readBody(request);
-      const assignmentId = body.assignmentId || 'assignment-local-mvp';
+      const assignmentId = body.assignmentId || getActiveAssignmentId();
       sendJson(response, 200, {
         assignmentId,
         analysis: body.browserAnalysis
@@ -10122,10 +11220,10 @@ const server = createServer(async (request, response) => {
 
     if (request.method === 'POST' && url.pathname === '/api/design/draft') {
       const body = await readBody(request);
-      const assignmentId = body.assignmentId || 'assignment-local-mvp';
+      const assignmentId = body.assignmentId || getActiveAssignmentId();
       const currentEvidence = collectEvidence(assignmentId);
       const requirement = body.requirement || currentEvidence.requirements?.[0] || {};
-      const latestRepo = currentEvidence.current?.repoAnalysis?.[0] || statements.selectRepoAnalysisByAssignment.all(assignmentId)[0];
+      const latestRepo = currentEvidence.current?.repoAnalysis?.[0] || repoAnalysisRepository.listByAssignment(assignmentId)[0];
       const repoAnalysis = body.repoAnalysis || parseJsonValue(latestRepo?.analysisJson, {});
       const design = buildTechnicalDesign({
         assignmentId,
@@ -10139,9 +11237,9 @@ const server = createServer(async (request, response) => {
 
     if (request.method === 'POST' && url.pathname === '/api/plan/draft') {
       const body = await readBody(request);
-      const assignmentId = body.assignmentId || 'assignment-local-mvp';
+      const assignmentId = body.assignmentId || getActiveAssignmentId();
       const currentEvidence = collectEvidence(assignmentId);
-      const latestDesign = currentEvidence.current?.technicalDesigns?.[0] || statements.selectTechnicalDesignsByAssignment.all(assignmentId)[0];
+      const latestDesign = currentEvidence.current?.technicalDesigns?.[0] || technicalDesignRepository.listByAssignment(assignmentId)[0];
       const design = body.design || parseJsonValue(latestDesign?.designJson, {});
       const plan = buildImplementationPlan({
         assignmentId,
@@ -10168,7 +11266,7 @@ const server = createServer(async (request, response) => {
 
     if (request.method === 'POST' && url.pathname === '/api/standards/check') {
       const body = await readBody(request);
-      const assignmentId = body.assignmentId || 'assignment-local-mvp';
+      const assignmentId = body.assignmentId || getActiveAssignmentId();
       const assignment = getAssignment(assignmentId) || {};
       const currentEvidence = collectEvidence(assignmentId);
       const artifact = body.artifact || {
@@ -10204,21 +11302,21 @@ const server = createServer(async (request, response) => {
 
     if (request.method === 'POST' && url.pathname === '/api/approvals') {
       const body = await readBody(request);
-      const assignmentId = body.assignmentId || 'assignment-local-mvp';
+      const assignmentId = body.assignmentId || getActiveAssignmentId();
       const approvalType = body.approvalType || body.type || 'standards_warning_override';
       const status = body.status || 'approved';
       const now = new Date().toISOString();
-      statements.insertApprovalEvent.run(
-        createId('approval'),
+      const approval = approvalEventRepository.createApproval({
+        id: createId('approval'),
         assignmentId,
         approvalType,
         status,
-        body.approvedBy || body.userId || process.env.USER || 'local-user',
-        now,
-        body.notes || ''
-      );
+        approvedBy: body.approvedBy || body.userId || process.env.USER || 'local-user',
+        approvedAt: now,
+        notes: body.notes || ''
+      });
       createRunEvent(createId('run'), 'approval_recorded', 'ok', { assignmentId, approvalType, status }, assignmentId);
-      sendJson(response, 200, { assignmentId, approvalType, status, approvedAt: now, evidence: collectEvidence(assignmentId).approvals[0] });
+      sendJson(response, 200, { assignmentId, approvalType, status, approvedAt: now, evidence: approval });
       return;
     }
 
@@ -10230,26 +11328,24 @@ const server = createServer(async (request, response) => {
         sendJson(response, 400, { error: 'packageName and reason are required for dependency requests.' });
         return;
       }
-      const assignmentId = body.assignmentId || 'assignment-local-mvp';
+      const assignmentId = body.assignmentId || getActiveAssignmentId();
       const now = new Date().toISOString();
       const id = createId('dep');
-      statements.insertDependencyRequest.run(
+      const dependencyRequest = dependencyRequestRepository.createRequest({
         id,
         assignmentId,
         packageName,
-        body.version || '',
-        body.license || 'UNKNOWN',
+        version: body.version || '',
+        license: body.license || 'UNKNOWN',
         reason,
-        body.alternatives || '',
-        'pending',
-        body.requestedBy || process.env.USER || 'local-user',
-        null,
-        now,
-        null,
-        body.notes || ''
-      );
+        alternatives: body.alternatives || '',
+        status: 'pending',
+        requestedBy: body.requestedBy || process.env.USER || 'local-user',
+        requestedAt: now,
+        notes: body.notes || ''
+      });
       createRunEvent(createId('run'), 'dependency_request_created', 'warning', { assignmentId, packageName }, assignmentId);
-      sendJson(response, 200, statements.selectDependencyRequestById.get(id));
+      sendJson(response, 200, dependencyRequest);
       return;
     }
 
@@ -10258,25 +11354,25 @@ const server = createServer(async (request, response) => {
       const body = await readBody(request);
       const id = dependencyDecisionMatch[1];
       const action = dependencyDecisionMatch[2];
-      const existing = statements.selectDependencyRequestById.get(id);
+      const existing = dependencyRequestRepository.getById(id);
       if (!existing) {
         sendJson(response, 404, { error: 'Dependency request not found.' });
         return;
       }
       const status = action === 'approve' ? 'approved' : 'rejected';
       const now = new Date().toISOString();
-      statements.updateDependencyDecision.run(
+      const dependencyRequest = dependencyRequestRepository.updateDecision({
+        id,
         status,
-        body.approvedBy || body.userId || process.env.USER || 'local-user',
-        now,
-        body.notes || '',
-        id
-      );
+        approvedBy: body.approvedBy || body.userId || process.env.USER || 'local-user',
+        decidedAt: now,
+        notes: body.notes || ''
+      });
       createRunEvent(createId('run'), `dependency_${status}`, status === 'approved' ? 'ok' : 'blocked', {
         assignmentId: existing.assignmentId,
         packageName: existing.packageName
       }, existing.assignmentId);
-      sendJson(response, 200, statements.selectDependencyRequestById.get(id));
+      sendJson(response, 200, dependencyRequest);
       return;
     }
 
@@ -10284,7 +11380,7 @@ const server = createServer(async (request, response) => {
       const body = await readBody(request);
       try {
         sendJson(response, 200, createReviewComment({
-          assignmentId: body.assignmentId || 'assignment-local-mvp',
+          assignmentId: body.assignmentId || getActiveAssignmentId(),
           targetType: body.targetType || 'plan',
           targetId: body.targetId || '',
           severity: body.severity || 'comment',
@@ -10332,7 +11428,7 @@ const server = createServer(async (request, response) => {
       const body = await readBody(request);
       try {
         sendJson(response, 200, requestPlanRework({
-          assignmentId: body.assignmentId || 'assignment-local-mvp',
+          assignmentId: body.assignmentId || getActiveAssignmentId(),
           targetType: body.targetType || 'plan',
           notes: body.notes || ''
         }));
@@ -10347,7 +11443,7 @@ const server = createServer(async (request, response) => {
       const assignmentId = reviewCycleCloseoutMatch[1];
       sendJson(response, 200, {
         assignmentId,
-        closeout: collectEvidence(assignmentId).reviewCycleCloseout
+        closeout: workflowService.getReviewCycleCloseout(assignmentId)
       });
       return;
     }
@@ -10356,7 +11452,7 @@ const server = createServer(async (request, response) => {
       const body = await readBody(request);
       try {
         sendJson(response, 200, recordImplementationEvidence({
-          assignmentId: body.assignmentId || 'assignment-local-mvp',
+          assignmentId: body.assignmentId || getActiveAssignmentId(),
           runId: body.runId || '',
           phase: body.phase || 'implementation',
           changedFiles: body.changedFiles || [],
@@ -10376,9 +11472,9 @@ const server = createServer(async (request, response) => {
 	    if (request.method === 'POST' && url.pathname === '/api/implementation/post-check') {
 	      const body = await readBody(request);
 	      try {
-        const assignmentId = body.assignmentId || 'assignment-local-mvp';
+        const assignmentId = body.assignmentId || getActiveAssignmentId();
         const evidenceRecord = body.evidenceId
-          ? parseImplementationEvidenceRow(statements.selectImplementationEvidenceById.get(body.evidenceId))
+          ? implementationEvidenceRepository.getById(body.evidenceId)
           : null;
         sendJson(response, 200, {
           assignmentId,
@@ -10395,7 +11491,7 @@ const server = createServer(async (request, response) => {
 	      const body = await readBody(request);
 	      try {
 	        const result = recordImplementationEvidenceFromWorkerRun({
-	          assignmentId: body.assignmentId || 'assignment-local-mvp',
+	          assignmentId: body.assignmentId || getActiveAssignmentId(),
 	          workerRunId: implementationFromWorkerMatch[1],
 	          runPostCheck: body.runPostCheck !== false,
 	          dryRun: body.dryRun === true
@@ -10405,7 +11501,7 @@ const server = createServer(async (request, response) => {
 	          workerRun: compactWorkerRunForApi(result.workerRun)
 	        });
 	      } catch (err) {
-	        sendJson(response, err.statusCode || 400, { error: err.message, extracted: err.extracted || null });
+	        sendJson(response, err.statusCode || 400, { error: err.message, extracted: err.extracted || null, repoVerification: err.repoVerification || null });
 	      }
 	      return;
 	    }
@@ -10422,8 +11518,8 @@ const server = createServer(async (request, response) => {
 
     if (request.method === 'POST' && url.pathname === '/api/agents/delegate') {
       const body = await readBody(request);
-      const delegation = prepareAgentDelegation({
-        assignmentId: body.assignmentId || 'assignment-local-mvp',
+      const delegation = await prepareAgentDelegation({
+        assignmentId: body.assignmentId || getActiveAssignmentId(),
         executionAgent: body.executionAgent || getStoredSetting('executionAgent', 'codex'),
         requireWriteApproved: body.requireWriteApproved !== false,
         workerRoleId: body.workerRoleId || body.workerRole || '',
@@ -10454,7 +11550,7 @@ const server = createServer(async (request, response) => {
     }
 
     if (request.method === 'GET' && url.pathname === '/api/agents/execution-health') {
-      const assignmentId = url.searchParams.get('assignmentId') || 'assignment-local-mvp';
+      const assignmentId = url.searchParams.get('assignmentId') || getActiveAssignmentId();
       sendJson(response, 200, getExecutionAdapterHealth(assignmentId));
       return;
     }
@@ -10467,8 +11563,8 @@ const server = createServer(async (request, response) => {
           sendJson(response, 400, { error: 'launchMode must be terminal or bundle-only.' });
           return;
         }
-        const result = launchCodexWorker({
-          assignmentId: body.assignmentId || 'assignment-local-mvp',
+        const result = await launchCodexWorker({
+          assignmentId: body.assignmentId || getActiveAssignmentId(),
           executionAgent: body.executionAgent || getStoredSetting('executionAgent', 'codex'),
           workerRole: body.workerRole || 'lead-planner',
           launchMode,
@@ -10489,8 +11585,7 @@ const server = createServer(async (request, response) => {
 	    if (request.method === 'GET' && workerRunsMatch) {
 	      const assignmentId = workerRunsMatch[1];
 	      ensureRelayItemsForAssignment(assignmentId);
-	      statements.selectAgentWorkerRunsByAssignment.all(assignmentId)
-	        .map(parseAgentWorkerRun)
+	      agentWorkerRunRepository.listByAssignment(assignmentId)
 	        .filter((run) => ['running', 'starting', 'delegated_visible', 'manual_fallback', 'bundle_created', 'unknown'].includes(String(run.status || '').toLowerCase()))
 	        .slice(0, 20)
 	        .forEach((run) => {
@@ -10502,8 +11597,8 @@ const server = createServer(async (request, response) => {
 	        });
 	      sendJson(response, 200, {
 	        assignmentId,
-	        workerRuns: statements.selectAgentWorkerRunsByAssignment.all(assignmentId).map(parseAgentWorkerRun).map(compactWorkerRunForApi),
-	        relayItems: statements.selectAgentRelayItemsByAssignment.all(assignmentId).map(parseAgentRelayItem),
+	        workerRuns: agentWorkerRunRepository.listByAssignment(assignmentId).map(compactWorkerRunForApi),
+	        relayItems: agentRelayRepository.listByAssignment(assignmentId),
 	        orchestrationPolicy: {
 	          defaultMode: 'sequential',
 	          relayPriorOutputs: true,
@@ -10519,7 +11614,7 @@ const server = createServer(async (request, response) => {
 	      const body = await readBody(request);
 	      try {
 	        const result = syncWorkerRunStatus({
-	          assignmentId: body.assignmentId || 'assignment-local-mvp',
+	          assignmentId: body.assignmentId || getActiveAssignmentId(),
 	          workerRunId: workerStatusMatch[1]
 	        });
 	        sendJson(response, 200, {
@@ -10532,12 +11627,30 @@ const server = createServer(async (request, response) => {
 		      return;
 		    }
 
+		    const workerLaunchMatch = url.pathname.match(/^\/api\/agents\/worker-runs\/([^/]+)\/launch$/);
+		    if (request.method === 'POST' && workerLaunchMatch) {
+		      const body = await readBody(request);
+		      try {
+		        const result = launchPreparedWorkerRun({
+		          assignmentId: body.assignmentId || getActiveAssignmentId(),
+		          workerRunId: workerLaunchMatch[1]
+		        });
+		        sendJson(response, 200, {
+		          ...result,
+		          workerRun: compactWorkerRunForApi(result.workerRun)
+		        });
+		      } catch (err) {
+		        sendJson(response, err.statusCode || 400, { error: err.message });
+		      }
+		      return;
+		    }
+
 		    const workerStopMatch = url.pathname.match(/^\/api\/agents\/worker-runs\/([^/]+)\/stop$/);
 		    if (request.method === 'POST' && workerStopMatch) {
 		      const body = await readBody(request);
 		      try {
 		        const result = requestStopWorkerRun({
-		          assignmentId: body.assignmentId || 'assignment-local-mvp',
+		          assignmentId: body.assignmentId || getActiveAssignmentId(),
 		          workerRunId: workerStopMatch[1],
 		          requestedBy: body.requestedBy || process.env.USER || 'local-user',
 		          reason: body.reason || ''
@@ -10558,7 +11671,7 @@ const server = createServer(async (request, response) => {
 	      ensureRelayItemsForAssignment(assignmentId);
 	      sendJson(response, 200, {
 	        assignmentId,
-	        relayItems: statements.selectAgentRelayItemsByAssignment.all(assignmentId).map(parseAgentRelayItem),
+	        relayItems: agentRelayRepository.listByAssignment(assignmentId),
 	        policy: {
 	          sourceWorkerRunsImmutable: true,
 	          nextWorkerPromptInjection: true,
@@ -10574,7 +11687,7 @@ const server = createServer(async (request, response) => {
 	      try {
 	        const relayItem = decideAgentRelayItem({
 	          relayItemId: relayDecisionMatch[1],
-	          assignmentId: body.assignmentId || 'assignment-local-mvp',
+	          assignmentId: body.assignmentId || getActiveAssignmentId(),
 	          action: body.action || 'answer',
 	          decision: body.decision || '',
 	          targetWorkerRole: body.targetWorkerRole || '',
@@ -10593,7 +11706,7 @@ const server = createServer(async (request, response) => {
       const body = await readBody(request);
       try {
         const workerRun = ingestWorkerOutput({
-          assignmentId: body.assignmentId || 'assignment-local-mvp',
+          assignmentId: body.assignmentId || getActiveAssignmentId(),
           workerRunId: workerIngestMatch[1]
         });
         sendJson(response, 200, { workerRun: compactWorkerRunForApi(workerRun) });
@@ -10622,7 +11735,7 @@ const server = createServer(async (request, response) => {
     if (request.method === 'POST' && url.pathname === '/api/agent-foundry/run') {
       const body = await readBody(request);
       const result = runAgentFoundry({
-        assignmentId: body.assignmentId || 'assignment-local-mvp',
+        assignmentId: body.assignmentId || getActiveAssignmentId(),
         phase: body.phase || 'full-sdlc',
         domainId: body.domainId || '',
         inputSources: body.inputSources || []
@@ -10639,7 +11752,7 @@ const server = createServer(async (request, response) => {
 
     if (request.method === 'POST' && url.pathname === '/api/pr/prepare') {
       const body = await readBody(request);
-      const assignmentId = body.assignmentId || 'assignment-local-mvp';
+      const assignmentId = body.assignmentId || getActiveAssignmentId();
       sendJson(response, 200, {
         assignmentId,
         report: preparePrReadinessReport({ assignmentId, linkedJira: body.linkedJira || '', notes: body.notes || '' })
@@ -10652,7 +11765,7 @@ const server = createServer(async (request, response) => {
       const assignmentId = workflowStateMatch[1];
       sendJson(response, 200, {
         assignmentId,
-        workflowState: collectEvidence(assignmentId).workflowState
+        workflowState: workflowService.getWorkflowState(assignmentId)
       });
       return;
     }
@@ -10666,34 +11779,94 @@ const server = createServer(async (request, response) => {
     const agentContractMatch = url.pathname.match(/^\/api\/assignments\/([^/]+)\/agent-contract$/);
     if (request.method === 'GET' && agentContractMatch) {
       const assignmentId = agentContractMatch[1];
-      sendJson(response, 200, buildCurrentAgentContract(assignmentId).contract);
+      const currentContract = await buildCurrentAgentContract(assignmentId);
+      sendJson(response, 200, {
+        ...currentContract.contract,
+        projectContractSelection: currentContract.projectContractSelection
+      });
       return;
     }
 
     if (request.method === 'GET' && url.pathname === '/api/monitoring/ai-usage') {
-      const events = statements.selectAiUsage.all().map(hydrateAiUsageEvent);
+      const events = aiUsageRepository.list().map(hydrateAiUsageEvent);
       sendJson(response, 200, { summary: summarizeUsage(events), events });
       return;
     }
 
     if (request.method === 'GET' && url.pathname === '/api/monitoring/error-log') {
       sendJson(response, 200, buildMonitoringErrorLog({
-        assignmentId: url.searchParams.get('assignmentId') || 'assignment-local-mvp'
+        assignmentId: url.searchParams.get('assignmentId') || getActiveAssignmentId()
       }));
       return;
     }
 
     if (request.method === 'GET' && url.pathname === '/api/validation/runs') {
-      sendJson(response, 200, { runs: listValidationRuns() });
+      const assignmentId = url.searchParams.get('assignmentId') || getActiveAssignmentId();
+      sendJson(response, 200, { assignmentId, runs: listValidationRuns(10, assignmentId) });
       return;
     }
 
     if (request.method === 'POST' && url.pathname === '/api/validation/ui-smoke') {
       const body = await readBody(request);
       const result = await runUiSmokeScript({
-        assignmentId: body.assignmentId || 'assignment-local-mvp',
+        assignmentId: body.assignmentId || getActiveAssignmentId(),
         expectedIssue: body.expectedIssue || ''
       });
+      sendJson(response, 200, result);
+      return;
+    }
+
+    if (request.method === 'GET' && url.pathname === '/api/project-contracts') {
+      const assignmentId = url.searchParams.get('assignmentId') || '';
+      sendJson(response, 200, {
+        assignmentId: assignmentId || null,
+        contracts: projectContractService.listContracts({ assignmentId })
+      });
+      return;
+    }
+
+    if (request.method === 'POST' && url.pathname === '/api/project-contracts') {
+      const body = await readBody(request);
+      const contract = projectContractService.saveContract({
+        ...body,
+        assignmentId: body.assignmentId ?? getActiveAssignmentId()
+      });
+      sendJson(response, 200, { contract });
+      return;
+    }
+
+    const projectContractMatch = url.pathname.match(/^\/api\/project-contracts\/([^/]+)$/);
+    if (request.method === 'GET' && projectContractMatch) {
+      const contractId = decodeURIComponent(projectContractMatch[1]);
+      const contract = projectContractService.getContract(contractId);
+      if (!contract) {
+        sendJson(response, 404, { error: 'Project contract not found.', contractId });
+        return;
+      }
+      sendJson(response, 200, { contract });
+      return;
+    }
+
+    const projectContractReadinessMatch = url.pathname.match(/^\/api\/project-contracts\/([^/]+)\/readiness$/);
+    if (request.method === 'POST' && projectContractReadinessMatch) {
+      const contractId = decodeURIComponent(projectContractReadinessMatch[1]);
+      const readiness = await projectContractService.buildReadiness(contractId);
+      if (!readiness) {
+        sendJson(response, 404, { error: 'Project contract not found.', contractId });
+        return;
+      }
+      sendJson(response, 200, { readiness });
+      return;
+    }
+
+    const projectContractHandoffMatch = url.pathname.match(/^\/api\/project-contracts\/([^/]+)\/handoff$/);
+    if (request.method === 'POST' && projectContractHandoffMatch) {
+      const contractId = decodeURIComponent(projectContractHandoffMatch[1]);
+      const result = await projectContractService.buildHandoff(contractId);
+      if (!result) {
+        sendJson(response, 404, { error: 'Project contract not found.', contractId });
+        return;
+      }
       sendJson(response, 200, result);
       return;
     }
@@ -10705,33 +11878,38 @@ const server = createServer(async (request, response) => {
 
     if (request.method === 'POST' && url.pathname === '/api/settings') {
       const body = await readBody(request);
-      const settings = body.settings || {};
-      const unsafeKey = Object.keys(settings).find(isUnsafeSettingKey);
-      if (unsafeKey) {
-        sendJson(response, 400, { error: `Refusing to store secret-like setting "${unsafeKey}" from frontend.` });
-        return;
+      try {
+        sendJson(response, 200, settingsService.updateSafeSettings(body.settings || {}));
+      } catch (err) {
+        sendJson(response, err.statusCode || 400, { error: err.message });
       }
-      const now = new Date().toISOString();
-      Object.entries(settings).forEach(([key, value]) => {
-        statements.upsertSetting.run(key, JSON.stringify(value), now);
-      });
-      sendJson(response, 200, getSafeSettingsResponse());
       return;
     }
 
     if (request.method === 'GET' && url.pathname === '/api/runs') {
-      sendJson(response, 200, { runs: listRuns() });
+      const assignmentId = url.searchParams.get('assignmentId') || getActiveAssignmentId();
+      sendJson(response, 200, { assignmentId, runs: listRuns({ assignmentId }) });
       return;
     }
 
     const runEventsMatch = url.pathname.match(/^\/api\/runs\/([^/]+)\/events$/);
     if (request.method === 'GET' && runEventsMatch) {
-      sendJson(response, 200, { runId: runEventsMatch[1], events: statements.selectRunEventsByRun.all(runEventsMatch[1]) });
+      const assignmentId = url.searchParams.get('assignmentId') || getActiveAssignmentId();
+      const events = runEventRepository.listByRun(runEventsMatch[1]);
+      if (assignmentId && events.length && events.some((event) => event.assignmentId !== assignmentId)) {
+        sendJson(response, 409, {
+          error: 'Requested run does not belong to the active assignment.',
+          assignmentId,
+          runId: runEventsMatch[1]
+        });
+        return;
+      }
+      sendJson(response, 200, { assignmentId, runId: runEventsMatch[1], events });
       return;
     }
 
     if (request.method === 'GET' && url.pathname === '/api/connectors') {
-      sendJson(response, 200, { connectors: listConnectors(), recentEvents: statements.selectConnectorEvents.all() });
+      sendJson(response, 200, { connectors: listConnectors(), recentEvents: connectorEventRepository.list() });
       return;
     }
 

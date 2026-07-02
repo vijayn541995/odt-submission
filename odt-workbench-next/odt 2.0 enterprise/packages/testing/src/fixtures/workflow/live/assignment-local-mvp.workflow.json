@@ -1,0 +1,201 @@
+{
+  "capturedAt": "2026-06-16T13:12:42.240Z",
+  "apiBase": "http://127.0.0.1:5190",
+  "assignmentId": "assignment-local-mvp",
+  "source": "/api/workflow/state/assignment-local-mvp",
+  "workflow": {
+    "assignmentId": "assignment-local-mvp",
+    "state": "STANDARDS_REVIEW_PASSED",
+    "label": "Standards Reviewed",
+    "stage": "standards",
+    "status": "in_progress",
+    "nextAction": {
+      "label": "Approve Write Scope",
+      "detail": "Capture human approval for the latest standards review.",
+      "page": "standards"
+    },
+    "verificationProfile": null,
+    "blockedReasons": [],
+    "completed": {
+      "requirement": true,
+      "repo": true,
+      "technicalDesign": true,
+      "implementationPlan": true,
+      "standardsCheck": true,
+      "writeApproval": false,
+      "agentHandoff": false,
+      "implementationEvidence": false,
+      "postImplementationCheck": false,
+      "prPack": true
+    },
+    "decisionTrail": [
+      {
+        "type": "pr",
+        "label": "PR readiness pack generated",
+        "status": "BLOCKED",
+        "detail": "Prepared governed evidence for requirement, repo analysis, standards review, implementation evidence, approvals, dependency decisions, tests, risks, and rollback.",
+        "createdAt": "2026-06-10T09:38:28.703Z",
+        "page": "pr"
+      },
+      {
+        "type": "standards",
+        "label": "Standards check completed",
+        "status": "APPROVAL_REQUIRED",
+        "detail": "pre-implementation review against odt-baseline-1.0.",
+        "createdAt": "2026-06-10T09:38:20.929Z",
+        "page": "standards"
+      },
+      {
+        "type": "standards",
+        "label": "Standards check completed",
+        "status": "WARNING",
+        "detail": "pre-implementation review against odt-baseline-1.0.",
+        "createdAt": "2026-06-10T09:26:57.295Z",
+        "page": "standards"
+      },
+      {
+        "type": "plan",
+        "label": "Implementation plan drafted",
+        "status": "PLAN_REVIEW",
+        "detail": "Jira: JOURNEY-25577 Implementation Plan",
+        "createdAt": "2026-06-10T09:26:57.282Z",
+        "page": "planner"
+      },
+      {
+        "type": "design",
+        "label": "Technical design drafted",
+        "status": "TECH_DESIGN_DRAFTED",
+        "detail": "Jira: JOURNEY-25577 Technical Design",
+        "createdAt": "2026-06-10T09:26:57.269Z",
+        "page": "planner"
+      },
+      {
+        "type": "repo",
+        "label": "Repository analyzed",
+        "status": "REPO_ANALYZED",
+        "detail": "browser-selected:cerner-learning-js",
+        "createdAt": "2026-06-10T09:26:57.253Z",
+        "page": "intake"
+      },
+      {
+        "type": "requirement",
+        "label": "Requirement analyzed",
+        "status": "REQUIREMENT_ANALYZED",
+        "detail": "Jira: JOURNEY-25577",
+        "createdAt": "2026-06-10T09:26:57.235Z",
+        "page": "intake"
+      },
+      {
+        "type": "requirement",
+        "label": "Requirement analyzed",
+        "status": "REQUIREMENT_ANALYZED",
+        "detail": "Jira: JOURNEY-25577",
+        "createdAt": "2026-06-10T09:26:54.870Z",
+        "page": "intake"
+      },
+      {
+        "type": "plan",
+        "label": "Implementation plan drafted",
+        "status": "PLAN_REVIEW",
+        "detail": "Jira: JOURNEY-25577 Implementation Plan",
+        "createdAt": "2026-06-10T09:26:31.219Z",
+        "page": "planner"
+      },
+      {
+        "type": "design",
+        "label": "Technical design drafted",
+        "status": "TECH_DESIGN_DRAFTED",
+        "detail": "Jira: JOURNEY-25577 Technical Design",
+        "createdAt": "2026-06-10T09:26:31.186Z",
+        "page": "planner"
+      },
+      {
+        "type": "repo",
+        "label": "Repository analyzed",
+        "status": "NEEDS_REVIEW",
+        "detail": "Browser folder: cerner-learning-js",
+        "createdAt": "2026-06-10T09:26:31.162Z",
+        "page": "intake"
+      },
+      {
+        "type": "requirement",
+        "label": "Requirement analyzed",
+        "status": "REQUIREMENT_ANALYZED",
+        "detail": "Jira: JOURNEY-25577",
+        "createdAt": "2026-06-10T09:26:31.112Z",
+        "page": "intake"
+      },
+      {
+        "type": "standards",
+        "label": "Standards check completed",
+        "status": "APPROVAL_REQUIRED",
+        "detail": "pre-implementation review against odt-baseline-1.0.",
+        "createdAt": "2026-06-10T08:50:25.862Z",
+        "page": "standards"
+      },
+      {
+        "type": "standards",
+        "label": "Standards check completed",
+        "status": "APPROVAL_REQUIRED",
+        "detail": "pre-implementation review against odt-baseline-1.0.",
+        "createdAt": "2026-06-10T08:50:20.863Z",
+        "page": "standards"
+      },
+      {
+        "type": "standards",
+        "label": "Standards check completed",
+        "status": "WARNING",
+        "detail": "pre-implementation review against odt-baseline-1.0.",
+        "createdAt": "2026-06-10T08:49:40.435Z",
+        "page": "standards"
+      },
+      {
+        "type": "plan",
+        "label": "Implementation plan drafted",
+        "status": "PLAN_REVIEW",
+        "detail": "Jira: JOURNEY-25577 Implementation Plan",
+        "createdAt": "2026-06-10T08:49:40.422Z",
+        "page": "planner"
+      },
+      {
+        "type": "design",
+        "label": "Technical design drafted",
+        "status": "TECH_DESIGN_DRAFTED",
+        "detail": "Jira: JOURNEY-25577 Technical Design",
+        "createdAt": "2026-06-10T08:49:40.412Z",
+        "page": "planner"
+      },
+      {
+        "type": "repo",
+        "label": "Repository analyzed",
+        "status": "REPO_ANALYZED",
+        "detail": "/Users/vn105957/Desktop/lpdev/journey-builder-js",
+        "createdAt": "2026-06-10T08:49:40.395Z",
+        "page": "intake"
+      }
+    ],
+    "allowedActions": {
+      "canRunStandardsCheck": true,
+      "canApproveWrite": true,
+      "canDelegateWrite": false,
+      "canLaunchVerification": false,
+      "canRecordImplementationEvidence": false,
+      "canPreparePr": false,
+      "dependencyInstallsRequireSeparateApproval": true
+    },
+    "counts": {
+      "standardsBlockers": 0,
+      "reviewBlockers": 0,
+      "pendingDependencies": 0,
+      "failedTests": 0,
+      "incompleteTests": 0,
+      "prBlockingItems": 1
+    },
+    "latest": {
+      "standardsCheckId": "stdcheck_1781084300929_6ac81su",
+      "postImplementationCheckId": "",
+      "implementationEvidenceId": "",
+      "prReportStatus": "BLOCKED"
+    }
+  }
+}

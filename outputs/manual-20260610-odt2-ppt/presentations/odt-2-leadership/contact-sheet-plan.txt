@@ -1,0 +1,19 @@
+Macro-layout plan:
+1. Cover: large title, right product mark, three value pillars.
+2. Problem/value: 2x2 matrix with expected outcomes.
+3. Control-plane comparison: two-column tool comparison plus ODT advantage.
+4. Current capabilities: grouped product surface map.
+5. Workflow: large horizontal/loop flow diagram.
+6. Agent Team: sequential relay lanes with worker roles.
+7. Architecture: dark technical architecture map.
+8. Governance/customization: policy inheritance and gates.
+9. Context/cost/privacy: local evidence compiler diagram.
+10. Future upgrade roadmap: near/mid/long bands.
+11. Real working example: completed Jira verification path.
+12. Summary and pilot ask: three columns plus decision callout.
+
+Rhythm gates:
+- At least 6 distinct slide structures.
+- No three consecutive text-only layouts.
+- Architecture and workflow each get a full proof-object slide.
+- Future improvement slide is explicit and not buried in summary.

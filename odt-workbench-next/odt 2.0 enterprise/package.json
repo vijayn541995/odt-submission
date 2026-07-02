@@ -1,0 +1,20 @@
+{
+  "name": "odt-2-enterprise",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Enterprise modular workspace for ODT 2.0 browser and native delivery.",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "check": "npm run check:structure && npm run check:workflow && npm run check:sqlite && npm run check:settings",
+    "capture:workflow": "node packages/testing/src/capture-live-workflow-fixture.mjs",
+    "check:structure": "node packages/testing/src/check-structure.mjs",
+    "check:workflow": "node packages/testing/src/check-workflow-contract.mjs",
+    "check:sqlite": "node packages/testing/src/check-sqlite-repositories.mjs",
+    "check:settings": "node packages/testing/src/check-settings-service.mjs"
+  }
+}

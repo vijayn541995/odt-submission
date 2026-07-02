@@ -1,4 +1,4 @@
-export function buildAgentContract({ assignment, mode = 'read-only', executionAgent = 'codex', repoAnalysis = {}, technicalDesign = {}, implementationPlan = {}, intakeAssets = [], standards = {}, approvedDependencies = [], pendingDependencies = [] } = {}) {
+export function buildAgentContract({ assignment, mode = 'read-only', executionAgent = 'codex', repoAnalysis = {}, technicalDesign = {}, implementationPlan = {}, intakeAssets = [], standards = {}, approvedDependencies = [], pendingDependencies = [], projectContract = null, projectReadiness = null } = {}) {
   const writeApproved = mode === 'write-approved';
   const dependencyInstallsApproved = writeApproved && approvedDependencies.length > 0;
   return {
@@ -15,6 +15,8 @@ export function buildAgentContract({ assignment, mode = 'read-only', executionAg
     technicalDesign,
     implementationPlan,
     intakeAssets,
+    projectContract,
+    projectReadiness,
     standards: {
       standardsVersion: standards.standardsVersion || 'odt-baseline-1.0',
       accessibilityRequired: true,

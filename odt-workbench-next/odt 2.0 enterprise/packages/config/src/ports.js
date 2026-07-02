@@ -1,0 +1,4 @@
+export const DEFAULT_BROWSER_PORT = 5189;
+export const DEFAULT_API_PORT = 5190;
+export const DEFAULT_BROWSER_HOST = '127.0.0.1';
+export const DEFAULT_API_BASE_URL = `http://${DEFAULT_BROWSER_HOST}:${DEFAULT_API_PORT}`;
